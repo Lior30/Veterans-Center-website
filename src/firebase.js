@@ -1,19 +1,20 @@
-import {initializeApp} from "firebase/app";
-import {getFirestore, collection, addDoc} from "firebase/firestore";
+// src/firebase.js
+import { initializeApp } from "firebase/app";
+import { getFirestore }  from "firebase/firestore";
+import { getStorage }    from "firebase/storage";
 
-// TODO: Replace with your project's config object
 const firebaseConfig = {
-    apiKey: "AIzaSyCekdORTWs1Pqajh9RifBTqMOLJG5NmFrc",
-  authDomain: "veterans-center-website.firebaseapp.com",
-  projectId: "veterans-center-website",
-  storageBucket: "veterans-center-website.firebasestorage.app",
-  messagingSenderId: "651479703538",
-  appId: "1:651479703538:web:f9caf73990ac406a09556b",
-  measurementId: "G-E84JMP1BW4"
-  };
-  
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  
-  // Initialize Firestore
-  export const db = getFirestore(app);
+  apiKey:               import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain:           import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId:            import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket:        import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId:    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId:                import.meta.env.VITE_FIREBASE_APP_ID
+};
+
+const app     = initializeApp(firebaseConfig);
+const db      = getFirestore(app);
+const storage = getStorage(app);
+
+// **Export both** Firestore and Storage
+export { db, storage };
