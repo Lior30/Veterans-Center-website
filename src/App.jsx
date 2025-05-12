@@ -22,6 +22,8 @@ import MessageRepliesContainer      from "./components/MessageRepliesContainer.j
 import PublicMessageBoardContainer  from "./components/PublicMessageBoardContainer.jsx";
 import ReplyContainer               from "./components/ReplyContainer.jsx";
 
+import ManageUsersContainer         from "./components/ManageUsersContainer.jsx";
+
 export default function App() {
   return (
     <>
@@ -29,29 +31,32 @@ export default function App() {
 
       <Routes>
         {/* Home & Core */}
-        <Route path="/"                  element={<Home />} />
-        <Route path="/activities"        element={<ActivitiesContainer />} />
-        <Route path="/flyers"            element={<FlyerManager />} />
+        <Route path="/"                    element={<Home />} />
+        <Route path="/activities"          element={<ActivitiesContainer />} />
+        <Route path="/flyers"              element={<FlyerManager />} />
 
-        {/* ── Surveys (Admin) ── */}
-        <Route path="/surveys"           element={<Surveys />} />
-        <Route path="/surveys/create"    element={<CreateSurvey />} />
-        <Route path="/surveys/results"   element={<SurveyResultsList />} />
+        {/* Manage Users */}
+        <Route path="/manage-users"        element={<ManageUsersContainer />} />
+
+        {/* Surveys (Admin) */}
+        <Route path="/surveys"             element={<Surveys />} />
+        <Route path="/surveys/create"      element={<CreateSurvey />} />
+        <Route path="/surveys/results"     element={<SurveyResultsList />} />
         <Route path="/surveys/results/:id" element={<SurveyResultsDetail />} />
 
-        {/* ── Surveys (Public) ── */}
-        <Route path="/surveys/list"      element={<SurveyListContainer />} />
-        <Route path="/surveys/take/:id"  element={<SurveyDetailContainer />} />
+        {/* Surveys (Public) */}
+        <Route path="/surveys/list"        element={<SurveyListContainer />} />
+        <Route path="/surveys/take/:id"    element={<SurveyDetailContainer />} />
 
-        {/* ── Messages (Admin) ── */}
-        <Route path="/messages"           element={<ManageMessages />} />
-        <Route path="/messages/create"    element={<CreateMessage />} />
-        <Route path="/messages/list"      element={<MessageListContainer />} />
+        {/* Messages (Admin) */}
+        <Route path="/messages"            element={<ManageMessages />} />
+        <Route path="/messages/create"     element={<CreateMessage />} />
+        <Route path="/messages/list"       element={<MessageListContainer />} />
         <Route path="/messages/replies/:id" element={<MessageRepliesContainer />} />
 
-        {/* ── Messages (Public) ── */}
-        <Route path="/messages/board"     element={<PublicMessageBoardContainer />} />
-        <Route path="/messages/reply/:id" element={<ReplyContainer />} />
+        {/* Messages (Public) */}
+        <Route path="/messages/board"      element={<PublicMessageBoardContainer />} />
+        <Route path="/messages/reply/:id"  element={<ReplyContainer />} />
       </Routes>
     </>
   );
