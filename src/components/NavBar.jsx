@@ -1,17 +1,10 @@
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
-/* ----- tiny helper for DRY inline styles ----- */
-const pill = {
-  padding: "6px 10px",
-  margin: "0 4px",
-  textDecoration: "none",
-  borderRadius: 6,
-  fontWeight: 500,
-  fontSize: "0.95rem",
-};
-const active = { background: "#1976d2", color: "white" };
-const inactive = { color: "#1976d2" };
+/* tiny helper for DRY inline styles */
+const pill    = { padding: "6px 10px", margin: "0 4px", textDecoration: "none", borderRadius: 6, fontWeight: 500, fontSize: "0.95rem" };
+const active  = { background: "#1976d2", color: "white" };
+const inactive= { color: "#1976d2" };
 
 export default function NavBar() {
   const navigate = useNavigate();
@@ -19,8 +12,7 @@ export default function NavBar() {
     isActive ? { ...pill, ...active } : { ...pill, ...inactive };
 
   return (
-    <nav
-      style={{
+    <nav style={{
         display: "flex",
         alignItems: "center",
         gap: 4,
@@ -31,21 +23,15 @@ export default function NavBar() {
         marginBottom: 20,
       }}
     >
-      {/* Back & Home buttons */}
-      <button
-        onClick={() => navigate(-1)}
-        style={{ marginRight: 12, padding: "6px 12px" }}
-      >
+      {/* Back & Home */}
+      <button onClick={() => navigate(-1)} style={{ marginRight: 12, padding: "6px 12px" }}>
         ← Back
       </button>
-      <button
-        onClick={() => navigate("/")}
-        style={{ marginRight: 24, padding: "6px 12px" }}
-      >
+      <button onClick={() => navigate("/")} style={{ marginRight: 24, padding: "6px 12px" }}>
         🏠 Home
       </button>
 
-      {/* Your existing nav links */}
+      {/* existing nav links */}
       <NavLink to="/"           style={linkStyle} end>
         דף הבית
       </NavLink>
@@ -60,6 +46,11 @@ export default function NavBar() {
       </NavLink>
       <NavLink to="/messages"   style={linkStyle}>
         הודעות
+      </NavLink>
+
+      {/* ← NEW Users link */}
+      <NavLink to="/manage-users" style={linkStyle}>
+        משתמשים
       </NavLink>
     </nav>
   );
