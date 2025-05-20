@@ -3,13 +3,15 @@ import { db } from "../firebase";
 import {
   collection,
   collectionGroup,
-  addDoc,
+  doc,
+  setDoc,
   getDocs,
   query,
   where,
   updateDoc,
   deleteDoc
 } from "firebase/firestore";
+
 
 // helper: יוצר user_id קבוע מכל מקור אפשרי
 // helper: יוצר user_id קבוע מכל מקור אפשרי
@@ -45,16 +47,16 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
   const [userType, setUserType] = useState("");
 
-  const handleAddUser = async () => {
+const handleAddUser = async () => {
   if (!newFirstName.trim() || !newLastName.trim() || !newPhone.trim() || !userType) {
     alert("נא למלא את כל השדות");
     return;
   }
 
-
   const first = newFirstName.trim();
-  const last = newLastName.trim();
+  const last  = newLastName.trim();
   const phone = newPhone.trim();
+
   const isClub  = userType === "senior";
   const isReg   = userType === "registered" || isClub;
   const user_id = `${first}_${last}_${phone}`;
@@ -65,8 +67,8 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     last_name: last,
     phone,
      fullname:   `${first} ${last}`, 
-    is_registered: isRegistered,
-    is_club_60: isClub60
+    is_registered: isReg,
+    is_club_60: isClub
   };
   
   const exists = manualUsers.some(u =>
@@ -83,8 +85,10 @@ if (exists) {
 
 
   try {
-    await addDoc(collection(db, "users"), userData);
     alert("המשתמש נוסף בהצלחה!");
+
+     const docRef = doc(db, "users", user_id);
+     await setDoc(docRef, userData, { merge: true });
 
     setNewFirstName("");
     setNewLastName("");
@@ -98,8 +102,8 @@ if (exists) {
 };
 
 const updateUserType = async (user, newType) => {
-  const isClub60     = newType === "senior";
-  const isRegistered = newType === "registered" || isClub60;
+  const isClub     = newType === "senior";
+  const isReg = newType === "registered" || isClub;
 
   // ➊ פיצול שם מלא במקרה שאין first / last
   const fullRaw  = user.fullname || user.fullName || "";
@@ -125,13 +129,13 @@ const updateUserType = async (user, newType) => {
     docRef = await addDoc(collection(db, "users"), {
       ...baseData,
       fullname: `${first} ${last}`.trim(),
-      is_registered: isRegistered,
-      is_club_60:    isClub60,
+      is_registered: isReg,
+      is_club_60:    isClub,
     });
   } else {
     await updateDoc(docRef, {
-      is_registered: isRegistered,
-      is_club_60:    isClub60,
+      is_registered: isReg,
+      is_club_60:    isClub,
     });
   }
 
@@ -141,8 +145,8 @@ const updateUserType = async (user, newType) => {
     const entry = {
       ...baseData,
       fullname: `${first} ${last}`.trim(),
-      is_registered: isRegistered,
-      is_club_60:   isClub60,
+      is_registered: isReg,
+      is_club_60:   isClub,
     };
     if (idx === -1) return [...prev, entry];
     const clone = [...prev];
