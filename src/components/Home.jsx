@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, Button } from "@mui/material";
+import { Box, Typography, Button, Container, Stack } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 import MessageService from "../services/MessageService";
 
@@ -18,8 +18,6 @@ export default function Home() {
 
   return (
     <>
-      {/* …other Home content above… */}
-
       {/* Scrolling ticker, flush under navbar */}
       <Box
         sx={{
@@ -73,6 +71,55 @@ export default function Home() {
           ))}
         </Box>
       </Box>
+
+      {/* Admin button grid */}
+      <Container sx={{ pt: 4 }}>
+        <Typography variant="h4" align="center" gutterBottom>
+          Veterans Center Admin
+        </Typography>
+        <Stack spacing={2} sx={{ maxWidth: 400, mx: "auto" }}>
+          <Button
+            component={RouterLink}
+            to="/activities"
+            variant="outlined"
+            fullWidth
+          >
+            Manage Activities
+          </Button>
+          <Button
+            component={RouterLink}
+            to="/flyers"
+            variant="outlined"
+            fullWidth
+          >
+            Manage Flyers
+          </Button>
+          <Button
+            component={RouterLink}
+            to="/surveys"
+            variant="outlined"
+            fullWidth
+          >
+            Manage Surveys
+          </Button>
+          <Button
+            component={RouterLink}
+            to="/messages"
+            variant="outlined"
+            fullWidth
+          >
+            Manage Messages
+          </Button>
+          <Button
+            component={RouterLink}
+            to="/manage-users"
+            variant="outlined"
+            fullWidth
+          >
+            Manage Users
+          </Button>
+        </Stack>
+      </Container>
     </>
   );
 }
