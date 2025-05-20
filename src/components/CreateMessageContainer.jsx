@@ -1,51 +1,69 @@
-import React, { useState } from "react";
-import { useNavigate }    from "react-router-dom";
-import { collection, addDoc } from "firebase/firestore";
-import { db }                from "../firebase.js";
-import CreateMessageDesign   from "./CreateMessageDesign.jsx";
+import { useState, useEffect } from "react";
+import CreateMessageDesign from "./CreateMessageDesign";
+import MessageService from "../services/MessageService";
+import ActivityService from "../services/ActivityService";
+import { Snackbar, Alert } from "@mui/material";
 
 export default function CreateMessageContainer() {
-  const navigate = useNavigate();
-  const [title, setTitle]       = useState("");
-  const [body, setBody]         = useState("");
-  const [location, setLocation] = useState("");
+  const [activities, setActivities] = useState([]);
+  const [values, setValues] = useState({
+    title: "",
+    body: "",
+    activityId: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [success, setSuccess] = useState(false);
 
-  const handleSubmit = async () => {
-    const t = title.trim();
-    if (!t) {
-      alert("Please enter a title before publishing.");
-      return;
-    }
-    if (!location) {
-      alert("Please choose where the message will be displayed.");
-      return;
-    }
+  useEffect(() => {
+    const unsubscribe = ActivityService.subscribe((acts) =>
+      setActivities(acts)
+    );
+    return () => unsubscribe();
+  }, []);
 
-    await addDoc(collection(db, "messages"), {
-      title: t,
-      body,
-      location,           // one of 'home' | 'fullActivity' | 'surveysView'
-      createdAt: new Date(),
-    });
-    navigate("/messages/list");
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    setValues((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleCancel = () => {
-    if (window.confirm("Abort message creation and lose all changes?")) {
-      navigate("/messages");
+  const onSubmit = async () => {
+    const errs = {};
+    if (!values.title) errs.title = "יש להזין כותרת";
+    if (!values.body) errs.body = "יש להזין תוכן";
+    if (Object.keys(errs).length) {
+      setErrors(errs);
+      return;
     }
+
+    await MessageService.create(values);
+    setValues({ title: "", body: "", activityId: "" });
+    setErrors({});
+    setSuccess(true);
   };
 
   return (
-    <CreateMessageDesign
-      title={title}
-      body={body}
-      location={location}
-      onTitleChange={(e) => setTitle(e.target.value)}
-      onBodyChange={(e) => setBody(e.target.value)}
-      onLocationChange={(e) => setLocation(e.target.value)}
-      onSubmit={handleSubmit}
-      onCancel={handleCancel}
-    />
+    <>
+      <CreateMessageDesign
+        activities={activities}
+        values={values}
+        errors={errors}
+        onChange={onChange}
+        onSubmit={onSubmit}
+      />
+      <Snackbar
+        open={success}
+        autoHideDuration={3000}
+        onClose={() => setSuccess(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSuccess(false)}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
+          ההודעה נשלחה בהצלחה
+        </Alert>
+      </Snackbar>
+    </>
   );
 }

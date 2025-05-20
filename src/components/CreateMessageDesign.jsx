@@ -1,70 +1,75 @@
 import React from "react";
+import {
+  Container,
+  Stack,
+  Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+  Button,
+} from "@mui/material";
 
 export default function CreateMessageDesign({
-  title,
-  body,
-  location,
-  onTitleChange,
-  onBodyChange,
-  onLocationChange,
+  activities,
+  values,
+  errors,
+  onChange,
   onSubmit,
-  onCancel,
 }) {
   return (
-    <div style={{ padding: 40, maxWidth: 600, margin: "0 auto" }}>
-      <h2>Create New Message</h2>
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Stack spacing={3}>
+        <Typography variant="h5" align="center">
+          צור הודעה חדשה
+        </Typography>
 
-      {/* Title */}
-      <div style={{ margin: "20px 0" }}>
-        <label>
-          <strong>Title:</strong>
-          <input
-            type="text"
-            value={title}
-            onChange={onTitleChange}
-            placeholder="Enter message title"
-            style={{ width: "100%", padding: 8, marginTop: 4 }}
-          />
-        </label>
-      </div>
-
-      {/* Body */}
-      <div style={{ margin: "20px 0" }}>
-        <label>
-          <strong>Body:</strong>
-          <textarea
-            value={body}
-            onChange={onBodyChange}
-            placeholder="Enter message body"
-            style={{ width: "100%", height: 120, padding: 8, marginTop: 4 }}
-          />
-        </label>
-      </div>
-
-      {/* Location dropdown */}
-      <div style={{ margin: "20px 0" }}>
-        <label>
-          <strong>Display On:</strong>
-          <select
-            value={location}
-            onChange={onLocationChange}
-            style={{ width: "100%", padding: 8, marginTop: 4 }}
+        <FormControl fullWidth>
+          <InputLabel id="act-label">קשר לפעילות</InputLabel>
+          <Select
+            labelId="act-label"
+            id="activityId"
+            name="activityId"
+            value={values.activityId}
+            label="קשר לפעילות"
+            onChange={onChange}
           >
-            <option value="">— select where to show —</option>
-            <option value="home">Home Page</option>
-            <option value="fullActivity">When Activity Is Full</option>
-            <option value="surveysView">When Viewing Surveys</option>
-          </select>
-        </label>
-      </div>
+            <MenuItem value="">כללי</MenuItem>
+            {activities.map((a) => (
+              <MenuItem key={a.id} value={a.id}>
+                {a.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-      {/* Actions */}
-      <div style={{ marginTop: 20 }}>
-        <button onClick={onSubmit} style={{ marginRight: 12 }}>
-          ✅ Publish Message
-        </button>
-        <button onClick={onCancel}>← Cancel</button>
-      </div>
-    </div>
+        <TextField
+          label="כותרת"
+          name="title"
+          fullWidth
+          value={values.title}
+          onChange={onChange}
+          error={!!errors.title}
+          helperText={errors.title}
+        />
+
+        <TextField
+          label="תוכן"
+          name="body"
+          multiline
+          rows={4}
+          fullWidth
+          value={values.body}
+          onChange={onChange}
+          error={!!errors.body}
+          helperText={errors.body}
+        />
+
+        <Button variant="contained" size="large" onClick={onSubmit}>
+          שלח
+        </Button>
+      </Stack>
+    </Container>
   );
 }

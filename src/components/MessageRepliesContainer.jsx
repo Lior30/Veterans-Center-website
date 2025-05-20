@@ -1,4 +1,3 @@
-// src/components/MessageRepliesContainer.jsx
 import React, { useState, useEffect } from "react";
 import {
   doc,
@@ -11,28 +10,26 @@ import { useParams, useNavigate } from "react-router-dom";
 import { db } from "../firebase.js";
 
 export default function MessageRepliesContainer() {
-  const { id } = useParams();           // message ID
+  const { id } = useParams();
   const navigate = useNavigate();
   const [message, setMessage] = useState(null);
   const [replies, setReplies] = useState([]);
 
-  // load message + its replies
   useEffect(() => {
     async function load() {
       const msgSnap = await getDoc(doc(db, "messages", id));
       if (msgSnap.exists()) setMessage({ id: msgSnap.id, ...msgSnap.data() });
 
       const rSnap = await getDocs(collection(db, "messages", id, "replies"));
-      setReplies(rSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setReplies(rSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     }
     load();
   }, [id]);
 
   const handleDeleteReply = async (rid) => {
     await deleteDoc(doc(db, "messages", id, "replies", rid));
-    // reload replies
     const rSnap = await getDocs(collection(db, "messages", id, "replies"));
-    setReplies(rSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    setReplies(rSnap.docs.map(d => ({ id: d.id, ...d.data() })));
   };
 
   if (!message) return <p>Loading…</p>;
@@ -40,11 +37,10 @@ export default function MessageRepliesContainer() {
   return (
     <div style={{ padding: 40, maxWidth: 600, margin: "0 auto" }}>
       <h2>Replies for: {message.title}</h2>
-
       {replies.length === 0 ? (
         <p>No replies yet.</p>
       ) : (
-        replies.map((r) => (
+        replies.map(r => (
           <div
             key={r.id}
             style={{
@@ -58,14 +54,13 @@ export default function MessageRepliesContainer() {
             <p>
               <strong>{r.fullname}</strong> ({r.phone})
             </p>
-            <p>{r.text}</p>
+            <p>{r.replyText}</p>
             <button onClick={() => handleDeleteReply(r.id)}>
               Delete Reply
             </button>
           </div>
         ))
       )}
-
       <button onClick={() => navigate(-1)}>← Back</button>
     </div>
   );

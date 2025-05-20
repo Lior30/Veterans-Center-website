@@ -1,4 +1,11 @@
 import React from "react";
+import {
+  Container,
+  Stack,
+  Typography,
+  TextField,
+  Button
+} from "@mui/material";
 
 export default function ReplyDesign({
   message,
@@ -12,53 +19,45 @@ export default function ReplyDesign({
   onCancel,
 }) {
   return (
-    <div style={{ padding: 40, maxWidth: 600, margin: "0 auto" }}>
-      <h2>Reply to: {message.title}</h2>
-      <p>{message.body}</p>
-      <hr />
-
-      <div style={{ margin: "20px 0" }}>
-        <label>
-          <strong>Full Name*:</strong>
-          <input
-            type="text"
-            value={fullname}
-            onChange={onFullnameChange}
-            style={{ width: "100%", padding: 8, marginTop: 4 }}
-          />
-        </label>
-      </div>
-
-      <div style={{ margin: "20px 0" }}>
-        <label>
-          <strong>Phone Number*:</strong>
-          <input
-            type="text"
-            value={phone}
-            onChange={onPhoneChange}
-            placeholder="05XXXXXXXX"
-            style={{ width: "100%", padding: 8, marginTop: 4 }}
-          />
-        </label>
-      </div>
-
-      <div style={{ margin: "20px 0" }}>
-        <label>
-          <strong>Your Message:</strong>
-          <textarea
-            value={replyText}
-            onChange={onReplyChange}
-            style={{ width: "100%", height: 120, padding: 8, marginTop: 4 }}
-          />
-        </label>
-      </div>
-
-      <div style={{ marginTop: 20 }}>
-        <button onClick={onSubmit} style={{ marginRight: 12 }}>
-          ✅ Send Reply
-        </button>
-        <button onClick={onCancel}>← Cancel</button>
-      </div>
-    </div>
-  );
-}
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Typography variant="h5" align="center" gutterBottom>
+        השב להודעה: {message.title}
+      </Typography>
+      <Stack spacing={2}>
+        <TextField
+          label="שם מלא"
+          variant="outlined"
+          fullWidth
+          value={fullname}
+          onChange={onFullnameChange}
+        />
+        <TextField
+          label="טלפון"
+          variant="outlined"
+          fullWidth
+          value={phone}
+          onChange={onPhoneChange}
+        />
+        <TextField
+          label="הודעה"
+          variant="outlined"
+          fullWidth
+          multiline
+          rows={4}
+          value={replyText}
+          onChange={onReplyChange}
+          InputProps={{
+            sx: {
+              fontSize: "1.2rem"
+            }
+          }}
+        />
+        <Button variant="contained" onClick={onSubmit}>
+          שלח תגובה
+        </Button>
+        <Button variant="text" onClick={onCancel}>
+          ביטול
+        </Button>
+      </Stack>
+    </Container>
+); }

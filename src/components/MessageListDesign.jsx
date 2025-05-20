@@ -1,43 +1,35 @@
-// src/components/MessageListDesign.jsx
 import React from "react";
-import { Link } from "react-router-dom";
+import { Container, Typography, Card, CardContent, CardActions, Button } from "@mui/material";
 
-export default function MessageListDesign({ messages, onDelete }) {
+export default function MessageListDesign({ messages, onDelete, onViewReplies }) {
   return (
-    <div style={{ padding: 40, textAlign: "center" }}>
-      <h2>All Messages</h2>
+    <Container sx={{ py: 4 }}>
+      <Typography variant="h4" align="center" gutterBottom>
+        כל ההודעות
+      </Typography>
       {messages.length === 0 ? (
-        <p>No messages published yet.</p>
+        <Typography align="center">אין הודעות לפרסום.</Typography>
       ) : (
         messages.map((m) => (
-          <div
-            key={m.id}
-            style={{
-              border: "1px solid #ccc",
-              padding: 16,
-              margin: "10px auto",
-              maxWidth: 600,
-              borderRadius: 4,
-              textAlign: "left",
-            }}
-          >
-            <h3>{m.title}</h3>
-            <p><em>At: {m.location}</em></p>
-            <p>{m.body}</p>
-            <div style={{ marginTop: 12 }}>
-+             <Link to={`/messages/replies/${m.id}`}>
-+               <button style={{ marginRight: 8 }}>View Replies</button>
-+             </Link>
-              <button onClick={() => onDelete(m.id)}>Delete</button>
-            </div>
-          </div>
+          <Card key={m.id} sx={{ mb: 2 }}>
+            <CardContent>
+              <Typography variant="h6">{m.title}</Typography>
+              <Typography color="text.secondary" sx={{ mt: 1 }}>
+                ב: {m.activityId || "כללי"}
+              </Typography>
+              <Typography sx={{ mt: 2 }}>{m.body}</Typography>
+            </CardContent>
+            <CardActions>
+              <Button size="small" onClick={() => onViewReplies(m.id)}>
+                הצג תגובות
+              </Button>
+              <Button size="small" color="error" onClick={() => onDelete(m.id)}>
+                מחיקה
+              </Button>
+            </CardActions>
+          </Card>
         ))
       )}
-      <div style={{ marginTop: 20 }}>
-        <Link to="/messages">
-          <button>← Back to Manage</button>
-        </Link>
-      </div>
-    </div>
+    </Container>
   );
 }

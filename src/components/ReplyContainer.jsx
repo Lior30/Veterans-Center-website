@@ -1,73 +1,75 @@
 import React, { useState, useEffect } from "react";
-import {
-  doc,
-  getDoc,
-  collection,
-  addDoc
-} from "firebase/firestore";
+import { doc, getDoc, collection, addDoc } from "firebase/firestore";
 import { useParams, useNavigate } from "react-router-dom";
-import { db }                    from "../firebase.js";
-import ReplyDesign               from "./ReplyDesign.jsx";
+import { db } from "../firebase.js";
+import ReplyDesign from "./ReplyDesign.jsx";
+import { Snackbar, Alert } from "@mui/material";
 
 export default function ReplyContainer() {
-  const { id } = useParams();          // message ID
+  const { id } = useParams();
   const navigate = useNavigate();
+
   const [message, setMessage] = useState(null);
   const [fullname, setFullname] = useState("");
-  const [phone, setPhone]       = useState("");
+  const [phone, setPhone] = useState("");
   const [replyText, setReplyText] = useState("");
+  const [success, setSuccess] = useState(false);
 
-  // Load the message being replied to
   useEffect(() => {
-    async function load() {
+    async function loadMessage() {
       const snap = await getDoc(doc(db, "messages", id));
-      if (snap.exists()) setMessage({ id: snap.id, ...snap.data() });
-      else console.error("Message not found:", id);
+      if (snap.exists()) {
+        setMessage({ id: snap.id, ...snap.data() });
+      }
     }
-    load();
+    loadMessage();
   }, [id]);
 
   const handleSubmit = async () => {
-    // Validation
-    if (!fullname.trim()) {
-      alert("Please enter your full name.");
-      return;
-    }
-    if (!/^[A-Za-z\u05D0-\u05EA\s]+$/.test(fullname.trim())) {
-      alert("Name must contain only letters (English or Hebrew) and spaces.");
-      return;
-    }
-    if (!/^05\d{8}$/.test(phone)) {
-      alert("Phone Number must be 10 digits starting with 05.");
-      return;
-    }
-
-    // Save reply
+    if (!fullname || !phone || !replyText) return;
     await addDoc(collection(db, "messages", id, "replies"), {
-      fullname: fullname.trim(),
+      fullname,
       phone,
-      text: replyText,
-      sentAt: new Date(),
+      replyText,
+      createdAt: new Date(),
     });
-
-    navigate("/messages/board");
+    setSuccess(true);
+    setTimeout(() => navigate("/"), 2000);
   };
 
-  const handleCancel = () => navigate("/messages/board");
-
-  if (!message) return <p>Loading…</p>;
+  const handleCancel = () => {
+    navigate("/");
+  };
 
   return (
-    <ReplyDesign
-      message={message}
-      fullname={fullname}
-      phone={phone}
-      replyText={replyText}
-      onFullnameChange={(e) => setFullname(e.target.value)}
-      onPhoneChange={(e)    => setPhone(e.target.value)}
-      onReplyChange={(e)    => setReplyText(e.target.value)}
-      onSubmit={handleSubmit}
-      onCancel={handleCancel}
-    />
-  );
+    <>
+      {message && (
+        <ReplyDesign
+          message={message}
+          fullname={fullname}
+          phone={phone}
+          replyText={replyText}
+          onFullnameChange={(e) => setFullname(e.target.value)}
+          onPhoneChange={(e) => setPhone(e.target.value)}
+          onReplyChange={(e) => setReplyText(e.target.value)}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+        />
+      )}
+      <Snackbar
+        open={success}
+        autoHideDuration={3000}
+        onClose={() => setSuccess(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSuccess(false)}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
+          תגובתך נוספה בהצלחה
+        </Alert>
+      </Snackbar>
+    </>
+);
 }
