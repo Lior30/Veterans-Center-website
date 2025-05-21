@@ -84,7 +84,7 @@ export default function CalendarPreview() {
   const [err,   setErr]   = useState("");
 
   const validName  = /^[A-Za-z\u0590-\u05FF\s]+$/.test(name.trim());
-  const validPhone = /^\d+$/.test(phone.trim());
+   const validPhone = UserService.isValidPhone(phone.trim());
 
   const handleEventClick = (info) => {
     if (info.event.extendedProps.holiday) return;
@@ -183,7 +183,7 @@ export default function CalendarPreview() {
               onChange={(e) => setPhone(e.target.value)}
               fullWidth
               error={phone && !validPhone}
-              helperText={phone && !validPhone ? "ספרות בלבד" : " "}
+              helperText={phone && !validPhone ? "טלפון לא תקין (05X1234567)" : " "}
             />
           </Stack>
         </DialogContent>

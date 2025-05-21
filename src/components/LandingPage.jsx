@@ -6,6 +6,8 @@ import { Container, Box, Button }     from "@mui/material";
 import PublicMessageBoardContainer    from "./PublicMessageBoardContainer.jsx";
 import CalendarPreview                from "./CalendarPreview.jsx";
 
+
+
 /**
  * First screen ("/") that users see.
  *  • Messages at the top
