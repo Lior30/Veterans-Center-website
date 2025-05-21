@@ -9,7 +9,6 @@ import {
 import { db } from "../firebase.js";
 import ManageUsersDesign from "./ManageUsersDesign";
 
-
 function ensureUserId(u) {
   if (u.user_id) return u.user_id;
   const full = (u.fullname || u.fullName || "").trim();
@@ -90,8 +89,6 @@ export default function ManageUsersContainer() {
     //   collectionGroup(db, "responses"),
     //   snap => {
     //     console.log("📝 survey responses total:", snap.docs.length);
-
-
     //     snap.docChanges().forEach(change => {
     //       if (change.type !== "added") return;
 
@@ -164,6 +161,7 @@ export default function ManageUsersContainer() {
       unsubUsers();
     };
   }, []);
+  /* ──────────────────────────────────────────────────────────────── */
 
   // חיבור כל המקורות בלי כפילויות (key = phone)
   const allMap = [...regs, ...surveys, ...replies, ...manual]
@@ -176,6 +174,7 @@ export default function ManageUsersContainer() {
       return acc;
     }, {});
   const allUsers = Object.values(allMap);
+  /* ──────────────────────────────────────────────────────────────── */
 
   const inAct = new Set(regs   .map(u => u.phone));
   const inSur = new Set(surveys.map(u => u.phone));
@@ -194,6 +193,7 @@ export default function ManageUsersContainer() {
       default:         return true;
     }
   });
+  /* ──────────────────────────────────────────────────────────────── */
 
   return (
     <ManageUsersDesign
