@@ -1,129 +1,196 @@
-// src/components/ManageUsersContainer.jsx
 import React, { useState, useEffect } from "react";
 import {
   collection,
   collectionGroup,
   onSnapshot,
+  doc,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "../firebase.js";
 import ManageUsersDesign from "./ManageUsersDesign";
 
-/** ----------------------------------------------------------
- *  Utility: convert raw Firestore doc ➜ canonical user object
- *  Always returns:
- *      { fullName, phone, is_registered, is_club_60, ... }
- *  fullName is NEVER blank – falls back to "—".
- *  --------------------------------------------------------- */
-function normalizeUser(raw) {
-  const src = raw.user ?? raw;
+function ensureUserId(u) {
+  if (u.user_id) return u.user_id;
+  const full = (u.fullname || u.fullName || "").trim();
+  const [first = "", ...rest] = full.split(" ");
+  const last = rest.join(" ");
+  return `${first}_${last}_${u.phone}`;
+}
 
+function normalizeUser(raw) {
+  const src   = raw.user ?? raw;
   const first = src.first_name  ?? "";
   const last  = src.last_name   ?? "";
-  const fn    =
-    (src.fullname   || src.fullName || src.name || `${first} ${last}`.trim())
-      .trim();
-
+  const fn    = (src.fullname || src.fullName || `${first} ${last}`.trim())
+                  .trim() || "—";
   return {
-    /** main columns UI expects */
-    fullName: fn.length ? fn : "—",
-    phone:    (src.phone || src.phoneNumber || "").trim(),
-
-    /** flags (default ➜ false) */
+    fullName:      fn,
+    phone:         (src.phone || src.phoneNumber || "").trim(),
     is_registered: src.is_registered ?? false,
     is_club_60:    src.is_club_60    ?? false,
-
-    /** anything else you were already using */
-    first_name: first,
-    last_name:  last,
-    user_id:    src.user_id || "",
+    first_name:    first,
+    last_name:     last,
+    user_id:       src.user_id || "",
   };
 }
 
 export default function ManageUsersContainer() {
-  const [regs,        setRegs]        = useState([]);
-  const [surveys,     setSurveys]     = useState([]);
-  const [replies,     setReplies]     = useState([]);
-  const [manualUsers, setManualUsers] = useState([]);
+  const [regs,    setRegs]    = useState([]);
+  const [surveys, setSurveys] = useState([]);
+  const [replies, setReplies] = useState([]);
+  const [manual,  setManual]  = useState([]);
+  const [filter,  setFilter]  = useState("all");
+  const [deletedPhones, setDeletedPhones] = useState(new Set());
 
-  const [filter, setFilter] = useState("all");          // UI filter buttons
-  const [deletedPhones, setDeletedPhones] = useState(   // soft-delete set
-    new Set()
-  );
-
-  /* ── real-time listeners ───────────────────────────────────────── */
   useEffect(() => {
+    // 1) Registrations
     const unsubRegs = onSnapshot(
       collection(db, "activityRegistrations"),
-      (snap) => setRegs(snap.docs.map((d) => normalizeUser(d.data()))),
+
+      snap => setRegs(snap.docs.map(d => normalizeUser(d.data()))),
       console.error
     );
 
-    const unsubSurveys = onSnapshot(
-      collection(db, "surveyResponses"),
-      (snap) => setSurveys(snap.docs.map((d) => normalizeUser(d.data()))),
+    // 2) Messages → נכנס ל־users
+    const unsubMsgs = onSnapshot(
+      collection(db, "messages"),
+      snap => {
+        console.log("📨 messages changes:", snap.docChanges().map(c => c.type));
+        console.log("📨 messages snapshot docs:", snap.docs.length);
+        console.log("📨 docChanges:", snap.docChanges().map(c => c.type));
+        snap.docChanges().forEach(change => {
+          if (change.type === "added") {
+            const u = normalizeUser(change.doc.data());
+            if (!u.phone) return;
+            const id = ensureUserId(u);
+            setDoc(
+              doc(db, "users", id),
+              {
+                user_id:      id,
+                first_name:   u.first_name,
+                last_name:    u.last_name,
+                phone:        u.phone,
+                fullname:     u.fullName,
+                is_registered:false,
+                is_club_60:   false,
+              },
+              { merge: true }
+            )
+            .then(() => console.log("   → wrote user from message:", id))
+            .catch(console.error);
+          }
+        });
+      },
       console.error
     );
 
-    const unsubReplies = onSnapshot(
-      collectionGroup(db, "replies"),
-      (snap) => setReplies(snap.docs.map((d) => normalizeUser(d.data()))),
-      console.error
-    );
+// 3) Survey responses (collectionGroup on "responses")
+    // const unsubSurveyResponses = onSnapshot(
+    //   collectionGroup(db, "responses"),
+    //   snap => {
+    //     console.log("📝 survey responses total:", snap.docs.length);
+    //     snap.docChanges().forEach(change => {
+    //       if (change.type !== "added") return;
 
-    const unsubManual = onSnapshot(
+    //       // ➡️ כאן אנחנו חופרים לתוך answers
+    //       const data    = change.doc.data();
+    //       const answers = data.answers || {};
+    //       const full    = (answers.fullname || "").trim();
+    //       const phone   = (answers.phone    || "").trim();
+    //       if (!phone) return;
+
+    //       // מפרקים לשם פרטי ומשפחה
+    //       const [first = "", ...rest] = full.split(" ");
+    //       const last = rest.join(" ");
+
+    //       // בונים את האובייקט של המשתמש
+    //       const u = {
+    //         first_name:   first,
+    //         last_name:    last,
+    //         fullName:     full || "—",
+    //         phone,
+    //         is_registered:false,
+    //         is_club_60:   false,
+    //       };
+
+    //       const id = ensureUserId(u);
+    //       setDoc(
+    //         doc(db, "users", id),
+    //         {
+    //           user_id:      id,
+    //           first_name:   u.first_name,
+    //           last_name:    u.last_name,
+    //           fullname:     u.fullName,
+    //           phone:        u.phone,
+    //           is_registered:false,
+    //           is_club_60:   false,
+    //         },
+    //         { merge: true }
+    //       )
+    //       .then(() => console.log("   → wrote user from survey:", id))
+    //       .catch(console.error);
+    //     });
+
+    //     // ועדכון ה־state המקומי של surveys
+    //     setSurveys(snap.docs.map(d => normalizeUser(d.data())));
+    //   },
+    //   console.error
+    // );
+
+
+    // 4) Replies (אם יש לך "replies" כ־collectionGroup)
+  //   const unsubReplies = onSnapshot(
+  //     collectionGroup(db, "replies"),
+  //     snap => setReplies(snap.docs.map(d => normalizeUser(d.data()))),
+  //   console.error
+  // );
+
+    // 5) Users (הכללי, כולל אלו שנוספו בפעולות 2+3)
+    const unsubUsers = onSnapshot(
       collection(db, "users"),
-      (snap) => setManualUsers(snap.docs.map((d) => normalizeUser(d.data()))),
+      snap => setManual(snap.docs.map(d => normalizeUser(d.data()))),
       console.error
     );
 
+    // **הנה ה־cleanup המתוקן**:
     return () => {
       unsubRegs();
-      unsubSurveys();
-      unsubReplies();
-      unsubManual();
+      unsubMsgs();
+      // unsubSurveyResponses();
+      // unsubReplies();
+      unsubUsers();
     };
   }, []);
   /* ──────────────────────────────────────────────────────────────── */
 
-  /* ── Merge sources without duplicates (key = phone) ───────────── */
-  const allMap = [...regs, ...surveys, ...replies, ...manualUsers].reduce(
-    (acc, u) => {
-      if (!u.phone) return acc;               // skip if phone missing
-      /* prefer entry that holds a *real* name over "—" */
-      const existing = acc[u.phone];
-      if (!existing || (existing.fullName === "—" && u.fullName !== "—")) {
+  // חיבור כל המקורות בלי כפילויות (key = phone)
+  const allMap = [...regs, ...surveys, ...replies, ...manual]
+    .filter(u => u.phone)
+    .reduce((acc, u) => {
+      const ex = acc[u.phone];
+      if (!ex || (ex.fullName === "—" && u.fullName !== "—")) {
         acc[u.phone] = u;
       }
       return acc;
-    },
-    {}
-  );
+    }, {});
   const allUsers = Object.values(allMap);
   /* ──────────────────────────────────────────────────────────────── */
 
-  /* used for quick membership checks */
-  const inAct = new Set(regs.map((u) => u.phone));
-  const inSur = new Set(surveys.map((u) => u.phone));
-  const inRep = new Set(replies.map((u) => u.phone));
+  const inAct = new Set(regs   .map(u => u.phone));
+  const inSur = new Set(surveys.map(u => u.phone));
+  const inRep = new Set(replies.map(u => u.phone));
 
-  /* ── UI filter logic (same as your original) ──────────────────── */
-  const filtered = allUsers.filter((u) => {
-    if (deletedPhones.has(u.phone)) return false;   // soft-deleted row
-    const a = inAct.has(u.phone);
-    const s = inSur.has(u.phone);
-    const r = inRep.has(u.phone);
-
+  const filtered = allUsers.filter(u => {
+    if (deletedPhones.has(u.phone)) return false;
+    const a = inAct .has(u.phone),
+          s = inSur .has(u.phone),
+          r = inRep .has(u.phone);
     switch (filter) {
-      case "activity":
-        return a && !s && !r;
-      case "survey":
-        return s && !a && !r;
-      case "replies":
-        return r && !a && !s;
-      case "both":
-        return a && s && !r;
-      default:
-        return true;
+      case "activity": return a && !s && !r;
+      case "survey":   return s && !a && !r;
+      case "replies":  return r && !a && !s;
+      case "both":     return a && s && !r;
+      default:         return true;
     }
   });
   /* ──────────────────────────────────────────────────────────────── */
@@ -133,11 +200,9 @@ export default function ManageUsersContainer() {
       users={filtered}
       filter={filter}
       onFilterChange={setFilter}
-      manualUsers={manualUsers}
-      setManualUsers={setManualUsers}
-      markDeleted={(phone) =>
-        setDeletedPhones((prev) => new Set(prev).add(phone))
-      }
+      manualUsers={manual}
+      setManualUsers={setManual}
+      markDeleted={phone => setDeletedPhones(p => new Set(p).add(phone))}
     />
   );
 }
