@@ -39,7 +39,7 @@ export default function FlyerUploader({ onSubmit }) {
   };
 
   return (
-    <div style={{ border: "1px solid #ccc", padding: 20, borderRadius: 6 }}>
+    <div style={{ border: "1px solid #ccc", padding: 20, borderRadius: 6, width: "20%" }}>
       <label>
         שם הפלאייר:
         <input
@@ -62,6 +62,7 @@ export default function FlyerUploader({ onSubmit }) {
           borderRadius: 6,
           textAlign: "center",
           backgroundColor: "#f9f9f9",
+          width: "90%",
         }}
       >
         {file ? (
