@@ -12,7 +12,7 @@ export default function CreateSurveyContainer() {
   // Start with the two fixed mandatory questions
   const [questions, setQuestions] = useState([
     {
-      id: nextId++,
+      id: "fullname",
       text: "Full Name",
       type: "open",
       options: [],
@@ -20,7 +20,7 @@ export default function CreateSurveyContainer() {
       fixed: true,
     },
     {
-      id: nextId++,
+      id: "phone",
       text: "Phone Number",
       type: "open",
       options: [],

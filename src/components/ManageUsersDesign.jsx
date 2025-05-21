@@ -240,7 +240,7 @@ const deleteUser = async (user) => {
           position: "fixed",
           top: "50%", left: "50%",
           transform: "translate(-50%, -50%)",
-          background: "white",
+          backgroundColor: "white",
           border: "1px solid #ccc",
           padding: 20,
           zIndex: 9999,
@@ -253,7 +253,7 @@ const deleteUser = async (user) => {
               position: "absolute",
               top: 10,
               right: 10,
-              background: "transparent",
+              backgroundColor: "transparent",
               border: "none",
               fontSize: "20px",
               cursor: "pointer"
@@ -383,7 +383,7 @@ const deleteUser = async (user) => {
 const th = {
   border: "1px solid #ccc",
   padding: "8px",
-  background: "#f5f5f5",
+  backgroundColor: "#f5f5f5",
   textAlign: "left",
 };
 
@@ -401,7 +401,7 @@ const tabContainerStyle = {
 
 const tabStyle = {
   border: "none",
-  background: "transparent",
+  backgroundColor: "transparent",
   padding: "8px 16px",
   borderRadius: "9999px",
   cursor: "pointer",
