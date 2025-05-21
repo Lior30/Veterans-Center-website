@@ -84,66 +84,6 @@ export default function ManageUsersContainer() {
       console.error
     );
 
-// 3) Survey responses (collectionGroup on "responses")
-    // const unsubSurveyResponses = onSnapshot(
-    //   collectionGroup(db, "responses"),
-    //   snap => {
-    //     console.log("📝 survey responses total:", snap.docs.length);
-    //     snap.docChanges().forEach(change => {
-    //       if (change.type !== "added") return;
-
-    //       // ➡️ כאן אנחנו חופרים לתוך answers
-    //       const data    = change.doc.data();
-    //       const answers = data.answers || {};
-    //       const full    = (answers.fullname || "").trim();
-    //       const phone   = (answers.phone    || "").trim();
-    //       if (!phone) return;
-
-    //       // מפרקים לשם פרטי ומשפחה
-    //       const [first = "", ...rest] = full.split(" ");
-    //       const last = rest.join(" ");
-
-    //       // בונים את האובייקט של המשתמש
-    //       const u = {
-    //         first_name:   first,
-    //         last_name:    last,
-    //         fullName:     full || "—",
-    //         phone,
-    //         is_registered:false,
-    //         is_club_60:   false,
-    //       };
-
-    //       const id = ensureUserId(u);
-    //       setDoc(
-    //         doc(db, "users", id),
-    //         {
-    //           user_id:      id,
-    //           first_name:   u.first_name,
-    //           last_name:    u.last_name,
-    //           fullname:     u.fullName,
-    //           phone:        u.phone,
-    //           is_registered:false,
-    //           is_club_60:   false,
-    //         },
-    //         { merge: true }
-    //       )
-    //       .then(() => console.log("   → wrote user from survey:", id))
-    //       .catch(console.error);
-    //     });
-
-    //     // ועדכון ה־state המקומי של surveys
-    //     setSurveys(snap.docs.map(d => normalizeUser(d.data())));
-    //   },
-    //   console.error
-    // );
-
-
-    // 4) Replies (אם יש לך "replies" כ־collectionGroup)
-  //   const unsubReplies = onSnapshot(
-  //     collectionGroup(db, "replies"),
-  //     snap => setReplies(snap.docs.map(d => normalizeUser(d.data()))),
-  //   console.error
-  // );
 
     // 5) Users (הכללי, כולל אלו שנוספו בפעולות 2+3)
     const unsubUsers = onSnapshot(

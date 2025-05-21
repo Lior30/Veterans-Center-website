@@ -9,8 +9,10 @@ import {
   query,
   where,
   updateDoc,
-  deleteDoc
+  deleteDoc,
+  addDoc
 } from "firebase/firestore";
+import UserService from "../services/UserService";
 
 
 // helper: יוצר user_id קבוע מכל מקור אפשרי
@@ -37,6 +39,35 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   const [newLastName, setNewLastName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [activeTab, setActiveTab] = useState("registered");
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const phoneError = UserService.getPhoneError(newPhone);
+  const isPhoneValid = phoneError === null;
+  const [firstTouched,    setFirstTouched]    = useState(false);
+  const [lastTouched,     setLastTouched]     = useState(false);
+
+  // const nameError = 
+  // !newFirstName.trim()
+  // ? "נא למלא את השם"
+  // : !UserService.isValidName(newFirstName)
+  //   ? "שם לא תקין (אותיות בלבד, מילה ב-2+ תווים)"
+  //   : null;
+  // const isNameValid = nameError === null;
+
+   // שגיאות שם
+  const firstError = !newFirstName.trim()
+    ? "נא למלא את השם הפרטי"
+    : !UserService.isValidName(newFirstName)
+      ? "שם פרטי לא תקין"
+      : null;
+  const lastError = !newLastName.trim()
+    ? "נא למלא את שם המשפחה"
+    : !UserService.isValidName(newLastName)
+      ? "שם משפחה לא תקין"
+      : null;
+  const isFirstValid = firstError === null;
+  const isLastValid  = lastError  === null;
+
+  
 
   const filteredUsers = users.filter(user => {
   if (activeTab === "registered") return user.is_registered && !user.is_club_60;
@@ -53,9 +84,21 @@ const handleAddUser = async () => {
     return;
   }
 
+  if (!isNameValid || firstError || lastError) {
+  alert(nameError);
+  return;
+}
+
+
   const first = newFirstName.trim();
   const last  = newLastName.trim();
   const phone = newPhone.trim();
+
+    // ➤ כאן בודקים תקינות טלפון
+   if (!UserService.isValidPhone(phone)) {
+    alert("המספר שהוקלד אינו תקין");
+    return;
+  }
 
   const isClub  = userType === "senior";
   const isReg   = userType === "registered" || isClub;
@@ -139,6 +182,8 @@ const updateUserType = async (user, newType) => {
     });
   }
 
+  
+
   // --- עדכון ה-state המקומי ---
   setManualUsers(prev => {
     const idx   = prev.findIndex(p => p.user_id === user_id);
@@ -184,54 +229,84 @@ const deleteUser = async (user) => {
 };
 
 
-
   return (
-    <div style={{ padding: 40 }}>
-      <h1>Manage Users</h1>
+    <div style={{ padding: 40, direction: "rtl", textAlign: "right" }}>
+      <h1>ניהול משתמשים</h1>
 
-      {/* Filter selector */}
-      <div style={{ margin: "16px 0" }}>
-        <label>
-          Show:&nbsp;
-          <select value={filter} onChange={e => onFilterChange(e.target.value)}>
-            <option value="all">All Users</option>
-            <option value="activity">Activity Only</option>
-            <option value="survey">Survey Only</option>
-            <option value="replies">Replies Only</option>
-            <option value="both">Activity + Survey</option>
+      {/* ----------------------------------------
+          השורה הזו תופיע *מעל* הטבלה, במרכז
+      ------------------------------------------*/}
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "100%",
+          marginBottom: 16,
+          height: "40px",
+        }}
+      >
+        {/* SHOW בצד ימין */}
+        <label
+          style={{
+            position: "absolute",
+            right: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          הצג:
+          <select value={filter} onChange={(e) => onFilterChange(e.target.value)}>
+            <option value="all">כל המשתמשים</option>
+            <option value="activity">נרשמים</option>
+            <option value="survey">סקרים</option>
+            <option value="replies">תגובות</option>
+            <option value="both">פעילות + סקר</option>
           </select>
         </label>
-      </div>
 
-      {/* Add User Button */}
-      <div style={{ margin: "16px 0", textAlign: "right" }}>
-        <button onClick={() => setShowModal(true)}>הוסף משתמש</button>
-      </div>
-
-      {/* Tabs לבחירת קבוצה */}
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginBottom: 16 }}>
-        <div style={tabContainerStyle}>
+        {/* טאבים במרכז */}
+        <div
+          style={{
+            display: "inline-flex",
+            borderRadius: 9999,
+            backgroundColor: "#eee",
+            padding: 4,
+          }}
+        >
           <button
             onClick={() => setActiveTab("unregistered")}
             style={{ ...tabStyle, ...(activeTab === "unregistered" ? activeTabStyle : {}) }}
           >
             לא רשומים
           </button>
-          
           <button
             onClick={() => setActiveTab("registered")}
             style={{ ...tabStyle, ...(activeTab === "registered" ? activeTabStyle : {}) }}
           >
             משתמשים רשומים
           </button>
-
           <button
             onClick={() => setActiveTab("senior")}
             style={{ ...tabStyle, ...(activeTab === "senior" ? activeTabStyle : {}) }}
           >
-            מועדון ה־60 פלוס
+            מועדון ה-60 פלוס
           </button>
+
         </div>
+
+
+          {/* Add User Button */}
+      <div style={{ margin: "16px 0", textAlign: "left" }}>
+        <button
+          onClick={() => setShowModal(true)}
+          style={{ margin: 40 /* פס הכיוון אחורה בשמאל */ }}
+        >
+          הוסף משתמש
+        </button>
+      </div>
       </div>
 
       {/* Modal */}
@@ -240,7 +315,7 @@ const deleteUser = async (user) => {
           position: "fixed",
           top: "50%", left: "50%",
           transform: "translate(-50%, -50%)",
-          backgroundColor: "white",
+          background: "white",
           border: "1px solid #ccc",
           padding: 20,
           zIndex: 9999,
@@ -253,7 +328,7 @@ const deleteUser = async (user) => {
               position: "absolute",
               top: 10,
               right: 10,
-              backgroundColor: "transparent",
+              background: "transparent",
               border: "none",
               fontSize: "20px",
               cursor: "pointer"
@@ -271,10 +346,22 @@ const deleteUser = async (user) => {
               <input
                 type="text"
                 value={newFirstName}
-                onChange={e => setNewFirstName(e.target.value)}
+                onChange={e => {
+                setNewFirstName(e.target.value);
+                setFirstTouched(true);
+              }}
+     onBlur={() => setFirstTouched(true)}
                 style={{ display: "block", width: "100%", marginTop: 4 }}
               />
             </label>
+            {firstTouched && firstError && (
+          <div style={{ color: "red", marginTop: 4 }}>{firstError}</div>
+        )}
+                    {/* {firstTouched && firstError && nameError && (
+            <div style={{ color: "red", marginTop: 4 }}>
+              {nameError}
+            </div>
+          )} */}
           </div>
 
           <div style={{ marginBottom: 12 }}>
@@ -283,10 +370,17 @@ const deleteUser = async (user) => {
               <input
                 type="text"
                 value={newLastName}
-                onChange={e => setNewLastName(e.target.value)}
+                 onChange={e => {
+                setNewLastName(e.target.value);
+                setLastTouched(true);
+              }}
+              onBlur={() => setLastTouched(true)}
                 style={{ display: "block", width: "100%", marginTop: 4 }}
               />
             </label>
+            {lastTouched && lastError && (
+          <div style={{ color: "red", marginTop: 4 }}>{lastError}</div>
+        )}
           </div>
 
           <div style={{ marginBottom: 12 }}>
@@ -295,9 +389,18 @@ const deleteUser = async (user) => {
               <input
                 type="text"
                 value={newPhone}
-                onChange={e => setNewPhone(e.target.value)}
+                onChange={e => {
+                setNewPhone(e.target.value);
+                setPhoneTouched(true);
+              }}
                 style={{ display: "block", width: "100%", marginTop: 4 }}
               />
+
+              {phoneTouched && phoneError && (
+              <div style={{ color: "red", marginTop: 4 }}>
+                 {phoneError}
+              </div>
+             )}
             </label>
           </div>
           <div style={{ marginBottom: 12 }}>
@@ -316,7 +419,17 @@ const deleteUser = async (user) => {
         </div>
 
 
-          <button onClick={handleAddUser}>הוספה</button>
+           <button
+            onClick={handleAddUser}
+            disabled={!isPhoneValid || !isFirstValid || !isLastValid}
+            style={{
+              ...actionButtonStyle,
+              opacity:  isPhoneValid ? 1 : 0.5,
+              cursor:  isPhoneValid ? "pointer" : "not-allowed",
+            }}
+          >
+            הוספה
+          </button>
 
         </div>
       )}
@@ -338,36 +451,70 @@ const deleteUser = async (user) => {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span>{u.phone}</span>
 
-                {activeTab === "unregistered" && (
-                  <div style={{ display: "flex", gap: "4px" }}>
-                    {/* הוספה למשתמשים רשומים */}
-                    <button
-                      type="button"
-                      style={actionButtonStyle}
-                      onClick={() => updateUserType(u, "registered")}   // שולח את u כולו
-                    >
-                      הוסף למשתמשים רשומים
-                    </button>
+            {activeTab === "unregistered" && (
+            <div style={{ display: "flex", gap: "4px" }}>
+              <button
+                type="button"
+                style={actionButtonStyle}
+                onClick={() => updateUserType(u, "registered")}
+              >
+                הוסף למשתמשים רשומים
+              </button>
+              <button
+                type="button"
+                style={actionButtonStyle}
+                onClick={() => updateUserType(u, "senior")}
+              >
+                +הוסף למועדון ה-60
+              </button>
+              <button
+                type="button"
+                style={deleteButtonStyle}
+                onClick={() => deleteUser(u)}
+              >
+                מחק
+              </button>
+            </div>
+          )}
 
-                    {/* הוספה למועדון ה-60 */}
-                    <button
-                      type="button"
-                      style={actionButtonStyle}
-                      onClick={() => updateUserType(u, "senior")}
-                    >
-                      +הוסף למועדון ה-60
-                    </button>
+          {activeTab === "registered" && (
+            <div style={{ display: "flex", gap: "4px" }}>
+              <button
+                type="button"
+                style={actionButtonStyle}
+                onClick={() => updateUserType(u, "senior")}
+              >
+                +הוסף למועדון ה-60
+              </button>
+              <button
+                type="button"
+                style={deleteButtonStyle}
+                onClick={() => deleteUser(u)}
+              >
+                מחק
+              </button>
+            </div>
+          )}
 
-                    {/* מחיקה */}
-                    <button
-                      type="button"
-                      style={deleteButtonStyle}
-                      onClick={() => deleteUser(u)}
-                    >
-                      מחק
-                    </button>
-                  </div>
-                )}
+          {activeTab === "senior" && (
+            <div style={{ display: "flex", gap: "4px" }}>
+              <button
+                type="button"
+                style={actionButtonStyle}
+                onClick={() => updateUserType(u, "registered")}
+              >
+                הוסף למשתמשים רשומים
+              </button>
+              <button
+                type="button"
+                style={deleteButtonStyle}
+                onClick={() => deleteUser(u)}
+              >
+                מחק
+              </button>
+            </div>
+          )}
+
               </div>
             </td>
           </tr>
@@ -380,16 +527,18 @@ const deleteUser = async (user) => {
   );
 }
 
+
 const th = {
   border: "1px solid #ccc",
   padding: "8px",
   backgroundColor: "#f5f5f5",
-  textAlign: "left",
+  textAlign: "right",    // יישור לימין
 };
 
 const td = {
   border: "1px solid #eee",
   padding: "8px",
+  textAlign: "right",    // יישור לימין
 };
 
 const tabContainerStyle = {
@@ -414,11 +563,6 @@ const activeTabStyle = {
   color: "white"
 };
 
-const deleteButtonStyle = {
-  border: "1px solid #dc3545",
-  color: "#dc3545",
-};
-
 const actionButtonStyle = {
   fontSize: "12px",
   padding: "4px 8px",
@@ -426,5 +570,10 @@ const actionButtonStyle = {
   border: "1px solid #007bff",
   backgroundColor: "white",
   color: "#007bff",
-  cursor: "pointer"
+  cursor: "pointer",
+};
+const deleteButtonStyle = {
+  ...actionButtonStyle,
+  border: "1px solid #dc3545",
+  color: "#dc3545",
 };
