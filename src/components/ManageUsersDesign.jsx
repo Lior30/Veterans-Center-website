@@ -45,14 +45,6 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   const [firstTouched,    setFirstTouched]    = useState(false);
   const [lastTouched,     setLastTouched]     = useState(false);
 
-  // const nameError = 
-  // !newFirstName.trim()
-  // ? "נא למלא את השם"
-  // : !UserService.isValidName(newFirstName)
-  //   ? "שם לא תקין (אותיות בלבד, מילה ב-2+ תווים)"
-  //   : null;
-  // const isNameValid = nameError === null;
-
    // שגיאות שם
   const firstError = !newFirstName.trim()
     ? "נא למלא את השם הפרטי"
@@ -78,16 +70,18 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
   const [userType, setUserType] = useState("");
 
-const handleAddUser = async () => {
-  if (!newFirstName.trim() || !newLastName.trim() || !newPhone.trim() || !userType) {
-    alert("נא למלא את כל השדות");
+  const handleAddUser = async () => {
+    if (!newFirstName.trim() || !newLastName.trim() || !newPhone.trim() || !userType) {
+      alert("נא למלא את כל השדות");
+      return;
+    }
+
+ // וידוא שהשם הפרטי ושם המשפחה תקינים
+  if (firstError || lastError) {
+    // מציג את השגיאה הרלוונטית
+    alert(firstError || lastError);
     return;
   }
-
-  if (!isNameValid || firstError || lastError) {
-  alert(nameError);
-  return;
-}
 
 
   const first = newFirstName.trim();
@@ -182,6 +176,12 @@ const updateUserType = async (user, newType) => {
     });
   }
 
+    if (newType === "registered") {
+    alert("המשתמש הועבר למשתמשים רשומים");
+  } else if (newType === "senior") {
+    alert("המשתמש נכנס לחברי מרכז ה-+60");
+  }
+
   
 
   // --- עדכון ה-state המקומי ---
@@ -202,7 +202,10 @@ const updateUserType = async (user, newType) => {
 
 
 const deleteUser = async (user) => {
-  if (!window.confirm("אתה בטוח שברצונך למחוק משתמש זה?")) return;
+  const confirmed = window.confirm("האם אתה בטוח שברצונך למחוק משתמש זה?");
+  if (!confirmed) return;
+
+  // if (!window.confirm("אתה בטוח שברצונך למחוק משתמש זה?")) return;
 
   const phone   = user.phone || "";
   const user_id = ensureUserId(user);
@@ -218,13 +221,20 @@ const deleteUser = async (user) => {
     for (const { k, v } of fields) {
       if (!v) continue;
       const snap = await getDocs(query(ref, where(k, "==", v)));
-      console.log(`[${label}] where(${k}==${v}) ->`, snap.size);   // 🔎
-      for (const d of snap.docs) await deleteDoc(d.ref);
+      // console.log(`[${label}] where(${k}==${v}) ->`, snap.size);   // 🔎
+      // for (const d of snap.docs) await deleteDoc(d.ref);
+
+      for (const d of snap.docs) {
+        await deleteDoc(d.ref);
+      }
     }
   }
 
   setManualUsers(prev => prev.filter(u => u.phone !== phone));
   markDeleted(phone);
+
+  alert("המשתמש נמחק בהצלחה"); 
+
   window.location.reload();
 };
 
@@ -241,12 +251,18 @@ const deleteUser = async (user) => {
           position: "relative",
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: "space-between",
           width: "100%",
           marginBottom: 16,
           height: "40px",
         }}
-      >
+        >
+
+          {/* 1. Add User בצד שמאל */}
+        <button onClick={() => setShowModal(true)}>
+        </button>
+
+        
         {/* SHOW בצד ימין */}
         <label
           style={{
@@ -292,21 +308,16 @@ const deleteUser = async (user) => {
             onClick={() => setActiveTab("senior")}
             style={{ ...tabStyle, ...(activeTab === "senior" ? activeTabStyle : {}) }}
           >
-            מועדון ה-60 פלוס
+            חברי מרכז ה-60+ 
           </button>
 
         </div>
 
 
           {/* Add User Button */}
-      <div style={{ margin: "16px 0", textAlign: "left" }}>
-        <button
-          onClick={() => setShowModal(true)}
-          style={{ margin: 40 /* פס הכיוון אחורה בשמאל */ }}
-        >
+        <button onClick={() => setShowModal(true)}>
           הוסף משתמש
         </button>
-      </div>
       </div>
 
       {/* Modal */}
@@ -357,11 +368,7 @@ const deleteUser = async (user) => {
             {firstTouched && firstError && (
           <div style={{ color: "red", marginTop: 4 }}>{firstError}</div>
         )}
-                    {/* {firstTouched && firstError && nameError && (
-            <div style={{ color: "red", marginTop: 4 }}>
-              {nameError}
-            </div>
-          )} */}
+
           </div>
 
           <div style={{ marginBottom: 12 }}>
@@ -413,7 +420,7 @@ const deleteUser = async (user) => {
             >
               <option value="" disabled>בחר סוג משתמש</option>
               <option value="registered">משתמש רשום</option>
-              <option value="senior">מועדון ה־60 פלוס</option>
+              <option value="senior">חברי מרכז ה־60 פלוס</option>
             </select>
           </label>
         </div>
@@ -438,8 +445,8 @@ const deleteUser = async (user) => {
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
-              <th style={th}>Full Name</th>
-              <th style={th}>Phone Number</th>
+              <th style={th}>שם מלא</th>
+              <th style={th}>מספר טלפון</th>
             </tr>
           </thead>
           <tbody>
@@ -465,7 +472,7 @@ const deleteUser = async (user) => {
                 style={actionButtonStyle}
                 onClick={() => updateUserType(u, "senior")}
               >
-                +הוסף למועדון ה-60
+                הוסף לחברי מרכז ה-60+
               </button>
               <button
                 type="button"
@@ -484,7 +491,7 @@ const deleteUser = async (user) => {
                 style={actionButtonStyle}
                 onClick={() => updateUserType(u, "senior")}
               >
-                +הוסף למועדון ה-60
+             הוסף לחברי מרכז ה60+
               </button>
               <button
                 type="button"
