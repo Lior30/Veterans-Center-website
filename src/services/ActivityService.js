@@ -22,15 +22,18 @@ export default class ActivityService {
     return onSnapshot(
       ActivityService.colRef,
       (snap) =>
-        callback(
-          snap.docs.map((d) => ({
+      callback(
+        snap.docs.map((d) => {
+          const data = d.data();
+          return {
             id: d.id,
-            ...d.data(),
-            weekdays:    d.data().weekdays    || [],
-            registrants: d.data().registrants || [],
-            tags:        d.data().tags        || [],
-          }))
-        ),
+            ...data,
+            weekdays:     data.weekdays     || [],
+            participants: data.participants || [],
+            tags:         data.tags         || [],
+          };
+        })
+      ),
       console.error
     );
   }
@@ -66,6 +69,9 @@ export default class ActivityService {
 
     if (!Array.isArray(data.tags) || data.tags.length === 0) delete data.tags;
 
+    // ensure participants exists as array (default empty)
+    if (!Array.isArray(data.participants)) data.participants = [];
+
     /* ---------- strip id before sending ---------- */
     const { id, ...payload } = data;
 
@@ -83,31 +89,62 @@ export default class ActivityService {
   /* ──────────────────────── Registration helpers ──────────────────────── */
 
   /** ➕ user registers (transaction = capacity safe) */
-  static async registerUser(activityId, userId) {
+  static async registerUser(activityId, user) {
     const ref = doc(db, ActivityService.COL, activityId);
 
     await runTransaction(db, async (tx) => {
       const snap = await tx.get(ref);
       if (!snap.exists()) throw new Error("NOT_FOUND");
 
-      const data        = snap.data();
-      const capacity    = data.capacity ?? 0;          // 0 → unlimited
-      const registrants = data.registrants || [];
+      const data = snap.data();
+      const capacity = data.capacity ?? 0;
+      const raw = data.participants || [];      // could be [string] or [{…}]
+      
+      // 1. Normalize to objects:
+      const participants = raw.map((p) =>
+        typeof p === "string" ? { phone: p } : { ...p }
+      );
 
-      if (registrants.includes(userId)) return;        // already registered
-      if (capacity && registrants.length >= capacity) {
+      // 2. Already-registered check:
+      const alreadyRegistered = participants.some(
+        (p) => p.phone === user.phone
+      );
+      if (alreadyRegistered) throw new Error("alreadyRegistered");
+
+      // 3. Capacity check:
+      if (capacity && participants.length >= capacity) {
         throw new Error("FULL");
       }
 
-      tx.update(ref, { registrants: arrayUnion(userId) });
+      // 4. Append the new participant object:
+      const updatedParticipants = [
+        ...participants,
+        { name: user.name, phone: user.phone },
+      ];
+
+      tx.update(ref, { participants: updatedParticipants });
     });
   }
 
+
   /** ➖ admin removes user */
-  static removeUser(activityId, userId) {
-    return updateDoc(
-      doc(db, ActivityService.COL, activityId),
-      { registrants: arrayRemove(userId) }
-    );
+  static async removeUser(activityId, participant) {
+    const ref = doc(db, ActivityService.COL, activityId);
+
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) throw new Error("NOT_FOUND");
+
+      const data = snap.data();
+      const participants = data.participants || [];
+
+      // participant is { name, phone }
+      const updatedParticipants = participants.filter(
+        (p) => p.phone !== participant.phone
+      );
+
+      tx.update(ref, { participants: updatedParticipants });
+    });
   }
+
 }

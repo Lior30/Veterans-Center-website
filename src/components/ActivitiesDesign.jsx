@@ -64,26 +64,37 @@ export default function ActivitiesDesign({
 
   const [selAct, setSelAct] = useState(null);
   const [users, setUsers] = useState({});
+ 
   useEffect(() => {
     if (!selAct) return;
-    (async () => {
-      const map = {};
-      for (const uid of selAct.registrants || []) {
-        const u = await UserService.get(uid);
-        map[uid] = u?.name || uid;
-      }
-      setUsers(map);
-    })();
+
+    const map = {};
+    // selAct.participants is now [{ name, phone }, …]
+    (selAct.participants || []).forEach((participant) => {
+      const { name, phone } = participant;
+      // key by phone so you can lookup easily
+      map[phone] = `${name} — ${phone}`;
+    });
+
+    setUsers(map);
   }, [selAct]);
 
-  const kickUser = async (uid) => {
-    await ActivityService.removeUser(selAct.id, uid);
+  const kickParticipant = async (phone) => {
+    // find the full object in selAct.participants
+    const participant = selAct.participants.find((p) => p.phone === phone);
+    if (!participant) return;
+
+    await ActivityService.removeUser(selAct.id, participant);
     setSelAct((prev) =>
       prev
-        ? { ...prev, registrants: prev.registrants.filter((x) => x !== uid) }
-        : prev
+        ? {
+            ...prev,
+            participants: prev.participants.filter((p) => p.phone !== phone),
+          }
+        : null
     );
   };
+
 
   const events = useMemo(() => {
     const filteredActs = activities.filter(
@@ -120,17 +131,17 @@ export default function ActivitiesDesign({
   }, [activities, holidays, tagFilter]);
 
   const columns = [
-    { field: "date", headerName: "תאריך", width: 110, headerAlign: "right", align: "right" },
-    { field: "startTime", headerName: "התחלה", width: 110, headerAlign: "right", align: "right" },
-    { field: "endTime", headerName: "סיום", width: 110, headerAlign: "right", align: "right" },
-    { field: "name", headerName: "שם", flex: 1, headerAlign: "right", align: "right" },
-    { field: "description", headerName: "תיאור", flex: 1, headerAlign: "right", align: "right" },
+    { field: "date", headerName: "תאריך", width: 110, headerAlign: "center", align: "center" },
+    { field: "startTime", headerName: "התחלה", width: 110, headerAlign: "center", align: "center" },
+    { field: "endTime", headerName: "סיום", width: 110, headerAlign: "center", align: "center" },
+    { field: "name", headerName: "שם", flex: 1, headerAlign: "center", align: "center" },
+    { field: "description", headerName: "תיאור", flex: 1, headerAlign: "center", align: "center" },
     {
       field: "tags",
       headerName: "תגיות",
       width: 120,
-      headerAlign: "right",
-      align: "right",
+      headerAlign: "center",
+      align: "center",
       valueGetter: (params) => {
         const t = Array.isArray(params?.row?.tags) ? params.row.tags : [];
         return t.join(", ");
@@ -140,8 +151,8 @@ export default function ActivitiesDesign({
       field: "capacity",
       headerName: "קיבולת",
       width: 90,
-      headerAlign: "right",
-      align: "right",
+      headerAlign: "center",
+      align: "center",
       renderCell: ({ row }) =>
         row.capacity ? `${row.registeredCount}/${row.capacity}` : "∞",
     },
@@ -149,16 +160,16 @@ export default function ActivitiesDesign({
       field: "recurring",
       headerName: "חוזרת?",
       width: 100,
-      headerAlign: "right",
-      align: "right",
+      headerAlign: "center",
+      align: "center",
       valueFormatter: ({ value }) => (value ? "כן" : "לא"),
     },
     {
       field: "actions",
       headerName: "פעולות",
-      width: 260,
-      headerAlign: "right",
-      align: "right",
+      width: 500,
+      headerAlign: "center",
+      align: "center",
       renderCell: (params) => (
         <>
           <Button size="small" onClick={() => onEdit(params.row)} sx={{ mr: 1 }}>
@@ -270,15 +281,26 @@ export default function ActivitiesDesign({
       <Dialog open={Boolean(selAct)} onClose={() => setSelAct(null)} fullWidth maxWidth="sm">
         <DialogTitle>נרשמים – {selAct?.name}</DialogTitle>
         <DialogContent dividers>
-          {(selAct?.registrants || []).length === 0 && "אין נרשמים כרגע."}
-          {(selAct?.registrants || []).map((uid) => (
-            <Stack key={uid} direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-              <span>{users[uid] || uid}</span>
-              <IconButton onClick={() => kickUser(uid)}><DeleteIcon /></IconButton>
+          {(selAct?.participants || []).length === 0 && "אין נרשמים כרגע."}
+          {(selAct?.participants || []).map(({ name, phone }) => (
+            <Stack
+              key={phone}
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              sx={{ mb: 1 }}
+            >
+              {/* directly show name & phone */}
+              <span>{name} , {phone}</span>
+              <IconButton onClick={() => kickParticipant(phone)}>
+                <DeleteIcon />
+              </IconButton>
             </Stack>
           ))}
         </DialogContent>
-        <DialogActions><Button onClick={() => setSelAct(null)}>סגור</Button></DialogActions>
+        <DialogActions>
+          <Button onClick={() => setSelAct(null)}>סגור</Button>
+        </DialogActions>
       </Dialog>
     </Container>
   );

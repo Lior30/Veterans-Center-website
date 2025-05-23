@@ -113,11 +113,12 @@ export default function CalendarPreview() {
         name:  name.trim(),
         phone: phone.trim(),
       });
-      await ActivityService.registerUser(selId, user.id);
+      await ActivityService.registerUser(selId, user);
       setSelId(null);
       alert("ההרשמה בוצעה בהצלחה!");
     } catch (e) {
       if (e.message === "FULL") alert("מצטערים, אין מקום פנוי.");
+      else if (e.message === "alreadyRegistered") alert("כבר רשום לפעילות.");
       else {
         console.error(e);
         alert("אירעה שגיאה, נסו שוב.");
