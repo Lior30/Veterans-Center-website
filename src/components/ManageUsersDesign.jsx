@@ -59,6 +59,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   const isPhoneValid = phoneError === null;
   const [firstTouched,    setFirstTouched]    = useState(false);
   const [lastTouched,     setLastTouched]     = useState(false);
+  const isRepliesTab = filter === "replies";
 
 
 
@@ -74,26 +75,48 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     fetchUsers();
   }, []);
 
+    // מפותחים מערכי שורות של פעילויות וסקרים
+  const rowsActivities = allUsers
+    .flatMap(u => {
+      if (!Array.isArray(u.activities)) return [];
+      return u.activities.map((activityName, idx) => ({
+        user:         u,
+        activityName,
+        activityDate: u.activities_date?.[idx] ?? ""
+      }));
+    })
+    // מיון לפי תאריך מהחדש לישן
+    .sort((a, b) => new Date(b.activityDate) - new Date(a.activityDate));
+
+  const rowsSurveys = allUsers
+    .flatMap(u => {
+      if (!Array.isArray(u.survey)) return [];
+      return u.survey.map((surveyName, idx) => ({
+        user:       u,
+        surveyName,
+        surveyDate: u.survey_date?.[idx] ?? ""
+      }));
+    })
+    .sort((a, b) => new Date(b.surveyDate) - new Date(a.surveyDate));
+
   const rowsAll = allUsers.filter(u => {
-  if (activeTab === "registered") {
-    // משתמש רשום (אבל לא חבר +60)
-    return u.is_registered === true && u.is_club_60 === false;
-  }
-  if (activeTab === "senior") {
-    // חבר מרכז 60+
-    return u.is_club_60 === true;
-  }
-  if (activeTab === "unregistered") {
-    // לא רשום כלל
-    return u.is_registered === false && u.is_club_60 === false;
-  }
-  // במקרה של 'all' (או כל ערך אחר) נחזיר את כולם
-  return true;
-});
+   if (activeTab === "registered")  return u.is_registered && !u.is_club_60;
+   if (activeTab === "senior")      return u.is_club_60;
+   if (activeTab === "unregistered") return !u.is_registered;
+   return true;
+ });
+
+ // 2) מאחד לכל entry את ה־shape { user }
+ const rowsAllWithShape = rowsAll.map(u => ({ user: u }));
 
   const rowsReplies = allUsers.flatMap(u => {
     if (!u.replies) return [];
-    const titles = u.replies.split(",");
+  // אם replies הוא כבר מערך – השתמש בו, אחרת פרק מחרוזת
+  const titles = Array.isArray(u.replies)
+    ? u.replies
+    : (typeof u.replies === "string"
+        ? u.replies.split(",")
+        : []);
 
     const dates = Array.isArray(u.replies_date)
     ? u.replies_date
@@ -108,8 +131,22 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     }));
   });
 
-  const isRepliesTab = filter === "replies";
-  const rowsToShow = isRepliesTab ? rowsReplies : rowsAll;
+  // const isRepliesTab = filter === "replies";
+  // const rowsToShow = isRepliesTab ? rowsReplies : rowsAll;
+
+  // על־פי ה־filter נקבע מה להציג
+  let rowsToShow = [];
+  if (filter === "activity") rowsToShow = rowsActivities;
+  else if (filter === "replies") rowsToShow = rowsReplies;
+  else if (filter === "survey")   rowsToShow = rowsSurveys;
+  else if (filter === "both")     rowsToShow = [...rowsActivities, ...rowsSurveys]
+    .sort((a, b) => {
+      const dateA = a.activityDate || a.surveyDate;
+      const dateB = b.activityDate || b.surveyDate;
+      return new Date(dateB) - new Date(dateA);
+    });
+  else if (filter === "replies")  rowsToShow = rowsReplies;
+  else                             rowsToShow = rowsAllWithShape;
 
    // שגיאות שם
   const firstError = !newFirstName.trim()
@@ -171,7 +208,13 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     phone,
      fullname:   `${first} ${last}`, 
     is_registered: isReg,
-    is_club_60: isClub
+    is_club_60: isClub,
+    activities:      [],          // מערך ריק
+     activities_date: [],          // מערך ריק
+     survey:          [],  // עכשיו מערך
+     survey_date:     [],   // מערך תאריכים
+     replies:         [],          // מערך ריק
+     replies_date:    [],          // מערך ריק
   };
   
   const exists = manualUsers.some(u =>
@@ -192,6 +235,11 @@ if (exists) {
 
      const docRef = doc(db, "users", user_id);
      await setDoc(docRef, userData, { merge: true });
+
+     setAllUsers(prev => [
+       ...prev,
+       { id: user_id, ...userData }     // מוסיפים ל־allUsers
+     ]);
 
     setNewFirstName("");
     setNewLastName("");
@@ -534,27 +582,33 @@ const deleteUser = async (user) => {
       <th style={th}>פעולות</th>
     </tr>
   </thead>
-  <tbody>
-    {rowsToShow.map((row, idx) => {
-      const user = isRepliesTab ? row.user : row;
-      return (
-        <tr key={idx}>
-          <td style={td}>{user.fullname}</td>
-          <td style={td}>{user.phone}</td>
+<tbody>
+  {rowsToShow.map((row, idx) => {
+    const u = row.user;
+    return (
+      <tr key={idx}>
+        <td>{u.fullname}</td>
+        <td>{u.phone}</td>
 
-          {isRepliesTab && (
-            <>
-              <td style={td}>{row.title}</td>
-              <td style={td}>{formatDate(row.date)}</td>
-            </>
-          )}
+        {filter === "activity" && <>
+          <td>{row.activityName}</td>
+          <td>{formatDate(row.activityDate)}</td>
+        </>}
 
-          {(filter === "activity" || filter === "survey" || filter === "both") && (
-            <>
-              <td style={td}>{row.activityName || row.surveyName}</td>
-              <td style={td}>{row.activityDate || row.surveyDate}</td>
-            </>
-          )}
+        {filter === "survey" && <>
+          <td>{row.surveyName}</td>
+          <td>{formatDate(row.surveyDate)}</td>
+        </>}
+
+        {filter === "both" && <>
+          <td>{row.activityName || row.surveyName}</td>
+          <td>{formatDate(row.activityDate || row.surveyDate)}</td>
+        </>}
+
+        {filter === "replies" && <>
+          <td>{row.title}</td>
+          <td>{formatDate(row.date)}</td>
+        </>}
 
           <td style={{ ...td, position: "relative" }}>
             <div style={{ display: "flex", gap: 4 }}>
