@@ -14,6 +14,21 @@ import {
 } from "firebase/firestore";
 import UserService from "../services/UserService";
 
+// מחוץ לקומפוננטה:
+function formatDate(dateValue) {
+  const d = new Date(dateValue);
+  // 'he-IL' תיתן פורמט יום/חודש/שנה
+  // ושעות בד"כ 24h אם מוסיפים hour12: false
+  return d.toLocaleString('he-IL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).replace(',', '');
+}
+
 
 // helper: יוצר user_id קבוע מכל מקור אפשרי
 // helper: יוצר user_id קבוע מכל מקור אפשרי
@@ -44,6 +59,57 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   const isPhoneValid = phoneError === null;
   const [firstTouched,    setFirstTouched]    = useState(false);
   const [lastTouched,     setLastTouched]     = useState(false);
+
+
+
+    const [allUsers, setAllUsers] = useState([]);
+
+  useEffect(() => {
+    // טען את כל המשתמשים מאוסף users
+    async function fetchUsers() {
+      const snap = await getDocs(collection(db, "users"));
+      const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setAllUsers(users);
+    }
+    fetchUsers();
+  }, []);
+
+  const rowsAll = allUsers.filter(u => {
+  if (activeTab === "registered") {
+    // משתמש רשום (אבל לא חבר +60)
+    return u.is_registered === true && u.is_club_60 === false;
+  }
+  if (activeTab === "senior") {
+    // חבר מרכז 60+
+    return u.is_club_60 === true;
+  }
+  if (activeTab === "unregistered") {
+    // לא רשום כלל
+    return u.is_registered === false && u.is_club_60 === false;
+  }
+  // במקרה של 'all' (או כל ערך אחר) נחזיר את כולם
+  return true;
+});
+
+  const rowsReplies = allUsers.flatMap(u => {
+    if (!u.replies) return [];
+    const titles = u.replies.split(",");
+
+    const dates = Array.isArray(u.replies_date)
+    ? u.replies_date
+    : (typeof u.replies_date === "string"
+        ? u.replies_date.split(",")
+        : []);
+
+    return titles.map((title, idx) => ({
+      user: u,
+      title,
+      date: dates[idx] || ""
+    }));
+  });
+
+  const isRepliesTab = filter === "replies";
+  const rowsToShow = isRepliesTab ? rowsReplies : rowsAll;
 
    // שגיאות שם
   const firstError = !newFirstName.trim()
@@ -441,99 +507,130 @@ const deleteUser = async (user) => {
         </div>
       )}
 
-      {/* Users table */}
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>
-              <th style={th}>שם מלא</th>
-              <th style={th}>מספר טלפון</th>
-            </tr>
-          </thead>
-          <tbody>
-        {filteredUsers.map((u, i) => (
-          <tr key={i}>
-            <td style={td}>{u.fullName || u.fullname || "—"}</td>
+{/* Users table */}
+<table style={{ width: "100%", borderCollapse: "collapse" }}>
+  <thead>
+    <tr>
+      <th style={th}>שם מלא</th>
+      <th style={th}>מספר טלפון</th>
+      {isRepliesTab && (
+        <>
+          <th style={th}>שם ההודעה</th>
+          <th style={th}>תאריך</th>
+        </>
+      )}
+      {filter === "activity" && (
+        <>
+          <th style={th}>שם הפעילות</th>
+          <th style={th}>תאריך</th>
+        </>
+      )}
+      {filter === "survey" && (
+        <>
+          <th style={th}>שם הסקר</th>
+          <th style={th}>תאריך</th>
+        </>
+      )}
+      <th style={th}>פעולות</th>
+    </tr>
+  </thead>
+  <tbody>
+    {rowsToShow.map((row, idx) => {
+      const user = isRepliesTab ? row.user : row;
+      return (
+        <tr key={idx}>
+          <td style={td}>{user.fullname}</td>
+          <td style={td}>{user.phone}</td>
 
-            <td style={{ ...td, position: "relative" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span>{u.phone}</span>
-
-            {activeTab === "unregistered" && (
-            <div style={{ display: "flex", gap: "4px" }}>
-              <button
-                type="button"
-                style={actionButtonStyle}
-                onClick={() => updateUserType(u, "registered")}
-              >
-                הוסף למשתמשים רשומים
-              </button>
-              <button
-                type="button"
-                style={actionButtonStyle}
-                onClick={() => updateUserType(u, "senior")}
-              >
-                הוסף לחברי מרכז ה-60+
-              </button>
-              <button
-                type="button"
-                style={deleteButtonStyle}
-                onClick={() => deleteUser(u)}
-              >
-                מחק
-              </button>
-            </div>
+          {isRepliesTab && (
+            <>
+              <td style={td}>{row.title}</td>
+              <td style={td}>{formatDate(row.date)}</td>
+            </>
           )}
 
-          {activeTab === "registered" && (
-            <div style={{ display: "flex", gap: "4px" }}>
-              <button
-                type="button"
-                style={actionButtonStyle}
-                onClick={() => updateUserType(u, "senior")}
-              >
-             הוסף לחברי מרכז ה60+
-              </button>
-              <button
-                type="button"
-                style={deleteButtonStyle}
-                onClick={() => deleteUser(u)}
-              >
-                מחק
-              </button>
-            </div>
+          {(filter === "activity" || filter === "survey" || filter === "both") && (
+            <>
+              <td style={td}>{row.activityName || row.surveyName}</td>
+              <td style={td}>{row.activityDate || row.surveyDate}</td>
+            </>
           )}
 
-          {activeTab === "senior" && (
-            <div style={{ display: "flex", gap: "4px" }}>
-              <button
-                type="button"
-                style={actionButtonStyle}
-                onClick={() => updateUserType(u, "registered")}
-              >
-                הוסף למשתמשים רשומים
-              </button>
-              <button
-                type="button"
-                style={deleteButtonStyle}
-                onClick={() => deleteUser(u)}
-              >
-                מחק
-              </button>
+          <td style={{ ...td, position: "relative" }}>
+            <div style={{ display: "flex", gap: 4 }}>
+              {activeTab === "unregistered" && (
+                <>
+                  <button
+                    type="button"
+                    style={actionButtonStyle}
+                    onClick={() => updateUserType(user, "registered")}
+                  >
+                    הוסף לרשומים
+                  </button>
+                  <button
+                    type="button"
+                    style={actionButtonStyle}
+                    onClick={() => updateUserType(user, "senior")}
+                  >
+                    הוסף לחברי מרכז ה-60+
+                  </button>
+                  <button
+                    type="button"
+                    style={deleteButtonStyle}
+                    onClick={() => deleteUser(user)}
+                  >
+                    מחק
+                  </button>
+                </>
+              )}
+
+              {activeTab === "registered" && (
+                <>
+                  <button
+                    type="button"
+                    style={actionButtonStyle}
+                    onClick={() => updateUserType(user, "senior")}
+                  >
+                    הוסף לחברי מרכז ה-60+
+                  </button>
+                  <button
+                    type="button"
+                    style={deleteButtonStyle}
+                    onClick={() => deleteUser(user)}
+                  >
+                    מחק
+                  </button>
+                </>
+              )}
+
+              {activeTab === "senior" && (
+                <>
+                  <button
+                    type="button"
+                    style={actionButtonStyle}
+                    onClick={() => updateUserType(user, "registered")}
+                  >
+                    הוסף לרשומים
+                  </button>
+                  <button
+                    type="button"
+                    style={deleteButtonStyle}
+                    onClick={() => deleteUser(user)}
+                  >
+                    מחק
+                  </button>
+                </>
+              )}
             </div>
-          )}
-
-              </div>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-
-
-      </table>
-    </div>
-  );
+          </td>
+        </tr>
+      );
+    })}
+  </tbody>
+</table>
+</div>
+ ); 
 }
-
 
 const th = {
   border: "1px solid #ccc",
