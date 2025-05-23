@@ -29,7 +29,6 @@ import heLocale from "@fullcalendar/core/locales/he";
 import ActivityService from "../services/ActivityService";
 import UserService from "../services/UserService";
 
-/* weekday labels for recurring */
 const WEEKDAYS = [
   { label: "א׳", value: 1 },
   { label: "ב׳", value: 2 },
@@ -56,7 +55,6 @@ export default function ActivitiesDesign({
   onSave,
   onClose,
 }) {
-  /* ────────────────── Tag filter (calendar) ────────────────── */
   const [tagFilter, setTagFilter] = useState("ALL");
   const allTags = useMemo(() => {
     const set = new Set();
@@ -64,7 +62,6 @@ export default function ActivitiesDesign({
     return [...set];
   }, [activities]);
 
-  /* ────────────────── Registrants dialog ────────────────── */
   const [selAct, setSelAct] = useState(null);
   const [users, setUsers] = useState({});
   useEffect(() => {
@@ -88,7 +85,6 @@ export default function ActivitiesDesign({
     );
   };
 
-  /* ────────────────── Calendar events (respect tagFilter) ────────────────── */
   const events = useMemo(() => {
     const filteredActs = activities.filter(
       (a) => tagFilter === "ALL" || (a.tags || []).includes(tagFilter)
@@ -123,7 +119,6 @@ export default function ActivitiesDesign({
     return [...actEvents, ...holidayEvents];
   }, [activities, holidays, tagFilter]);
 
-  /* ────────────────── DataGrid columns ────────────────── */
   const columns = [
     { field: "date", headerName: "תאריך", width: 110, headerAlign: "right", align: "right" },
     { field: "startTime", headerName: "התחלה", width: 110, headerAlign: "right", align: "right" },
@@ -169,20 +164,10 @@ export default function ActivitiesDesign({
           <Button size="small" onClick={() => onEdit(params.row)} sx={{ mr: 1 }}>
             ערוך
           </Button>
-          <Button
-            size="small"
-            color="error"
-            onClick={() => onDelete(params.row)}
-            sx={{ mr: 1 }}
-          >
+          <Button size="small" color="error" onClick={() => onDelete(params.row)} sx={{ mr: 1 }}>
             מחק
           </Button>
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={() => setSelAct(params.row)}
-            sx={{ whiteSpace: "nowrap" }}
-          >
+          <Button size="small" variant="outlined" onClick={() => setSelAct(params.row)} sx={{ whiteSpace: "nowrap" }}>
             נרשמים
           </Button>
         </>
@@ -190,10 +175,8 @@ export default function ActivitiesDesign({
     },
   ];
 
-  /* ────────────────── JSX ────────────────── */
   return (
     <Container dir="rtl">
-      {/* header */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 4, mb: 2 }}>
         <Typography variant="h4">פעילויות</Typography>
         <Button variant="outlined" onClick={() => (window.location.href = "/")}>
@@ -201,7 +184,6 @@ export default function ActivitiesDesign({
         </Button>
       </Box>
 
-      {/* tabs */}
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Tabs value={tab} onChange={(_, v) => onTabChange(v)}>
           <Tab label="רשימה" />
@@ -209,7 +191,6 @@ export default function ActivitiesDesign({
         </Tabs>
       </Box>
 
-      {/* list view */}
       {tab === 0 && (
         <Box sx={{ mt: 2 }}>
           <Button variant="contained" onClick={onNew} sx={{ mb: 2 }}>
@@ -227,15 +208,9 @@ export default function ActivitiesDesign({
         </Box>
       )}
 
-      {/* calendar view */}
       {tab === 1 && (
         <Box sx={{ mt: 2 }}>
-          <ToggleButtonGroup
-            exclusive
-            value={tagFilter}
-            onChange={(_, v) => setTagFilter(v || "ALL")}
-            sx={{ mb: 2 }}
-          >
+          <ToggleButtonGroup exclusive value={tagFilter} onChange={(_, v) => setTagFilter(v || "ALL")} sx={{ mb: 2 }}>
             <ToggleButton value="ALL">הכל</ToggleButton>
             {allTags.map((t) => (
               <ToggleButton key={t} value={t}>
@@ -258,35 +233,28 @@ export default function ActivitiesDesign({
         </Box>
       )}
 
-      {/* add / edit dialog */}
       <Dialog open={dialogOpen} onClose={onClose}>
         <DialogTitle>{form.id ? "עריכת פעילות" : "הוספת פעילות חדשה"}</DialogTitle>
-
         <DialogContent sx={{ display: "grid", gap: 2, pt: 1, minWidth: 400 }}>
-          <TextField label="שם הפעילות" value={form.name} onChange={(e) => onFormChange((f) => ({ ...f, name: e.target.value }))} />
-          <TextField label="תיאור" value={form.description} onChange={(e) => onFormChange((f) => ({ ...f, description: e.target.value }))} />
-          <TextField label="תגיות (מופרדות בפסיקים)" value={(form.tags || []).join(", ")} onChange={(e) => onFormChange((f) => ({ ...f, tags: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) }))} />
-          <TextField label="תאריך" type="date" InputLabelProps={{ shrink: true }} value={form.date} onChange={(e) => onFormChange((f) => ({ ...f, date: e.target.value }))} />
-          <TextField label="שעת התחלה" type="time" InputLabelProps={{ shrink: true }} value={form.startTime} onChange={(e) => onFormChange((f) => ({ ...f, startTime: e.target.value }))} />
-          <TextField label="שעת סיום" type="time" InputLabelProps={{ shrink: true }} value={form.endTime} onChange={(e) => onFormChange((f) => ({ ...f, endTime: e.target.value }))} />
-          <TextField label="קיבולת" type="number" InputLabelProps={{ shrink: true }} value={form.capacity} onChange={(e) => onFormChange((f) => ({ ...f, capacity: e.target.value }))} />
+          <TextField placeholder="שם הפעילות" value={form.name} onChange={(e) => onFormChange((f) => ({ ...f, name: e.target.value }))} fullWidth inputProps={{ dir: "rtl", style: { textAlign: 'right' } }} />
+          <TextField placeholder="תיאור" value={form.description} onChange={(e) => onFormChange((f) => ({ ...f, description: e.target.value }))} fullWidth inputProps={{ dir: "rtl", style: { textAlign: 'right' } }} />
+          <TextField placeholder="תגיות (מופרדות בפסיקים)" value={(form.tags || []).join(", ")} onChange={(e) => onFormChange((f) => ({ ...f, tags: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) }))} fullWidth inputProps={{ dir: "rtl", style: { textAlign: 'right' } }} />
+          <TextField placeholder="תאריך" type="date" value={form.date} onChange={(e) => onFormChange((f) => ({ ...f, date: e.target.value }))} fullWidth inputProps={{ dir: "rtl", style: { textAlign: 'right' } }} />
+          <TextField placeholder="שעת התחלה" type="time" value={form.startTime} onChange={(e) => onFormChange((f) => ({ ...f, startTime: e.target.value }))} fullWidth inputProps={{ dir: "rtl", style: { textAlign: 'right' } }} />
+          <TextField placeholder="שעת סיום" type="time" value={form.endTime} onChange={(e) => onFormChange((f) => ({ ...f, endTime: e.target.value }))} fullWidth inputProps={{ dir: "rtl", style: { textAlign: 'right' } }} />
+          <TextField placeholder="קיבולת" type="number" value={form.capacity} onChange={(e) => onFormChange((f) => ({ ...f, capacity: e.target.value }))} fullWidth inputProps={{ dir: "rtl", style: { textAlign: 'right' } }} />
+
           <FormControlLabel control={<Checkbox checked={form.recurring} onChange={(e) => onFormChange((f) => ({ ...f, recurring: e.target.checked, weekdays: e.target.checked ? [] : [] }))} />} label="פעילות חוזרת?" />
           {form.recurring && (
             <Box>
               <Typography sx={{ mb: 1 }}>בחר ימי שבוע חוזרים:</Typography>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                 {WEEKDAYS.map((d) => (
-                  <FormControlLabel
-                    key={d.value}
-                    label={d.label}
-                    control={
-                      <Checkbox checked={(form.weekdays || []).includes(d.value)} onChange={(e) => {
-                        const curr = form.weekdays || [];
-                        const next = e.target.checked ? [...curr, d.value] : curr.filter((wd) => wd !== d.value);
-                        onFormChange((f) => ({ ...f, weekdays: next }));
-                      }} />
-                    }
-                  />
+                  <FormControlLabel key={d.value} label={d.label} control={<Checkbox checked={(form.weekdays || []).includes(d.value)} onChange={(e) => {
+                    const curr = form.weekdays || [];
+                    const next = e.target.checked ? [...curr, d.value] : curr.filter((wd) => wd !== d.value);
+                    onFormChange((f) => ({ ...f, weekdays: next }));
+                  }} />} />
                 ))}
               </Box>
             </Box>
@@ -294,16 +262,11 @@ export default function ActivitiesDesign({
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>בטל</Button>
-          {form.id && (
-            <Button color="error" onClick={() => { onDelete(form); onClose(); }}>
-              מחק
-            </Button>
-          )}
+          {form.id && <Button color="error" onClick={() => { onDelete(form); onClose(); }}>מחק</Button>}
           <Button variant="contained" onClick={onSave}>שמור</Button>
         </DialogActions>
       </Dialog>
 
-      {/* registrants dialog */}
       <Dialog open={Boolean(selAct)} onClose={() => setSelAct(null)} fullWidth maxWidth="sm">
         <DialogTitle>נרשמים – {selAct?.name}</DialogTitle>
         <DialogContent dividers>
