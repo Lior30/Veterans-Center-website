@@ -40,7 +40,7 @@ export default function SurveyDetailContainer({ surveyId, onClose }) {
     for (let q of survey.questions.filter(q => q.mandatory)) {
       const val = (answers[q.id] || "").trim();
       if (!val) {
-        alert(`חובה למלא: ${q.text}`);
+        alert(חובה למלא: ${q.text});
         return;
       }
     }
