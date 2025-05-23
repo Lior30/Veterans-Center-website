@@ -21,6 +21,9 @@ import ActivityService                   from "../services/ActivityService";
 import UserService                       from "../services/UserService";
 import usePublicHolidays                 from "../hooks/usePublicHolidays";
 
+import { doc, getDoc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { db }                            from "../firebase";
+
 export default function CalendarPreview() {
   /* live activities */
   const [activities, setActivities] = useState([]);
@@ -104,26 +107,62 @@ export default function CalendarPreview() {
   };
 
   const register = async () => {
-    if (!validName || !validPhone) {
-      setErr("שם חייב להכיל אותיות בלבד, וטלפון – ספרות בלבד.");
-      return;
-    }
-    try {
-      const user = await UserService.findOrCreate({
-        name:  name.trim(),
-        phone: phone.trim(),
-      });
-      await ActivityService.registerUser(selId, user);
-      setSelId(null);
-      alert("ההרשמה בוצעה בהצלחה!");
-    } catch (e) {
-      if (e.message === "FULL") alert("מצטערים, אין מקום פנוי.");
-      else if (e.message === "alreadyRegistered") alert("כבר רשום לפעילות.");
-      else {
-        console.error(e);
-        alert("אירעה שגיאה, נסו שוב.");
-      }
-    }
+if (!validName || !validPhone) {
+  setErr("שם חייב להכיל אותיות בלבד, וטלפון – ספרות בלבד.");
+  return;
+}
+try {
+  // בונים את ה־userId
+  const userId  = `${name.trim()}_${phone.trim()}`;
+  const userRef = doc(db, "users", userId);
+  const actRef  = doc(db, "activities", selId);
+  const today = new Date().toISOString(); // "2025-05-24T14:23:45.123Z"
+
+  // בודקים אם המשתמש כבר קיים
+  const userSnap = await getDoc(userRef);
+  if (userSnap.exists()) {
+    const data = userSnap.data();
+    // מוסיפים בראש המערכים את הפעילות והתאריך
+    await updateDoc(userRef, {
+      activities:      [activities.find(a => a.id === selId).name, ...data.activities],
+      activities_date: [today,                                         ...data.activities_date],
+    });
+  } else {
+    // אם לא קיים – יוצרים מסמך חדש עם כל השדות
+    const [first, ...rest] = name.trim().split(/\s+/);
+    await setDoc(userRef, {
+      user_id:          userId,
+      fullname:         name.trim(),
+      first_name:       first,
+      last_name:        rest.join(" "),
+      phone:            phone.trim(),
+      is_registered:    true,
+      is_club_60:       false,
+      activities:       [activities.find(a => a.id === selId).name],
+      activities_date:  [today],
+      replies:          [],
+      replies_date:     [],
+      survey:           [],
+      survey_date:      [],
+    });
+  }
+
+  // עדכון רשימת הנרשמים של הפעילות
+  await updateDoc(actRef, {
+    registrants: arrayUnion(userId),
+  });
+
+  setSelId(null);
+  alert("ההרשמה בוצעה בהצלחה!");
+} catch (e) {
+  if (e.message === "FULL")              alert("מצטערים, אין מקום פנוי.");
+  else if (e.message === "alreadyRegistered") alert("כבר רשום לפעילות.");
+  else {
+    console.error(e);
+    alert("אירעה שגיאה, נסו שוב.");
+  }
+}
+
   };
 
   return (
