@@ -37,10 +37,11 @@ export default function LandingPage() {
   const [selectedFlyerIndex, setSelectedFlyerIndex] = useState(0);
   const selectedFlyer = flyers[selectedFlyerIndex] || null;
 
-  const [flyerRegId, setFlyerRegId] = useState(null);
-  const [flyerName, setFlyerName] = useState("");
-  const [flyerPhone, setFlyerPhone] = useState("");
-  const [flyerErr, setFlyerErr] = useState("");
+  const [activityRegId, setActivityRegId] = useState(null);
+
+  const [participantName, setParticipantName] = useState("");
+  const [participantPhone, setParticipantPhone] = useState("");
+  const [participantErr, setParticipantErr] = useState("");
 
   const [selectedMsg, setSelectedMsg] = useState(null);
   const [selectedSurvey, setSelectedSurvey] = useState(null);
@@ -64,27 +65,34 @@ export default function LandingPage() {
       .catch(console.error);
   }, []);
 
-  const validFlyerName = /^[A-Za-z\u0590-\u05FF\s]+$/.test(flyerName.trim());
-  const validFlyerPhone = UserService.isValidPhone(flyerPhone.trim());
+  const validParticipantName = /^[A-Za-z\u0590-\u05FF\s]+$/.test(participantName.trim());
+  const validParticipantPhone = UserService.isValidPhone(participantPhone.trim());
 
-  const handleFlyerRegister = async () => {
-    if (!validFlyerName || !validFlyerPhone) {
-      setFlyerErr("שם חייב אותיות בלבד, טלפון תקין (05XXXXXXXX)");
+  const handleActivityRegister = async () => {
+    if (!validParticipantName || !validParticipantPhone) {
+      setParticipantErr("שם חייב אותיות בלבד, טלפון תקין (05XXXXXXXX)");
       return;
     }
     try {
       const user = await UserService.findOrCreate({
-        name: flyerName.trim(),
-        phone: flyerPhone.trim(),
+        name: participantName.trim(),
+        phone: participantPhone.trim(),
       });
-      await ActivityService.registerUser(flyerRegId, user.id);
-      alert("ההרשמה לפלייר בוצעה בהצלחה!");
-      setFlyerRegId(null);
+      await ActivityService.registerUser(activityRegId, {
+        name: user.name,
+        phone: user.phone,
+      });
+      alert("ההרשמה לפעילות בוצעה בהצלחה!");
+      setActivityRegId(null);
+      setParticipantName("");
+      setParticipantPhone("");
+      setParticipantErr("");
     } catch (e) {
-      console.error(e);
-      setFlyerErr("שגיאה בהרשמה, נסי שוב");
+      console.error("Registration error:", e);
+      setParticipantErr("שגיאה בהרשמה, נסי שוב");
     }
   };
+
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -140,7 +148,7 @@ export default function LandingPage() {
                 src={selectedFlyer.fileUrl}
                 alt={selectedFlyer.name}
                 sx={{ width: "100%", maxWidth: "300px", borderRadius: 2, boxShadow: 3, cursor: "pointer", mb: 2 }}
-                onClick={() => setFlyerRegId(selectedFlyer.id)}
+                onClick={() => setActivityRegId(activity.id)}  
               />
               <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
                 <Button
@@ -198,36 +206,41 @@ export default function LandingPage() {
         <DialogActions><Button onClick={() => setSelectedSurvey(null)}>סגור</Button></DialogActions>
       </Dialog>
 
-      {/* Flyer Registration Dialog */}
-      <Dialog open={Boolean(flyerRegId)} onClose={() => setFlyerRegId(null)} fullWidth maxWidth="sm">
-        <DialogTitle>הרשמה לפלייר</DialogTitle>
+      {/* Activity Registration Dialog */}
+      <Dialog
+        open={Boolean(activityRegId)}
+        onClose={() => setActivityRegId(null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>הרשמה לפעילות</DialogTitle>
         <DialogContent>
-          {flyerErr && <Alert severity="error" sx={{ mb: 2 }}>{flyerErr}</Alert>}
+          {participantErr && <Alert severity="error" sx={{ mb: 2 }}>{participantErr}</Alert>}
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
               label="שם מלא"
-              value={flyerName}
-              onChange={e => setFlyerName(e.target.value)}
+              value={participantName}
+              onChange={e => setParticipantName(e.target.value)}
               fullWidth
-              error={flyerName && !validFlyerName}
-              helperText={flyerName && !validFlyerName ? "אותיות ורווחים בלבד" : " "}
+              error={participantName && !validParticipantName  }
+              helperText={participantName && !validParticipantName   ? "אותיות ורווחים בלבד" : " "}
             />
             <TextField
               label="טלפון"
-              value={flyerPhone}
-              onChange={e => setFlyerPhone(e.target.value)}
+              value={participantPhone}
+              onChange={e => setParticipantPhone(e.target.value)}
               fullWidth
-              error={flyerPhone && !validFlyerPhone}
-              helperText={flyerPhone && !validFlyerPhone ? "טלפון לא תקין" : " "}
+              error={participantPhone && !validParticipantPhone}
+              helperText={participantPhone && !validParticipantPhone ? "טלפון לא תקין" : " "}
             />
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setFlyerRegId(null)}>ביטול</Button>
+          <Button onClick={() => setActivityRegId(null)}>ביטול</Button>
           <Button
             variant="contained"
-            onClick={handleFlyerRegister}
-            disabled={!validFlyerName || !validFlyerPhone}
+            onClick={handleActivityRegister}
+            disabled={!validParticipantName   || !validParticipantPhone}
           >
             הרשמה
           </Button>

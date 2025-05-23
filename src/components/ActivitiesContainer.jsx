@@ -15,6 +15,7 @@ const initialForm = {
   flyerId: "",
   recurring: false,
   weekdays: [],     // 0=Sun … 6=Sat
+  participants: [],
 };
 
 export default function ActivitiesContainer() {
@@ -87,7 +88,7 @@ export default function ActivitiesContainer() {
       onTabChange={setTab}
       onNew={handleNew}
       onEdit={handleEdit}
-      onDelete={handleDelete}      // ← added
+      onDelete={handleDelete}
       onDateClick={handleDateClick}
       onEventClick={handleEventClick}
       onFormChange={setForm}

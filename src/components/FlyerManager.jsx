@@ -1,7 +1,7 @@
 // src/components/FlyerManager.jsx
 import React, { useState, useEffect } from "react";
 import FlyerUploader from "./FlyerUploaderArea.jsx";
-import FlyerService from "./FlyerService.jsx";
+import FlyerService from "../services/FlyerService.js";
 
 export default function FlyerManager() {
   const [flyers, setFlyers] = useState([]);
