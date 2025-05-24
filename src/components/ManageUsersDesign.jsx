@@ -75,6 +75,15 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     fetchUsers();
   }, []);
 
+
+   // פונקציה שבודקת אם משתמש מתאים ל־activeTab
+  const matchesTab = u => {
+    if (activeTab === "registered")   return u.is_registered && !u.is_club_60;
+    if (activeTab === "senior")       return u.is_club_60;
+    if (activeTab === "unregistered") return !u.is_registered;
+    return true; // all
+  }
+
     // מפותחים מערכי שורות של פעילויות וסקרים
   const rowsActivities = allUsers
     .flatMap(u => {
@@ -85,6 +94,10 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
         activityDate: u.activities_date?.[idx] ?? ""
       }));
     })
+
+    // סינון לפי הסוג (registered/senior/unregistered)
+    .filter(row => matchesTab(row.user))
+
     // מיון לפי תאריך מהחדש לישן
     .sort((a, b) => new Date(b.activityDate) - new Date(a.activityDate));
 
@@ -97,6 +110,9 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
         surveyDate: u.survey_date?.[idx] ?? ""
       }));
     })
+
+      // סינון לפי הסוג
+    .filter(row => matchesTab(row.user))
     .sort((a, b) => new Date(b.surveyDate) - new Date(a.surveyDate));
 
   const rowsAll = allUsers.filter(u => {
@@ -109,7 +125,8 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
  // 2) מאחד לכל entry את ה־shape { user }
  const rowsAllWithShape = rowsAll.map(u => ({ user: u }));
 
-  const rowsReplies = allUsers.flatMap(u => {
+ const rowsReplies = allUsers
+    .flatMap(u => {
     if (!u.replies) return [];
   // אם replies הוא כבר מערך – השתמש בו, אחרת פרק מחרוזת
   const titles = Array.isArray(u.replies)
@@ -129,7 +146,12 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       title,
       date: dates[idx] || ""
     }));
-  });
+  })
+
+   // 🟢 הוספת סינון לפי הטאב (registered/senior/unregistered)
+    .filter(row => matchesTab(row.user))
+    // 🟢 מיון מהחדש לישן
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
 
   // const isRepliesTab = filter === "replies";
   // const rowsToShow = isRepliesTab ? rowsReplies : rowsAll;
@@ -290,6 +312,15 @@ const updateUserType = async (user, newType) => {
     });
   }
 
+    // 🟢 עדכון ה־local state של allUsers
+  setAllUsers(prev =>
+    prev.map(u =>
+      ensureUserId(u) === user_id
+        ? { ...u, is_registered: isReg, is_club_60: isClub }
+        : u
+    )
+  );
+
     if (newType === "registered") {
     alert("המשתמש הועבר למשתמשים רשומים");
   } else if (newType === "senior") {
@@ -324,33 +355,108 @@ const deleteUser = async (user) => {
   const phone   = user.phone || "";
   const user_id = ensureUserId(user);
 
-  const COLL = [
-    { label: "users",  ref: collection(db,"users"),                 fields:[{k:"user_id",   v:user_id}] },
-    { label: "acts",   ref: collection(db,"activityRegistrations"), fields:[{k:"phone",v:phone},{k:"user.phone",v:phone}] },
-    { label: "surv",   ref: collection(db,"surveyResponses"),       fields:[{k:"phone",v:phone},{k:"user.phone",v:phone}] },
-    { label: "repls",  ref: collectionGroup(db,"replies"),          fields:[{k:"phone",v:phone},{k:"user.phone",v:phone}] },
-  ];
+// 1. מוחקים משתמש מועודכן מכל האוספים הרגילים
+const COLL = [
+  { ref: collection(db,"users"),                 whereField: ["user_id", user_id] },
+  { ref: collection(db,"activityRegistrations"), whereField: ["phone", phone] },
+  { ref: collection(db,"surveyResponses"),       whereField: ["phone", phone] },
+];
 
-  for (const { label, ref, fields } of COLL) {
-    for (const { k, v } of fields) {
-      if (!v) continue;
-      const snap = await getDocs(query(ref, where(k, "==", v)));
-      // console.log(`[${label}] where(${k}==${v}) ->`, snap.size);   // 🔎
-      // for (const d of snap.docs) await deleteDoc(d.ref);
+for (const { ref, whereField } of COLL) {
+  const snap = await getDocs(query(ref, where(whereField[0], "==", whereField[1])));
+  for (const d of snap.docs) {
+    await deleteDoc(d.ref);
+  }
+}
 
-      for (const d of snap.docs) {
-        await deleteDoc(d.ref);
-      }
+// 2. מוחקים replies בכל הודעה בלי Composite-Index
+const messagesSnap = await getDocs(collection(db, "messages"));
+for (const msgDoc of messagesSnap.docs) {
+  const repliesRef = collection(db, "messages", msgDoc.id, "replies");
+  const snap = await getDocs(query(repliesRef, where("phone", "==", phone)));
+  for (const replyDoc of snap.docs) {
+    await deleteDoc(replyDoc.ref);
+  }
+}
+
+
+  // 🟢 עדכון ה־local state
+  setManualUsers(prev => prev.filter(u => u.phone !== phone));
+  setAllUsers(prev => prev.filter(u => ensureUserId(u) !== user_id));
+  markDeleted(phone);
+  alert("המשתמש נמחק בהצלחה");
+};
+
+/**
+ * מוחקת את הפריט הספציפי (פעילות/סקר/תגובה) ממסמכי המשתמש
+ * @param {Object} row — האובייקט { user, activityName?, surveyName?, title?, … }
+ * @param {"activity"|"survey"|"replies"} type
+ */
+async function acknowledgeRow(row, type) {
+  const u        = row.user;
+  const userId   = ensureUserId(u);
+  const docRef   = doc(db, "users", userId);
+  // בואי נקרא קודם את המסמך
+  const snap     = await getDocs(query(collection(db, "users"), where("user_id", "==", userId)));
+  if (snap.empty) return;
+  const data     = snap.docs[0].data();
+
+  // בונים מערכים חדשים בלי הפריט הזה
+  let newActivities     = data.activities     || [];
+  let newActivitiesDate = data.activities_date|| [];
+  let newSurvey         = data.survey         || [];
+  let newSurveyDate     = data.survey_date    || [];
+  let newReplies        = data.replies        || [];
+  let newRepliesDate    = data.replies_date   || [];
+
+  if (type === "activity") {
+    const idx = newActivities.findIndex((a,i) => a === row.activityName && newActivitiesDate[i] === row.activityDate);
+    if (idx >= 0) {
+      newActivities.splice(idx, 1);
+      newActivitiesDate.splice(idx, 1);
+    }
+  }
+  else if (type === "survey") {
+    const idx = newSurvey.findIndex((s,i) => s === row.surveyName && newSurveyDate[i] === row.surveyDate);
+    if (idx >= 0) {
+      newSurvey.splice(idx,1);
+      newSurveyDate.splice(idx,1);
+    }
+  }
+  else if (type === "replies") {
+    const idx = newReplies.findIndex((t,i) => t === row.title && newRepliesDate[i] === row.date);
+    if (idx >= 0) {
+      newReplies.splice(idx,1);
+      newRepliesDate.splice(idx,1);
     }
   }
 
-  setManualUsers(prev => prev.filter(u => u.phone !== phone));
-  markDeleted(phone);
+  // תריץ עדכון ב־Firestore
+  await updateDoc(docRef, {
+    activities:      newActivities,
+    activities_date: newActivitiesDate,
+    survey:          newSurvey,
+    survey_date:     newSurveyDate,
+    replies:         newReplies,
+    replies_date:    newRepliesDate
+  });
 
-  alert("המשתמש נמחק בהצלחה"); 
+  // ועדכון state כדי להעלי המסך
+  setAllUsers(prev =>
+    prev.map(u0 =>
+      ensureUserId(u0) === userId
+        ? { ...u0,
+            activities:      newActivities,
+            activities_date: newActivitiesDate,
+            survey:          newSurvey,
+            survey_date:     newSurveyDate,
+            replies:         newReplies,
+            replies_date:    newRepliesDate }
+        : u0
+    )
+  );
+}
 
-  window.location.reload();
-};
 
 
   return (
@@ -612,26 +718,42 @@ const deleteUser = async (user) => {
 
           <td style={{ ...td, position: "relative" }}>
             <div style={{ display: "flex", gap: 4 }}>
+
+                {filter !== "all" && (
+                  <button
+                    onClick={() => acknowledgeRow(row, filter)}
+                    style={{
+                      fontSize: "16px",
+                      padding: "4px",
+                      color: "white",
+                      backgroundColor: "green",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer"
+                    }}
+                    title="סימן שבדקתי ולא רוצים להציג יותר"
+                  >
+                    ✓
+                  </button>
+                )}
+
               {activeTab === "unregistered" && (
                 <>
                   <button
-                    type="button"
-                    style={actionButtonStyle}
-                    onClick={() => updateUserType(user, "registered")}
+                     onClick={() => updateUserType(u, "registered")}
+                     style={actionButtonStyle}
                   >
                     הוסף לרשומים
                   </button>
                   <button
-                    type="button"
-                    style={actionButtonStyle}
-                    onClick={() => updateUserType(user, "senior")}
+                     onClick={() => updateUserType(u, "senior")}
+                     style={actionButtonStyle}
                   >
                     הוסף לחברי מרכז ה-60+
                   </button>
                   <button
-                    type="button"
-                    style={deleteButtonStyle}
-                    onClick={() => deleteUser(user)}
+                     onClick={() => deleteUser(u)}
+                     style={deleteButtonStyle}
                   >
                     מחק
                   </button>
@@ -643,14 +765,16 @@ const deleteUser = async (user) => {
                   <button
                     type="button"
                     style={actionButtonStyle}
-                    onClick={() => updateUserType(user, "senior")}
+                    onClick={() => updateUserType(u, "senior")}
                   >
                     הוסף לחברי מרכז ה-60+
                   </button>
                   <button
                     type="button"
                     style={deleteButtonStyle}
-                    onClick={() => deleteUser(user)}
+                    onClick={() => deleteUser(u
+
+                    )}
                   >
                     מחק
                   </button>
@@ -662,7 +786,7 @@ const deleteUser = async (user) => {
                   <button
                     type="button"
                     style={actionButtonStyle}
-                    onClick={() => updateUserType(user, "registered")}
+                    onClick={() => updateUserType(u, "registered")}
                   >
                     הוסף לרשומים
                   </button>
