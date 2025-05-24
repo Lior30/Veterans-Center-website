@@ -148,8 +148,11 @@ try {
   }
 
   // עדכון רשימת הנרשמים של הפעילות
-  await updateDoc(actRef, {
-    registrants: arrayUnion(userId),
+   await updateDoc(actRef, {
+    registrants: arrayUnion({
+      fullname: name.trim(),
+      phone:    phone.trim(),
+    }),
   });
 
   setSelId(null);
