@@ -30,13 +30,13 @@ export default function NavBar() {
         onClick={() => navigate(-1)}
         style={{ marginRight: 12, padding: "6px 12px" }}
       >
-        ← Back
+        ← חזרה
       </button>
       <button
         onClick={() => navigate("/home")}
         style={{ marginRight: 24, padding: "6px 12px" }}
       >
-        🏠 Home
+        🏠 בית
       </button>
 
       {/* nav links */}

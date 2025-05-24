@@ -75,7 +75,7 @@ export default function Home() {
       {/* Admin button grid */}
       <Container sx={{ pt: 4 }}>
         <Typography variant="h4" align="center" gutterBottom>
-          Veterans Center Admin
+          דף ניהול מרכז ותיקים
         </Typography>
         <Stack spacing={2} sx={{ maxWidth: 400, mx: "auto" }}>
           <Button
@@ -84,7 +84,7 @@ export default function Home() {
             variant="outlined"
             fullWidth
           >
-            Manage Activities
+            ניהול פעילויות
           </Button>
           <Button
             component={RouterLink}
@@ -92,7 +92,7 @@ export default function Home() {
             variant="outlined"
             fullWidth
           >
-            Manage Flyers
+            ניהול פלאיירים
           </Button>
           <Button
             component={RouterLink}
@@ -100,7 +100,7 @@ export default function Home() {
             variant="outlined"
             fullWidth
           >
-            Manage Surveys
+            ניהול סקרים
           </Button>
           <Button
             component={RouterLink}
@@ -108,7 +108,7 @@ export default function Home() {
             variant="outlined"
             fullWidth
           >
-            Manage Messages
+            ניהול הודעות
           </Button>
           <Button
             component={RouterLink}
@@ -116,7 +116,7 @@ export default function Home() {
             variant="outlined"
             fullWidth
           >
-            Manage Users
+            ניהול משתמשים
           </Button>
         </Stack>
       </Container>
