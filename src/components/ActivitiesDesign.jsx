@@ -71,9 +71,9 @@ export default function ActivitiesDesign({
     const map = {};
     // selAct.participants is now [{ name, phone }, …]
     (selAct.participants || []).forEach((participant) => {
-      const { name, phone } = participant;
+      const { fullname, phone } = participant;
       // key by phone so you can lookup easily
-      map[phone] = `${name} — ${phone}`;
+      map[phone] = `${fullname} — ${phone}`;
     });
 
     setUsers(map);
