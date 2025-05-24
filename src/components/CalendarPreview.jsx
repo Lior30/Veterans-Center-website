@@ -95,8 +95,8 @@ export default function CalendarPreview() {
     const act   = activities.find((a) => a.id === actId);
     if (!act) return;
 
-    const { capacity = 0, registrants = [] } = act;
-    if (capacity && registrants.length >= capacity) {
+    const { capacity = 0, participants = [] } = act;
+    if (capacity && participants.length >= capacity) {
       alert("מצטערים, אין מקום פנוי בפעילות זו.");
       return;
     }
@@ -136,7 +136,7 @@ try {
       first_name:       first,
       last_name:        rest.join(" "),
       phone:            phone.trim(),
-      is_registered:    true,
+      is_registered:    false,
       is_club_60:       false,
       activities:       [activities.find(a => a.id === selId).name],
       activities_date:  [today],
@@ -149,7 +149,7 @@ try {
 
   // עדכון רשימת הנרשמים של הפעילות
    await updateDoc(actRef, {
-    registrants: arrayUnion({
+      participants: arrayUnion({
       fullname: name.trim(),
       phone:    phone.trim(),
     }),
