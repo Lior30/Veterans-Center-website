@@ -1,118 +1,101 @@
-// src/components/SurveyDetailContainer.jsx
+
 import React, { useState, useEffect } from "react";
-import { doc, getDoc, collection, addDoc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, getDoc, collection, addDoc, getDocs } from "firebase/firestore";
 import { useParams, useNavigate } from "react-router-dom";
 import { db } from "../firebase.js";
 import SurveyDetailDesign from "./SurveyDetailDesign.jsx";
+import UserService from "../services/UserService.js";
 
 export default function SurveyDetailContainer({ surveyId, onClose }) {
-  const params   = useParams();
+  const params = useParams();
   const navigate = useNavigate();
-  // אם נקבל surveyId פרופ, נשתמש בו, אחרת הפרמטר מה־URL
   const id = surveyId || params.id;
 
-  const [survey, setSurvey]   = useState(null);
+  const [survey, setSurvey] = useState(null);
   const [answers, setAnswers] = useState({});
+  const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [responses, setResponses] = useState([]);
+  const [submitError, setSubmitError] = useState(null);
 
-  // טען את הגדרת הסקר
   useEffect(() => {
-    if (!id) return;
-    (async () => {
-      const snap = await getDoc(doc(db, "surveys", id));
-      if (snap.exists()) setSurvey({ id: snap.id, ...snap.data() });
-      else console.error("Survey not found:", id);
-    })();
+    async function load() {
+      try {
+        const snap = await getDoc(doc(db, "surveys", id));
+        if (snap.exists()) setSurvey({ id: snap.id, ...snap.data() });
+
+        const respSnap = await getDocs(collection(db, "surveys", id, "responses"));
+        const all = respSnap.docs.map(doc => doc.data());
+        setResponses(all);
+      } catch (err) {
+        console.error("Error loading survey or responses:", err);
+        setSubmitError("שגיאה בטעינת הסקר");
+      }
+    }
+    load();
   }, [id]);
 
-  // עדכון תשובה מקומית
+  useEffect(() => {
+    const fname = (answers.firstName || "").trim();
+    const lname = (answers.lastName || "").trim();
+    const phone = (answers.phone || "").trim();
+    if (!fname || !lname || !phone || responses.length === 0) return;
+
+    const userId = `${fname}_${lname}_${phone}`;
+    const isBlocked = responses.some((r) => {
+      const a = r.answers || {};
+      return `${a.firstName}_${a.lastName}_${a.phone}` === userId;
+    });
+
+    setBlocked(isBlocked);
+  }, [answers, responses]);
+
   const handleChange = (qid, value) => {
     setAnswers(prev => ({ ...prev, [qid]: value }));
   };
 
-  // שליחת התשובות
-  const handleSubmit = async () => {
-    if (!survey) return;
-    // בדיקת שאלות חובה
-    for (let q of survey.questions.filter(q => q.mandatory)) {
-      if (!(answers[q.id] || "").trim()) {
-        alert(`חובה למלא: ${q.text}`);
-        return;
+  const validate = () => {
+    const newErrors = {};
+    const fname = (answers.firstName || "").trim();
+    const lname = (answers.lastName || "").trim();
+    const phone = (answers.phone || "").trim();
+
+    if (!UserService.isValidName(fname)) newErrors.firstName = "שם לא תקין";
+    if (!UserService.isValidName(lname)) newErrors.lastName = "שם משפחה לא תקין";
+    if (!UserService.isValidPhone(phone)) newErrors.phone = UserService.getPhoneError(phone);
+
+    for (let q of survey?.questions || []) {
+      if (q.mandatory && !answers[q.id]?.trim()) {
+        newErrors[q.id] = "שדה חובה";
       }
     }
 
-    // 1️⃣ שמירת התשובות לתת-קולקשן של הסקר
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validate() || blocked) return;
+
     try {
+      console.log("Trying to submit to:", id);
+      console.log("Answers:", answers);
+
       await addDoc(collection(db, "surveys", id, "responses"), {
         answers,
-        submittedAt: new Date().toISOString()
+        submittedAt: new Date().toISOString(),
       });
+
+      console.log("✅ Submission successful!");
+      setSubmitError(null);
+      setSubmitted(true);
+      if (onClose) onClose();
+      else navigate("/surveys/list");
     } catch (err) {
-      console.error("Error saving response:", err);
-      alert("שגיאה בשמירת התשובות");
-      return;
+      console.error("❌ Error submitting response:", err);
+      setSubmitError("שגיאה בשליחת התשובה");
     }
-
-    // 2️⃣ נבנה את userId לפי full name + phone
-    const fullname = answers.fullname?.trim() || "";
-    const phone    = answers.phone?.trim()    || "";
-    const [first, ...rest] = fullname.split(" ");
-    const last    = rest.join(" ");
-
-    const userId  = `${first}_${last}_${phone}`;
-    const userRef = doc(db, "users", userId);
-
-     let userSnap;
-   try {
-     userSnap = await getDoc(userRef);
-   } catch (err) {
-     console.error("Error reading user:", err);
-     alert("שגיאה בקריאת נתוני המשתמש");
-     return;
-   }
-
-    // 3️⃣ נרנר את כותרת ותאריך הסקר
-    const surveyTitle = survey.title ?? survey.headline ?? survey.name ?? "";
-    const surveyDate  = new Date().toISOString();
-
-    // 4️⃣ בדיקה אם המשתמש קיים כבר
-    try {
-      const userSnap = await getDoc(userRef);
-
-       if (!userSnap.exists()) {
-   // 5️⃣ משתמש חדש → צור לו מסמך עם כל השדות
-   await setDoc(userRef, {
-     user_id:         userId,
-     fullname:        fullname,
-     first_name:      first,
-     last_name:       last,
-     phone:           phone,
-     is_registered:   false,
-     is_club_60:      false,
-     activities:      [],          // מערך ריק
-     activities_date: [],          // מערך ריק
-     survey:          [surveyTitle],  // עכשיו מערך
-     survey_date:     [surveyDate],   // מערך תאריכים
-     replies:         [],          // מערך ריק
-     replies_date:    [],          // מערך ריק
-   }, { merge: true });
- } else {
-        // 6️⃣ משתמש קיים → הוסף לסוף המערכים (אפשר להפוך בסייד UI)
-        await updateDoc(userRef, {
-          survey:       arrayUnion(surveyTitle),
-          survey_date:  arrayUnion(surveyDate)
-        });
-      }
-    } catch (err) {
-      console.error("Error upserting user:", err);
-      alert("שגיאה בעדכון המשתמש");
-      return;
-    }
-
-    setSubmitted(true);
-    // 7️⃣ סגר דיאלוג או נווט חזרה
-    if (onClose) onClose();
-    else navigate("/surveys/list");
   };
 
   const handleCancel = () => {
@@ -120,26 +103,19 @@ export default function SurveyDetailContainer({ surveyId, onClose }) {
     else navigate("/surveys/list");
   };
 
-  if (!survey) {
-    return (
-      <SurveyDetailDesign
-        survey={{ headline: "Loading…", questions: [] }}
-        answers={{}}
-        onChange={() => {}}
-        onSubmit={() => {}}
-        onCancel={handleCancel}
-      />
-    );
-  }
+  if (!survey) return <p>טוען סקר...</p>;
 
   return (
     <SurveyDetailDesign
       survey={survey}
       answers={answers}
+      errors={errors}
+      blocked={blocked}
       onChange={handleChange}
       onSubmit={handleSubmit}
       onCancel={handleCancel}
       submitted={submitted}
+      submitError={submitError}
     />
   );
 }
