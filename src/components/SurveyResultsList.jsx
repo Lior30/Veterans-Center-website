@@ -1,4 +1,4 @@
-// src/components/SurveyResultsList.jsx
+
 import React, { useState, useEffect } from "react";
 import {
   collection,
@@ -8,11 +8,12 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase.js";
 import { Link } from "react-router-dom";
+import { TextField } from "@mui/material";
 
 export default function SurveyResultsList() {
   const [surveys, setSurveys] = useState([]);
+  const [search, setSearch] = useState("");
 
-  // Load all surveys
   const loadSurveys = async () => {
     const snap = await getDocs(collection(db, "surveys"));
     setSurveys(snap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -22,29 +23,36 @@ export default function SurveyResultsList() {
     loadSurveys();
   }, []);
 
-  // Delete survey + all its responses
   const handleDeleteSurvey = async (surveyId) => {
-    // 1) delete each response doc
     const responsesSnap = await getDocs(
       collection(db, "surveys", surveyId, "responses")
     );
-    await Promise.all(
-      responsesSnap.docs.map(r => deleteDoc(r.ref))
-    );
-    // 2) delete the survey itself
+    await Promise.all(responsesSnap.docs.map(r => deleteDoc(r.ref)));
     await deleteDoc(doc(db, "surveys", surveyId));
-    // 3) reload
     loadSurveys();
   };
 
+  const filteredSurveys = surveys.filter((s) =>
+    s.headline?.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div style={{ padding: 40, textAlign: "center" }}>
-      <h2>Surveys &amp; Results</h2>
+      <h2>סקרים ותשובות</h2>
 
-      {surveys.length === 0 ? (
-        <p>No surveys found.</p>
+      <TextField
+        label="חיפוש לפי כותרת"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        fullWidth
+        style={{ maxWidth: 500, margin: "20px auto" }}
+        inputProps={{ style: { textAlign: "right" } }}
+      />
+
+      {filteredSurveys.length === 0 ? (
+        <p>לא נמצאו סקרים.</p>
       ) : (
-        surveys.map(s => (
+        filteredSurveys.map(s => (
           <div
             key={s.id}
             style={{
@@ -57,10 +65,10 @@ export default function SurveyResultsList() {
           >
             <h3>{s.headline}</h3>
             <Link to={`/surveys/results/${s.id}`}>
-              <button style={{ marginRight: 8 }}>View Responses</button>
+              <button style={{ marginRight: 8 }}>הצג תשובות</button>
             </Link>
             <button onClick={() => handleDeleteSurvey(s.id)}>
-              Delete Survey
+              מחק סקר
             </button>
           </div>
         ))
@@ -68,7 +76,7 @@ export default function SurveyResultsList() {
 
       <div style={{ marginTop: 20 }}>
         <Link to="/surveys">
-          <button>← Back to Manage Surveys</button>
+          <button>← חזרה לניהול סקרים</button>
         </Link>
       </div>
     </div>
