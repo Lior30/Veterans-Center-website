@@ -64,7 +64,7 @@ export default function SurveyDetailDesign({
       />
 
       {survey.questions
-        .filter((q) => q.text !== "שם מלא" && q.text !== "מספר טלפון")
+        .filter((q) => q.text !== "Full Name" && q.text !== "Phone Number")
         .map((q, idx) => (
           <Box key={q.id} sx={{ mb: 3 }}>
             <Typography>
