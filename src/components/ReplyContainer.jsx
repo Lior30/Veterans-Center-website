@@ -1,102 +1,168 @@
-// src/components/ReplyContainer.jsx
+
 import React, { useState } from "react";
-import { collection, addDoc, serverTimestamp, doc,
-  getDoc, setDoc, updateDoc} from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "../firebase.js";
+import UserService from "../services/UserService.js";
 import { Box, TextField, Button } from "@mui/material";
 
-export default function ReplyContainer({ messageId, onClose }) {
-  const [fullname, setFullname]   = useState("");
-  const [phone, setPhone]         = useState("");
+function ReplyContainer({ messageId, onClose }) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
   const [replyText, setReplyText] = useState("");
 
+  const [errors, setErrors] = useState({});
 
-const handleSubmit = async () => {
-  if (!fullname || !replyText) return;
+  const validate = () => {
+    const newErrors = {};
 
-  const messageDate = new Date().toISOString();
-  console.log("Saving reply at:", messageDate);
+    if (!firstName.trim()) {
+      newErrors.firstName = "נא למלא שם פרטי";
+    } else if (!UserService.isValidName(firstName.trim())) {
+      newErrors.firstName = "שם לא תקין";
+    }
 
-    // קודם שומרים את התשובה בתוך המסר
+    if (!lastName.trim()) {
+      newErrors.lastName = "נא למלא שם משפחה";
+    } else if (!UserService.isValidName(lastName.trim())) {
+      newErrors.lastName = "שם משפחה לא תקין";
+    }
+
+    if (!UserService.isValidPhone(phone.trim())) {
+      newErrors.phone = UserService.getPhoneError(phone.trim()) || "טלפון לא תקין";
+    }
+
+    if (!replyText.trim()) {
+      newErrors.replyText = "נא למלא את ההודעה";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
+
+    const fullname = `${firstName.trim()} ${lastName.trim()}`;
+    const phoneClean = phone.trim();
+    const replyTime = new Date().toISOString();
+
     await addDoc(collection(db, "messages", messageId, "replies"), {
       fullname,
-      phone,
+      phone: phoneClean,
       replyText,
       createdAt: serverTimestamp(),
     });
-  
+
     const messageRef = doc(db, "messages", messageId);
     const messageSnap = await getDoc(messageRef);
     const messageTitle = messageSnap.exists() ? messageSnap.data().title || "" : "";
 
-
-     // 2. מחשב את ה-userId כ"שם מלא_מספר טלפון"
-    const userId = `${fullname}_${phone}`;
-
-    // 3. בודק אם כבר יש דוק ב־users
-    const userRef  = doc(db, "users", userId);
+    const userId = `${firstName.trim()}_${lastName.trim()}_${phoneClean}`;
+    const userRef = doc(db, "users", userId);
     const userSnap = await getDoc(userRef);
 
-    // 4. אם לא קיים – יוצר אותו עם כל השדות המבוקשים
     if (!userSnap.exists()) {
-      // אפשר לפצל כאן לשם פרטי / אחר אם צריך
-      const [first, ...rest] = fullname.trim().split(" ");
-      const last            = rest.join(" ");
-
       await setDoc(
         userRef,
         {
-          user_id:      userId,
-          fullname:     fullname,
-          first_name:   first,
-          last_name:    last,
-          phone:        phone,
-          is_registered:false,
-          is_club_60:   false,
-          activities:   "",
-          activities_date: "",
-          survey:       "",
-          survey_date: "",
-          replies:  messageTitle,
-          replies_date: messageDate,
+          user_id: userId,
+          fullname,
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          phone: phoneClean,
+          is_registered: false,
+          is_club_60: false,
+          activities: [],
+          activities_date: [],
+          survey: [],
+          survey_date: [],
+          replies: [messageTitle],
+          replies_date: [replyTime],
         },
         { merge: true }
       );
-    }
-    else {
-      // משתמש קיים: עדכן על ידי שרשור הערכים החדשים לפני הישנים
+    } else {
       const data = userSnap.data();
-      const oldReplies = data.replies || "";
-      const oldDates   = data.replies_date ? [].concat(data.replies_date) : [];
-
-      const newReplies = [ messageTitle, ...oldReplies]; 
-
-
-      const newDates = [ messageDate, ...oldDates];   // ISO strings כלל המערך
+      const newReplies = [messageTitle, ...(data.replies || [])];
+      const newDates = [replyTime, ...(data.replies_date || [])];
 
       await updateDoc(userRef, {
-        replies:      newReplies,
+        replies: newReplies,
         replies_date: newDates,
       });
     }
 
-    onClose();
+    onClose?.();
+  };
+
+  const placeholderAlign = {
+    inputProps: { style: { textAlign: "right" } },
+    sx: {
+      "& input::placeholder": { textAlign: "right" },
+      "& textarea::placeholder": { textAlign: "right" },
+    }
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <TextField label="שם מלא"    value={fullname} onChange={e => setFullname(e.target.value)} fullWidth />
-      <TextField label="טלפון"      value={phone}    onChange={e => setPhone(e.target.value)}    fullWidth />
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, direction: "rtl" }}>
       <TextField
-        label="תגובה"
-        value={replyText}
-        onChange={e => setReplyText(e.target.value)}
-        multiline rows={4}
+        placeholder="שם פרטי"
+        value={firstName}
+        onChange={(e) => setFirstName(e.target.value)}
         fullWidth
+        error={!!errors.firstName}
+        helperText={errors.firstName}
+        inputProps={placeholderAlign.inputProps}
+        sx={placeholderAlign.sx}
+      />
+      <TextField
+        placeholder="שם משפחה"
+        value={lastName}
+        onChange={(e) => setLastName(e.target.value)}
+        fullWidth
+        error={!!errors.lastName}
+        helperText={errors.lastName}
+        inputProps={placeholderAlign.inputProps}
+        sx={placeholderAlign.sx}
+      />
+      <TextField
+        placeholder="טלפון"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+        fullWidth
+        error={!!errors.phone}
+        helperText={errors.phone}
+        inputProps={placeholderAlign.inputProps}
+        sx={placeholderAlign.sx}
+      />
+      <TextField
+        placeholder="כתוב את תגובתך כאן..."
+        value={replyText}
+        onChange={(e) => setReplyText(e.target.value)}
+        multiline
+        rows={4}
+        fullWidth
+        error={!!errors.replyText}
+        helperText={errors.replyText}
+        inputProps={placeholderAlign.inputProps}
+        sx={placeholderAlign.sx}
       />
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-        <Button variant="contained" onClick={handleSubmit}>שלח תגובה</Button>
+        <Button variant="contained" onClick={handleSubmit}>
+          שלח תגובה
+        </Button>
       </Box>
     </Box>
   );
 }
+
+export default ReplyContainer;

@@ -13,7 +13,7 @@ export default function CreateSurveyContainer() {
   const [questions, setQuestions] = useState([
     {
       id: "fullname",
-      text: "Full Name",
+      text: "שם מלא",
       type: "open",
       options: [],
       mandatory: true,
@@ -21,7 +21,7 @@ export default function CreateSurveyContainer() {
     },
     {
       id: "phone",
-      text: "Phone Number",
+      text: "מספר טלפון",
       type: "open",
       options: [],
       mandatory: true,
