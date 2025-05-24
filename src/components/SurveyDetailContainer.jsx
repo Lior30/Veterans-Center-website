@@ -66,7 +66,8 @@ export default function SurveyDetailContainer({ surveyId, onClose }) {
     if (!UserService.isValidPhone(phone)) newErrors.phone = UserService.getPhoneError(phone);
 
     for (let q of survey?.questions || []) {
-      if (q.mandatory && !answers[q.id]?.trim()) {
+      if (q.
+        datory && !answers[q.id]?.trim()) {
         newErrors[q.id] = "שדה חובה";
       }
     }
