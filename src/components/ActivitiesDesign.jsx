@@ -1,4 +1,5 @@
 // src/components/ActivitiesDesign.jsx
+import { Autocomplete } from "@mui/material";
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Container,
@@ -56,11 +57,41 @@ export default function ActivitiesDesign({
   onClose,
 }) {
   const [tagFilter, setTagFilter] = useState("ALL");
-  const allTags = useMemo(() => {
-    const set = new Set();
-    activities.forEach((a) => (a.tags || []).forEach((t) => set.add(t)));
-    return [...set];
+
+
+  // allTags עכשיו נטען גם מ־localStorage וגם מה־activities,
+  // ושומר חזרה ל־localStorage רק תגיות שהמשתמש הוסיף
+  const [allTags, setAllTags] = useState([]);
+
+  // 1. טען תגיות מה־API ומה־localStorage
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("customTags") || "[]");
+    const s = new Set(stored);
+    activities.forEach((a) => (a.tags || []).forEach((t) => s.add(t)));
+    setAllTags([...s]);
   }, [activities]);
+
+  // 2. בכל שינוי של allTags שמור בחזרה ל־localStorage רק תגיות חדשות
+  useEffect(() => {
+    const defaultSet = new Set();
+    activities.forEach((a) => (a.tags || []).forEach((t) => defaultSet.add(t)));
+    const custom = allTags.filter((t) => !defaultSet.has(t));
+    localStorage.setItem("customTags", JSON.stringify(custom));
+  }, [allTags, activities]);
+
+  // state לדיאלוג הוספת תגית חדשה
+  const [newTagDialogOpen, setNewTagDialogOpen] = useState(false);
+  const [newTagValue, setNewTagValue] = useState("");
+
+  // פונקציה לטיפול בהוספת תגית חדשה
+  const handleAddTag = () => {
+    const tag = newTagValue.trim();
+    if (tag && !allTags.includes(tag)) {
+      setAllTags((prev) => [...prev, tag]);
+    }
+    setNewTagValue("");
+    setNewTagDialogOpen(false);
+  };
 
   const [selAct, setSelAct] = useState(null);
   const [users, setUsers] = useState({});
@@ -125,17 +156,55 @@ export default function ActivitiesDesign({
           ]
     );
 
-    const holidayEvents = holidays;
-
-    return [...actEvents, ...holidayEvents];
+    return [...actEvents, ...holidays];
   }, [activities, holidays, tagFilter]);
 
   const columns = [
+<<<<<<< HEAD
     { field: "date", headerName: "תאריך", width: 110, headerAlign: "center", align: "center" },
     { field: "startTime", headerName: "התחלה", width: 110, headerAlign: "center", align: "center" },
     { field: "endTime", headerName: "סיום", width: 110, headerAlign: "center", align: "center" },
     { field: "name", headerName: "שם", flex: 1, headerAlign: "center", align: "center" },
     { field: "description", headerName: "תיאור", flex: 1, headerAlign: "center", align: "center" },
+=======
+    {
+      field: "date",
+      headerName: "תאריך",
+      width: 110,
+      headerAlign: "right",
+      align: "right",
+    },
+    {
+      field: "startTime",
+      headerName: "התחלה",
+      width: 110,
+      headerAlign: "right",
+      align: "right",
+    },
+    {
+      field: "endTime",
+      headerName: "סיום",
+      width: 110,
+      headerAlign: "right",
+      align: "right",
+    },
+    {
+      field: "name",
+      headerName: "שם",
+      flex: 1,
+      headerAlign: "right",
+      align: "right",
+    },
+    {
+      field: "description",
+      headerName: "תיאור",
+      flex: 1,
+      headerAlign: "right",
+      align: "right",
+    },
+
+    
+>>>>>>> 8f475d7 (Activities files updated, ActivitiesContainer, 25/05, 17:13)
     {
       field: "tags",
       headerName: "תגיות",
@@ -175,10 +244,20 @@ export default function ActivitiesDesign({
           <Button size="small" onClick={() => onEdit(params.row)} sx={{ mr: 1 }}>
             ערוך
           </Button>
-          <Button size="small" color="error" onClick={() => onDelete(params.row)} sx={{ mr: 1 }}>
+          <Button
+            size="small"
+            color="error"
+            onClick={() => onDelete(params.row)}
+            sx={{ mr: 1 }}
+          >
             מחק
           </Button>
-          <Button size="small" variant="outlined" onClick={() => setSelAct(params.row)} sx={{ whiteSpace: "nowrap" }}>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => setSelAct(params.row)}
+            sx={{ whiteSpace: "nowrap" }}
+          >
             נרשמים
           </Button>
         </>
@@ -188,22 +267,37 @@ export default function ActivitiesDesign({
 
   return (
     <Container dir="rtl">
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 4, mb: 2 }}>
-        <Typography variant="h4">פעילויות</Typography>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mt: 4,
+          mb: 2,
+          textAlign: "right",
+        }}
+      >
+        <Typography variant="h4" sx={{ textAlign: "right", width: "100%" }}>
+          פעילויות
+        </Typography>
         <Button variant="outlined" onClick={() => (window.location.href = "/")}>
           בית
         </Button>
       </Box>
 
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-        <Tabs value={tab} onChange={(_, v) => onTabChange(v)}>
+        <Tabs
+          value={tab}
+          onChange={(_, v) => onTabChange(v)}
+          sx={{ justifyContent: "flex-end" }}
+        >
           <Tab label="רשימה" />
           <Tab label="לוח שנה" />
         </Tabs>
       </Box>
 
       {tab === 0 && (
-        <Box sx={{ mt: 2 }}>
+        <Box sx={{ mt: 2, textAlign: "right" }}>
           <Button variant="contained" onClick={onNew} sx={{ mb: 2 }}>
             הוספת פעילות
           </Button>
@@ -220,15 +314,36 @@ export default function ActivitiesDesign({
       )}
 
       {tab === 1 && (
-        <Box sx={{ mt: 2 }}>
-          <ToggleButtonGroup exclusive value={tagFilter} onChange={(_, v) => setTagFilter(v || "ALL")} sx={{ mb: 2 }}>
-            <ToggleButton value="ALL">הכל</ToggleButton>
-            {allTags.map((t) => (
-              <ToggleButton key={t} value={t}>
-                {t}
-              </ToggleButton>
-            ))}
-          </ToggleButtonGroup>
+        <Box sx={{ mt: 2, textAlign: "right" }}>
+          {/* עטיפה חדשה ל־ToggleButtonGroup + כפתור "הוסף תגית" */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <ToggleButtonGroup
+              exclusive
+              value={tagFilter}
+              onChange={(_, v) => setTagFilter(v || "ALL")}
+            >
+              <ToggleButton value="ALL">הכל</ToggleButton>
+              {allTags.map((t) => (
+                <ToggleButton key={t} value={t}>
+                  {t}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+
+            <Button
+              variant="outlined"
+              onClick={() => setNewTagDialogOpen(true)}
+            >
+              הוסף תגית
+            </Button>
+          </Box>
 
           <FullCalendar
             plugins={[dayGridPlugin, interactionPlugin]}
@@ -238,46 +353,248 @@ export default function ActivitiesDesign({
             events={events}
             dateClick={(info) => onDateClick(info.dateStr)}
             eventClick={(info) => onEventClick(info)}
-            headerToolbar={{ left: "today prev,next", center: "title", right: "" }}
+            headerToolbar={{
+              left: "today prev,next",
+              center: "title",
+              right: "",
+            }}
             height={600}
           />
         </Box>
       )}
 
       <Dialog open={dialogOpen} onClose={onClose}>
-        <DialogTitle>{form.id ? "עריכת פעילות" : "הוספת פעילות חדשה"}</DialogTitle>
-        <DialogContent sx={{ display: "grid", gap: 2, pt: 1, minWidth: 400 }}>
-          <TextField placeholder="שם הפעילות" value={form.name} onChange={(e) => onFormChange((f) => ({ ...f, name: e.target.value }))} fullWidth inputProps={{ dir: "rtl", style: { textAlign: 'right' } }} />
-          <TextField placeholder="תיאור" value={form.description} onChange={(e) => onFormChange((f) => ({ ...f, description: e.target.value }))} fullWidth inputProps={{ dir: "rtl", style: { textAlign: 'right' } }} />
-          <TextField placeholder="תגיות (מופרדות בפסיקים)" value={(form.tags || []).join(", ")} onChange={(e) => onFormChange((f) => ({ ...f, tags: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) }))} fullWidth inputProps={{ dir: "rtl", style: { textAlign: 'right' } }} />
-          <TextField placeholder="תאריך" type="date" value={form.date} onChange={(e) => onFormChange((f) => ({ ...f, date: e.target.value }))} fullWidth inputProps={{ dir: "rtl", style: { textAlign: 'right' } }} />
-          <TextField placeholder="שעת התחלה" type="time" value={form.startTime} onChange={(e) => onFormChange((f) => ({ ...f, startTime: e.target.value }))} fullWidth inputProps={{ dir: "rtl", style: { textAlign: 'right' } }} />
-          <TextField placeholder="שעת סיום" type="time" value={form.endTime} onChange={(e) => onFormChange((f) => ({ ...f, endTime: e.target.value }))} fullWidth inputProps={{ dir: "rtl", style: { textAlign: 'right' } }} />
-          <TextField placeholder="קיבולת" type="number" value={form.capacity} onChange={(e) => onFormChange((f) => ({ ...f, capacity: e.target.value }))} fullWidth inputProps={{ dir: "rtl", style: { textAlign: 'right' } }} />
+        <DialogTitle sx={{ textAlign: "right" }}>
+          {form.id ? "עריכת פעילות" : "הוספת פעילות חדשה"}
+        </DialogTitle>
+        <DialogContent
+          sx={{
+            display: "grid",
+            gap: 2,
+            pt: 1,
+            minWidth: 400,
+            textAlign: "right",
+          }}
+        >
+          <TextField
+            placeholder="שם הפעילות"
+            value={form.name}
+            onChange={(e) =>
+              onFormChange((f) => ({ ...f, name: e.target.value }))
+            }
+            fullWidth
+            InputLabelProps={{
+              shrink: true,
+              sx: { textAlign: "right", right: 0, left: "auto" },
+            }}
+            inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
+          />
+          <TextField
+            placeholder="תיאור"
+            value={form.description}
+            onChange={(e) =>
+              onFormChange((f) => ({ ...f, description: e.target.value }))
+            }
+            fullWidth
+            InputLabelProps={{
+              shrink: true,
+              sx: { textAlign: "right", right: 0, left: "auto" },
+            }}
+            inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
+          />
 
-          <FormControlLabel control={<Checkbox checked={form.recurring} onChange={(e) => onFormChange((f) => ({ ...f, recurring: e.target.checked, weekdays: e.target.checked ? [] : [] }))} />} label="פעילות חוזרת?" />
+          
+          {/* Autocomplete לבחירת תגיות בלבד */}
+          <Autocomplete
+            multiple
+            options={allTags}
+            getOptionLabel={(opt) => opt}
+            value={form.tags || []}
+            onChange={(_, newTags) =>
+              onFormChange((f) => ({ ...f, tags: newTags }))
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="בחר תגיות"
+                required
+                InputLabelProps={{ shrink: true }}
+                inputProps={{
+                  ...params.inputProps,
+                  dir: "rtl",
+                  style: { textAlign: "right" },
+                }}
+                fullWidth
+              />
+            )}
+            sx={{ textAlign: "right", right: 0, left: "auto" }}
+          />
+
+          <TextField
+            label="תאריך"
+            type="date"
+            value={form.date}
+            onChange={(e) =>
+              onFormChange((f) => ({ ...f, date: e.target.value }))
+            }
+            fullWidth
+            InputLabelProps={{
+              shrink: true,
+              sx: {
+                position: "absolute",
+                top: "-6px",
+                right: "12px",
+                transform: "none",
+                backgroundColor: "#fff",
+                px: 0.5,
+                fontSize: "0.75rem",
+              },
+            }}
+            inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
+          />
+          <TextField
+            label="שעת התחלה"
+            type="time"
+            variant="outlined"
+            fullWidth
+            value={form.startTime}
+            onChange={(e) =>
+              onFormChange((f) => ({ ...f, startTime: e.target.value }))
+            }
+            InputLabelProps={{
+              shrink: true,
+              sx: {
+                position: "absolute",
+                top: "-6px",
+                right: "12px",
+                transform: "none",
+                backgroundColor: "#fff",
+                px: 0.5,
+                fontSize: "0.75rem",
+              },
+            }}
+          />
+          <TextField
+            label="שעת סיום"
+            type="time"
+            variant="outlined"
+            fullWidth
+            value={form.endTime}
+            onChange={(e) =>
+              onFormChange((f) => ({ ...f, endTime: e.target.value }))
+            }
+            InputLabelProps={{
+              shrink: true,
+              sx: {
+                position: "absolute",
+                top: "-6px",
+                right: "12px",
+                transform: "none",
+                backgroundColor: "#fff",
+                px: 0.5,
+                fontSize: "0.75rem",
+              },
+            }}
+          />
+          <TextField
+            label="קיבולת"
+            type="number"
+            value={form.capacity}
+            onChange={(e) =>
+              onFormChange((f) => ({ ...f, capacity: e.target.value }))
+            }
+            fullWidth
+            InputLabelProps={{
+              shrink: true,
+              sx: {
+                position: "absolute",
+                top: "-6px",
+                right: "12px",
+                transform: "none",
+                backgroundColor: "#fff",
+                px: 0.5,
+                fontSize: "0.75rem",
+              },
+            }}
+            inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
+          />
+
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={form.recurring}
+                onChange={(e) =>
+                  onFormChange((f) => ({
+                    ...f,
+                    recurring: e.target.checked,
+                    weekdays: e.target.checked ? [] : [],
+                  }))
+                }
+              />
+            }
+            label="פעילות חוזרת?"
+            sx={{
+              width: "100%",
+              justifyContent: "flex-end",
+              flexDirection: "row-reverse",
+            }}
+          />
           {form.recurring && (
             <Box>
-              <Typography sx={{ mb: 1 }}>בחר ימי שבוע חוזרים:</Typography>
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+              <Typography sx={{ mb: 1, textAlign: "right" }}>
+                בחר ימי שבוע חוזרים:
+              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 1,
+                  justifyContent: "flex-end",
+                }}
+              >
                 {WEEKDAYS.map((d) => (
-                  <FormControlLabel key={d.value} label={d.label} control={<Checkbox checked={(form.weekdays || []).includes(d.value)} onChange={(e) => {
-                    const curr = form.weekdays || [];
-                    const next = e.target.checked ? [...curr, d.value] : curr.filter((wd) => wd !== d.value);
-                    onFormChange((f) => ({ ...f, weekdays: next }));
-                  }} />} />
+                  <FormControlLabel
+                    key={d.value}
+                    label={d.label}
+                    sx={{ mr: 0 }}
+                    control={
+                      <Checkbox
+                        checked={(form.weekdays || []).includes(d.value)}
+                        onChange={(e) => {
+                          const curr = form.weekdays || [];
+                          const next = e.target.checked
+                            ? [...curr, d.value]
+                            : curr.filter((wd) => wd !== d.value);
+                          onFormChange((f) => ({ ...f, weekdays: next }));
+                        }}
+                      />
+                    }
+                  />
                 ))}
               </Box>
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ justifyContent: "flex-end" }}>
           <Button onClick={onClose}>בטל</Button>
-          {form.id && <Button color="error" onClick={() => { onDelete(form); onClose(); }}>מחק</Button>}
-          <Button variant="contained" onClick={onSave}>שמור</Button>
+          {form.id && (
+            <Button
+              color="error"
+              onClick={() => {
+                onDelete(form);
+                onClose();
+              }}
+            >
+              מחק
+            </Button>
+          )}
+          <Button variant="contained" onClick={onSave}>
+            שמור
+          </Button>
         </DialogActions>
       </Dialog>
 
+<<<<<<< HEAD
       <Dialog open={Boolean(selAct)} onClose={() => setSelAct(null)} fullWidth maxWidth="sm">
         <DialogTitle>נרשמים – {selAct?.name}</DialogTitle>
         <DialogContent dividers>
@@ -285,20 +602,68 @@ export default function ActivitiesDesign({
           {(selAct?.participants || []).map(({ name, phone }) => (
             <Stack
               key={phone}
+=======
+      {/* דיאלוג הוספת תגית חדשה */}
+      <Dialog
+        open={newTagDialogOpen}
+        onClose={() => setNewTagDialogOpen(false)}
+      >
+        <DialogTitle>הוספת תגית חדשה</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="שם תגית"
+            fullWidth
+            value={newTagValue}
+            onChange={(e) => setNewTagValue(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setNewTagDialogOpen(false)}>בטל</Button>
+          <Button onClick={handleAddTag}>הוסף</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* דיאלוג נרשמים */}
+      <Dialog
+        open={Boolean(selAct)}
+        onClose={() => setSelAct(null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle sx={{ textAlign: "right" }}>
+          נרשמים – {selAct?.name}
+        </DialogTitle>
+        <DialogContent dividers sx={{ textAlign: "right" }}>
+          {(selAct?.registrants || []).length === 0 && "אין נרשמים כרגע."}
+          {(selAct?.registrants || []).map((uid) => (
+            <Stack
+              key={uid}
+>>>>>>> 8f475d7 (Activities files updated, ActivitiesContainer, 25/05, 17:13)
               direction="row"
               alignItems="center"
               justifyContent="space-between"
               sx={{ mb: 1 }}
             >
+<<<<<<< HEAD
               {/* directly show name & phone */}
               <span>{name} , {phone}</span>
               <IconButton onClick={() => kickParticipant(phone)}>
+=======
+              <span style={{ textAlign: "right", flex: 1 }}>
+                {users[uid] || uid}
+              </span>
+              <IconButton onClick={() => kickUser(uid)}>
+>>>>>>> 8f475d7 (Activities files updated, ActivitiesContainer, 25/05, 17:13)
                 <DeleteIcon />
               </IconButton>
             </Stack>
           ))}
         </DialogContent>
+<<<<<<< HEAD
         <DialogActions>
+=======
+        <DialogActions sx={{ justifyContent: "flex-end" }}>
+>>>>>>> 8f475d7 (Activities files updated, ActivitiesContainer, 25/05, 17:13)
           <Button onClick={() => setSelAct(null)}>סגור</Button>
         </DialogActions>
       </Dialog>
