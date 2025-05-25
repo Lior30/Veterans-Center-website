@@ -9,6 +9,7 @@ import {
   runTransaction,
   arrayUnion,
   arrayRemove,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -16,6 +17,12 @@ export default class ActivityService {
   /* collection constants */
   static COL    = "activities";
   static colRef = collection(db, ActivityService.COL);
+
+
+  /** ➖ delete מסמך שלם */
+  static delete(id) {
+    return deleteDoc(doc(db, ActivityService.COL, id));
+  }
 
   /* ──────────────────────────── Realtime stream ──────────────────────────── */
   static subscribe(callback) {
