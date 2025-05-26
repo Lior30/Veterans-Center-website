@@ -160,13 +160,6 @@ export default function ActivitiesDesign({
   }, [activities, holidays, tagFilter]);
 
   const columns = [
-<<<<<<< HEAD
-    { field: "date", headerName: "תאריך", width: 110, headerAlign: "center", align: "center" },
-    { field: "startTime", headerName: "התחלה", width: 110, headerAlign: "center", align: "center" },
-    { field: "endTime", headerName: "סיום", width: 110, headerAlign: "center", align: "center" },
-    { field: "name", headerName: "שם", flex: 1, headerAlign: "center", align: "center" },
-    { field: "description", headerName: "תיאור", flex: 1, headerAlign: "center", align: "center" },
-=======
     {
       field: "date",
       headerName: "תאריך",
@@ -203,8 +196,7 @@ export default function ActivitiesDesign({
       align: "right",
     },
 
-    
->>>>>>> 8f475d7 (Activities files updated, ActivitiesContainer, 25/05, 17:13)
+
     {
       field: "tags",
       headerName: "תגיות",
@@ -594,15 +586,7 @@ export default function ActivitiesDesign({
         </DialogActions>
       </Dialog>
 
-<<<<<<< HEAD
-      <Dialog open={Boolean(selAct)} onClose={() => setSelAct(null)} fullWidth maxWidth="sm">
-        <DialogTitle>נרשמים – {selAct?.name}</DialogTitle>
-        <DialogContent dividers>
-          {(selAct?.participants || []).length === 0 && "אין נרשמים כרגע."}
-          {(selAct?.participants || []).map(({ name, phone }) => (
-            <Stack
-              key={phone}
-=======
+
       {/* דיאלוג הוספת תגית חדשה */}
       <Dialog
         open={newTagDialogOpen}
@@ -638,32 +622,25 @@ export default function ActivitiesDesign({
           {(selAct?.registrants || []).map((uid) => (
             <Stack
               key={uid}
->>>>>>> 8f475d7 (Activities files updated, ActivitiesContainer, 25/05, 17:13)
               direction="row"
               alignItems="center"
               justifyContent="space-between"
               sx={{ mb: 1 }}
             >
-<<<<<<< HEAD
-              {/* directly show name & phone */}
-              <span>{name} , {phone}</span>
-              <IconButton onClick={() => kickParticipant(phone)}>
-=======
+
               <span style={{ textAlign: "right", flex: 1 }}>
                 {users[uid] || uid}
               </span>
               <IconButton onClick={() => kickUser(uid)}>
->>>>>>> 8f475d7 (Activities files updated, ActivitiesContainer, 25/05, 17:13)
+
                 <DeleteIcon />
               </IconButton>
             </Stack>
           ))}
         </DialogContent>
-<<<<<<< HEAD
-        <DialogActions>
-=======
+
         <DialogActions sx={{ justifyContent: "flex-end" }}>
->>>>>>> 8f475d7 (Activities files updated, ActivitiesContainer, 25/05, 17:13)
+
           <Button onClick={() => setSelAct(null)}>סגור</Button>
         </DialogActions>
       </Dialog>

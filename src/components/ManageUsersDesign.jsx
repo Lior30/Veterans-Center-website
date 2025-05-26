@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { db } from "../firebase";
 import {
   collection,
@@ -13,6 +13,20 @@ import {
   addDoc
 } from "firebase/firestore";
 import UserService from "../services/UserService";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import EditIcon   from "@mui/icons-material/Edit";
+import CancelIcon from "@mui/icons-material/Cancel";
+import {
+  Box,
+  Button,
+  Typography,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton,
+  // … שאר ה-imports הקיימים
+} from "@mui/material";
 
 // מחוץ לקומפוננטה:
 function formatDate(dateValue) {
@@ -47,6 +61,55 @@ function ensureUserId(u) {
 }
 
 
+/* -------------------------------------------------
+   קומפוננטה שמציגה פירוט של משתמש בודד
+--------------------------------------------------*/
+function UserDetails({ user, filter }) {
+  const [openCats, setOpenCats] = useState({});         // {activity:true …}
+
+  /** פתיחה/סגירה של קטגוריה */
+  const toggle = (cat) => setOpenCats(p => ({ ...p, [cat]: !p[cat] }));
+
+  /** אילו קטגוריות להציג לפי המסנן הכללי */
+  const CATS = [
+    { key: "activity", label: "פעילויות", names: user.activities, dates: user.activities_date },
+    { key: "survey",   label: "סקרים",     names: user.survey,     dates: user.survey_date    },
+    { key: "replies",  label: "הודעות",   names: user.replies,    dates: user.replies_date   },
+  ]; 
+
+  return (
+    <div style={{ direction: "rtl" }}>
+      {CATS.map(cat => (
+        <div key={cat.key} style={{ marginBottom: 4 }}>
+          {/* כותרת קטגוריה (▶ / ▼) */}
+          <button
+            onClick={() => toggle(cat.key)}
+            style={{ border: "none", background: "none", cursor: "pointer", fontWeight: "bold" }}
+          >
+            {openCats[cat.key] ? "▼" : "▶"} {cat.label}
+          </button>
+
+          {/* רשימת פריטים */}
+          {openCats[cat.key] && (
+            <ul style={{ margin: "4px 0 0 0", padding: "0 0 0 16px", listStyle: "disc" }}>
+              {(cat.names || []).map((name, i) => (
+                <li key={i}>
+                  {name}
+                  {cat.dates?.[i] && " — " + formatDate(cat.dates[i])}
+                </li>
+              ))}
+              {(!cat.names || cat.names.length === 0) && <li>אין נתונים</li>}
+            </ul>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+
+
 
 export default function ManageUsersDesign({ users, filter, onFilterChange, manualUsers, setManualUsers, markDeleted }) {
   const [showModal, setShowModal] = useState(false);
@@ -60,10 +123,17 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   const [firstTouched,    setFirstTouched]    = useState(false);
   const [lastTouched,     setLastTouched]     = useState(false);
   const isRepliesTab = filter === "replies";
+  const [showRequests,  setShowRequests]  = useState(false); 
+  const [openRows, setOpenRows] = useState(new Set());
+  const [editUser,  setEditUser]  = useState(null);
 
 
+  const [allUsers, setAllUsers] = useState([]);
 
-    const [allUsers, setAllUsers] = useState([]);
+    const requests = useMemo(
+  () => allUsers.filter(u => !u.is_registered && !u.is_club_60),
+  [allUsers]
+);
 
   useEffect(() => {
     // טען את כל המשתמשים מאוסף users
@@ -80,9 +150,9 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   const matchesTab = u => {
     if (activeTab === "registered")   return u.is_registered && !u.is_club_60;
     if (activeTab === "senior")       return u.is_club_60;
-    if (activeTab === "unregistered") return !u.is_registered;
     return true; // all
   }
+
 
     // מפותחים מערכי שורות של פעילויות וסקרים
   const rowsActivities = allUsers
@@ -118,7 +188,6 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   const rowsAll = allUsers.filter(u => {
    if (activeTab === "registered")  return u.is_registered && !u.is_club_60;
    if (activeTab === "senior")      return u.is_club_60;
-   if (activeTab === "unregistered") return !u.is_registered;
    return true;
  });
 
@@ -169,6 +238,33 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     });
   else if (filter === "replies")  rowsToShow = rowsReplies;
   else                             rowsToShow = rowsAllWithShape;
+
+ async function approveRequest(u) {
+  // בטיחות – אם אין id ננסה ליפול ל-user_id
+  const docId = u.id || u.user_id;
+  if (!docId) return alert("לא נמצא מזהה למסמך");
+
+  await updateDoc(doc(db, "users", docId), {
+    is_registered: true,
+    is_club_60:   false,
+  });
+
+  // עדכון ה-state המקומי כדי שה-UI יתחדש בלי רענון
+  setAllUsers(prev =>
+    prev.map(p => p.id === docId ? { ...p, is_registered: true } : p)
+  );
+}
+
+async function hide(u) {
+  const docId = u.id || u.user_id;
+  if (!docId) return alert("לא נמצא מזהה למסמך");
+
+  await deleteDoc(doc(db, "users", docId));
+
+  // מסלק מה-state
+  setAllUsers(prev => prev.filter(p => p.id !== docId));
+}
+
 
    // שגיאות שם
   const firstError = !newFirstName.trim()
@@ -392,6 +488,60 @@ for (const msgDoc of messagesSnap.docs) {
  * @param {Object} row — האובייקט { user, activityName?, surveyName?, title?, … }
  * @param {"activity"|"survey"|"replies"} type
  */
+
+/** מעדכן שם משתמש בכל האוספים הרלוונטיים */
+async function saveEditedUser(u) {
+  const full  = `${u.first_name.trim()} ${u.last_name.trim()}`.trim();
+
+  /* 1) users (המסמך הראשי) */
+  await updateDoc(doc(db,"users", u.id || u.user_id), {
+    first_name: u.first_name,
+    last_name : u.last_name,
+    fullname  : full,
+  });
+
+  /* 2) activityRegistrations / surveyResponses / replies */
+  const phone = u.phone;
+  const coll = [
+    { ref: collection(db,"activityRegistrations") },
+    { ref: collection(db,"surveyResponses")       },
+  ];
+
+  for (const {ref} of coll) {
+    const snap = await getDocs(query(ref, where("phone","==",phone)));
+    for (const d of snap.docs) {
+      await updateDoc(d.ref, {
+        first_name: u.first_name,
+        last_name : u.last_name,
+        fullname  : full,
+      });
+    }
+  }
+
+  /* 3) replies – תת-אוסף messages/<msg>/replies */
+  const msgs = await getDocs(collection(db,"messages"));
+  for (const m of msgs.docs) {
+    const reps = await getDocs(
+      query(collection(db,"messages",m.id,"replies"), where("phone","==",phone))
+    );
+    for (const r of reps.docs) {
+      await updateDoc(r.ref,{ fullName: full });
+    }
+  }
+
+  /* 4) עדכון state מקומי */
+  setAllUsers(prev =>
+    prev.map(p =>
+      p.phone === phone
+        ? { ...p, first_name: u.first_name, last_name: u.last_name, fullname: full }
+        : p
+    )
+  );
+  setEditUser(null);
+  alert("השם עודכן בהצלחה");
+}
+
+
 async function acknowledgeRow(row, type) {
   const u        = row.user;
   const userId   = ensureUserId(u);
@@ -460,8 +610,103 @@ async function acknowledgeRow(row, type) {
 
 
   return (
-    <div style={{ padding: 40, direction: "rtl", textAlign: "right" }}>
-      <h1>ניהול משתמשים</h1>
+    <>
+      <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
+      ניהול משתמשים
+    </Typography>
+
+    {/* ►► 5-ב – כפתור בקשות בין הכותרת ל-filter ◄◄ */}
+    <Box sx={{ display: "flex", alignItems: "center", mb: 3, gap: 2 }}>
+
+           <button
+          onClick={() => setShowRequests(true)}
+          style={{ position:"relative", fontSize:16, padding:"6px 12px" }}
+        >
+          בקשות
+          {requests.length > 0 && (
+            <span
+              style={{
+                position:"absolute", top:-8, left:-8,
+                background:"crimson", color:"#fff",
+                borderRadius:"50%", padding:"2px 6px", fontSize:12
+              }}
+            >
+              {requests.length}
+            </span>
+          )}
+        </button>
+      </Box>
+
+      <Dialog
+  open={showRequests}
+  onClose={() => setShowRequests(false)}
+  fullWidth
+  maxWidth="sm"
+>
+  <DialogTitle sx={{ m: 0, p: 2, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+   בקשות (משתמשים ללא סטטוס)
+   <IconButton onClick={() => setShowRequests(false)} size="small">
+     <CancelIcon />
+   </IconButton>
+ </DialogTitle>
+
+  <DialogContent dividers>
+    <table  style={{ width:"100%", borderCollapse:"collapse", direction:"rtl" }}>
+      <thead>
+        <tr>
+          <th>שם מלא</th>
+          <th>טלפון</th>
+          <th style={{ textAlign: "center" }}>פעולות</th>
+        </tr>
+      </thead>
+      <tbody>
+        {requests.map(u => (
+          <tr key={u.id}>
+            
+               {/* עמודה 1 – שם מלא (מימין) */}
+      <td style={{ textAlign: "right" }}>
+        {u.fullname || `${u.first_name || ""} ${u.last_name || ""}`.trim()}
+      </td>
+
+      {/* עמודה 2 – טלפון (אמצע) */}
+      <td style={{ textAlign: "center" }}>
+        {u.phone}
+      </td>
+
+      {/* עמודה 3 – כפתורי ✔︎/✖︎ (משמאל) */}
+      <td style={{ textAlign: "center" }}>
+        <IconButton
+  size="small"
+  onClick={async () => {
+    await approveRequest(u, "registered");
+  }}
+>
+  <CheckCircleOutlineIcon color="success" fontSize="small" />
+  </IconButton>
+
+  <IconButton
+    size="small"
+    onClick={async () => {
+      await hide(u);
+    }}
+  >
+    <CancelIcon color="error" fontSize="small" />
+  </IconButton>
+      </td>
+          </tr>
+        ))}
+        {requests.length === 0 && (
+          <tr>
+            <td colSpan={3} style={{ textAlign: "center", padding: 16 }}>
+              אין בקשות פתוחות
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </DialogContent>
+</Dialog>
+
 
       {/* ----------------------------------------
           השורה הזו תופיע *מעל* הטבלה, במרכז
@@ -512,12 +757,7 @@ async function acknowledgeRow(row, type) {
             padding: 4,
           }}
         >
-          <button
-            onClick={() => setActiveTab("unregistered")}
-            style={{ ...tabStyle, ...(activeTab === "unregistered" ? activeTabStyle : {}) }}
-          >
-            לא רשומים
-          </button>
+
           <button
             onClick={() => setActiveTab("registered")}
             style={{ ...tabStyle, ...(activeTab === "registered" ? activeTabStyle : {}) }}
@@ -661,6 +901,8 @@ async function acknowledgeRow(row, type) {
         </div>
       )}
 
+
+
 {/* Users table */}
 <table style={{ width: "100%", borderCollapse: "collapse" }}>
   <thead>
@@ -691,32 +933,57 @@ async function acknowledgeRow(row, type) {
 <tbody>
   {rowsToShow.map((row, idx) => {
     const u = row.user;
+
     return (
-      <tr key={idx}>
-        <td>{u.fullname}</td>
-        <td>{u.phone}</td>
+      <React.Fragment key={idx}>
+        {/* ── שורה רגילה ── */}
+        <tr>
+          {/* כפתור ⋯ + שם מלא */}
+          <td>
+            <button
+              style={{ border:"none", background:"transparent", cursor:"pointer" }}
+              onClick={() => {
+                const s = new Set(openRows);
+                s.has(u.user_id) ? s.delete(u.user_id) : s.add(u.user_id);
+                setOpenRows(s);
+              }}
+            >
+              ⋯
+            </button>
+            {u.fullname}
+          </td>
 
-        {filter === "activity" && <>
-          <td>{row.activityName}</td>
-          <td>{formatDate(row.activityDate)}</td>
-        </>}
+          {/* מספר טלפון */}
+          <td style={td}>{u.phone}</td>
 
-        {filter === "survey" && <>
-          <td>{row.surveyName}</td>
-          <td>{formatDate(row.surveyDate)}</td>
-        </>}
+          {/* עמודות מותנות – פעילות / סקר / תגובה */}
+          {filter === "activity" && (
+            <>
+              <td>{row.activityName}</td>
+              <td>{formatDate(row.activityDate)}</td>
+            </>
+          )}
+          {filter === "survey" && (
+            <>
+              <td>{row.surveyName}</td>
+              <td>{formatDate(row.surveyDate)}</td>
+            </>
+          )}
+          {filter === "both" && (
+            <>
+              <td>{row.activityName || row.surveyName}</td>
+              <td>{formatDate(row.activityDate || row.surveyDate)}</td>
+            </>
+          )}
+          {filter === "replies" && (
+            <>
+              <td>{row.title}</td>
+              <td>{formatDate(row.date)}</td>
+            </>
+          )}
 
-        {filter === "both" && <>
-          <td>{row.activityName || row.surveyName}</td>
-          <td>{formatDate(row.activityDate || row.surveyDate)}</td>
-        </>}
-
-        {filter === "replies" && <>
-          <td>{row.title}</td>
-          <td>{formatDate(row.date)}</td>
-        </>}
-
-          <td style={{ ...td, position: "relative" }}>
+          {/* פעולות */}
+          <td style={{ ...td, position:"relative" }}>
             <div style={{ display: "flex", gap: 4 }}>
 
                 {filter !== "all" && (
@@ -737,31 +1004,17 @@ async function acknowledgeRow(row, type) {
                   </button>
                 )}
 
-              {activeTab === "unregistered" && (
-                <>
-                  <button
-                     onClick={() => updateUserType(u, "registered")}
-                     style={actionButtonStyle}
-                  >
-                    הוסף לרשומים
-                  </button>
-                  <button
-                     onClick={() => updateUserType(u, "senior")}
-                     style={actionButtonStyle}
-                  >
-                    הוסף לחברי מרכז ה-60+
-                  </button>
-                  <button
-                     onClick={() => deleteUser(u)}
-                     style={deleteButtonStyle}
-                  >
-                    מחק
-                  </button>
-                </>
-              )}
 
               {activeTab === "registered" && (
                 <>
+                  {/* ✎ כפתור עריכה */}
+                    <IconButton
+                      size="small"
+                      title="עריכת שם"
+                      onClick={() => setEditUser(u)}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
                   <button
                     type="button"
                     style={actionButtonStyle}
@@ -783,6 +1036,14 @@ async function acknowledgeRow(row, type) {
 
               {activeTab === "senior" && (
                 <>
+                 {/* ✎ כפתור עריכה גם בטאב senior */}
+                  <IconButton
+                    size="small"
+                    title="עריכת שם"
+                    onClick={() => setEditUser(u)}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
                   <button
                     type="button"
                     style={actionButtonStyle}
@@ -793,21 +1054,59 @@ async function acknowledgeRow(row, type) {
                   <button
                     type="button"
                     style={deleteButtonStyle}
-                    onClick={() => deleteUser(user)}
+                    onClick={() => deleteUser(u)}
                   >
                     מחק
                   </button>
                 </>
               )}
-            </div>
+            </div> 
           </td>
         </tr>
-      );
-    })}
-  </tbody>
-</table>
-</div>
- ); 
+
+        {/* ── שורת-הפירוט המתקפלת ── */}
+        {openRows.has(u.user_id) && (
+          <tr>
+            <td colSpan="100%" style={{ background:"#fafafa", padding:8 }}>
+              <UserDetails user={u} filter={filter} />
+            </td>
+          </tr>
+        )}
+      </React.Fragment>
+    );
+  })}
+</tbody>
+        </table>
+
+        {/* ✎ Modal עריכת שם */}
+{editUser && (
+  <Dialog open onClose={() => setEditUser(null)} maxWidth="xs" fullWidth>
+    <DialogTitle>עריכת משתמש</DialogTitle>
+    <DialogContent sx={{ display:"flex", flexDirection:"column", gap:2, mt:1 }}>
+      <TextField
+        label="שם פרטי"
+        defaultValue={editUser.first_name}
+        onChange={e => editUser.first_name = e.target.value}
+        fullWidth
+      />
+      <TextField
+        label="שם משפחה"
+        defaultValue={editUser.last_name}
+        onChange={e => editUser.last_name = e.target.value}
+        fullWidth
+      />
+      <Button
+        variant="contained"
+        onClick={() => saveEditedUser(editUser)}
+      >
+        שמירה
+      </Button>
+    </DialogContent>
+  </Dialog>
+)}
+
+    </>
+  ); 
 }
 
 const th = {
