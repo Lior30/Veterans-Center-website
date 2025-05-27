@@ -3,7 +3,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Container,
-  Paper,
+  Card,
+  CardContent,
   Grid,
   Typography,
   Button,
@@ -14,7 +15,9 @@ import {
   DialogActions,
   Stack,
   TextField,
-  Alert
+  Alert,
+  Grow,
+  Fade
 } from "@mui/material";
 
 import MessageService from "../services/MessageService.js";
@@ -36,15 +39,16 @@ export default function LandingPage() {
 
   const [selectedFlyerIndex, setSelectedFlyerIndex] = useState(0);
   const selectedFlyer = flyers[selectedFlyerIndex] || null;
+  const [flyerDialogOpen, setFlyerDialogOpen] = useState(false);
 
   const [activityRegId, setActivityRegId] = useState(null);
-
   const [participantName, setParticipantName] = useState("");
   const [participantPhone, setParticipantPhone] = useState("");
   const [participantErr, setParticipantErr] = useState("");
 
   const [selectedMsg, setSelectedMsg] = useState(null);
   const [selectedSurvey, setSelectedSurvey] = useState(null);
+  const [selectedActivity, setSelectedActivity] = useState(null);
 
   useEffect(() => {
     MessageService.list()
@@ -93,102 +97,178 @@ export default function LandingPage() {
     }
   };
 
+  const getUpcomingWeekActivities = () => {
+    const now = new Date();
+    const oneWeekFromNow = new Date();
+    oneWeekFromNow.setDate(now.getDate() + 7);
+    return activities.filter(a => {
+      const d = new Date(a.date);
+      return d >= now && d <= oneWeekFromNow;
+    });
+  };
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h3" align="center" color="primary.main" gutterBottom>
-        מרכז ותיקים בית הכרם
-      </Typography>
+      <Fade in timeout={800}>
+        <Typography variant="h3" align="center" color="primary.main" gutterBottom>
+          מרכז ותיקים בית הכרם
+        </Typography>
+      </Fade>
 
-      <Grid container spacing={4} sx={{ flexWrap: "nowrap" }}>
-        {/* Messages + Surveys (שמאל) */}
+      {/* פעילויות השבוע - ראשון */}
+      <Fade in timeout={1000}>
+        <Card sx={{ mt: 4 }}>
+          <CardContent>
+            <Typography variant="h5" color="secondary.main" gutterBottom>
+              פעילויות השבוע
+            </Typography>
+            <Box sx={{ display: "flex", overflowX: "auto", gap: 2, py: 2 }}>
+              {getUpcomingWeekActivities().map(activity => (
+                <Card key={activity.id} sx={{ minWidth: 260, p: 2, backgroundColor: "#fdfdfd" }}>
+                  <Typography variant="h6" color="primary.main">{activity.name}</Typography>
+                  <Typography variant="body2">תאריך: {activity.date}</Typography>
+                  <Typography variant="body2">שעה: {activity.startTime} - {activity.endTime}</Typography>
+                  <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
+                    <Button size="small" variant="outlined" onClick={() => setSelectedActivity(activity)}>
+                      פרטים
+                    </Button>
+                    <Button size="small" variant="contained" onClick={() => setActivityRegId(activity.id)}>
+                      הרשמה
+                    </Button>
+                  </Box>
+                </Card>
+              ))}
+            </Box>
+          </CardContent>
+        </Card>
+      </Fade>
+
+      {/* הודעות + סקרים + פליירים */}
+      <Grid container spacing={4} sx={{ mt: 4, flexWrap: "nowrap" }}>
         <Grid item md={8}>
           <Stack spacing={4}>
-            <Paper>
-              <Typography variant="h5" color="secondary.main" sx={{ p: 2 }}>
-                הודעות אחרונות
-              </Typography>
-              <Box sx={{ display: "flex", overflowX: "auto", p: 2, "&::-webkit-scrollbar": { display: "none" } }}>
-                {messages.slice(0, 5).map(m => (
-                  <Paper key={m.id} elevation={1} sx={{ minWidth: 200, mr: 2, p: 2, borderRadius: 2 }}>
-                    <Typography variant="subtitle1" gutterBottom>{m.title}</Typography>
-                    <Typography variant="body2">{m.body}</Typography>
-                    <Button size="small" sx={{ mt: 1 }} onClick={() => setSelectedMsg(m)}>
-                      השב
-                    </Button>
-                  </Paper>
-                ))}
-              </Box>
-            </Paper>
+            <Grow in timeout={500}>
+              <Card sx={{ background: "linear-gradient(135deg, #f0f4ff, #ffffff)" }}>
+                <CardContent>
+                  <Typography variant="h5" color="secondary.main" gutterBottom>
+                    הודעות אחרונות
+                  </Typography>
+                  <Box sx={{
+                    display: "flex", overflowX: "auto", p: 1, gap: 2,
+                    "&::-webkit-scrollbar": { height: 8 },
+                    "&::-webkit-scrollbar-thumb": { backgroundColor: "#ccc", borderRadius: 4 }
+                  }}>
+                    {messages.map(m => (
+                      <Card key={m.id} sx={{ minWidth: 220, p: 2, flexShrink: 0, transition: "0.3s", '&:hover': { boxShadow: 6 } }}>
+                        <Typography variant="h6" gutterBottom>{m.title}</Typography>
+                        <Typography variant="body2">{m.body}</Typography>
+                        <Button size="small" sx={{ mt: 1 }} onClick={() => setSelectedMsg(m)} variant="outlined">
+                          השב
+                        </Button>
+                      </Card>
+                    ))}
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grow>
 
-            <Paper>
-              <Typography variant="h5" color="secondary.main" sx={{ p: 2 }}>
-                סקרים פתוחים
-              </Typography>
-              <Box sx={{ display: "flex", overflowX: "auto", p: 2, "&::-webkit-scrollbar": { display: "none" } }}>
-                {surveys.slice(0, 5).map(s => (
-                  <Paper key={s.id} elevation={1} sx={{ minWidth: 200, mr: 2, p: 2, borderRadius: 2 }}>
-                    <Typography variant="subtitle1" gutterBottom>{s.title}</Typography>
-                    <Button variant="contained" size="small" onClick={() => setSelectedSurvey(s)}>
-                      למילוי הסקר
-                    </Button>
-                  </Paper>
-                ))}
-              </Box>
-            </Paper>
+            <Grow in timeout={800}>
+              <Card sx={{ background: "linear-gradient(135deg, #fff7f0, #ffffff)" }}>
+                <CardContent>
+                  <Typography variant="h5" color="secondary.main" gutterBottom>
+                    סקרים פתוחים
+                  </Typography>
+                  <Box sx={{
+                    display: "flex", overflowX: "auto", p: 1, gap: 2,
+                    "&::-webkit-scrollbar": { height: 8 },
+                    "&::-webkit-scrollbar-thumb": { backgroundColor: "#ccc", borderRadius: 4 }
+                  }}>
+                    {surveys.map(s => (
+                      <Card key={s.id} sx={{ minWidth: 220, p: 2, flexShrink: 0, transition: "0.3s", '&:hover': { boxShadow: 6 } }}>
+                        <Typography variant="h6" gutterBottom>{s.title}</Typography>
+                        <Button variant="contained" size="small" onClick={() => setSelectedSurvey(s)}>
+                          למילוי הסקר
+                        </Button>
+                      </Card>
+                    ))}
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grow>
           </Stack>
         </Grid>
 
-        {/* Flyer (ימין) */}
         <Grid item md={4}>
           {selectedFlyer && (
-            <Paper elevation={0} sx={{ p: 2, textAlign: "center" }}>
-              <Box
-                component="img"
-                src={selectedFlyer.fileUrl}
-                alt={selectedFlyer.name}
-                sx={{ width: "100%", maxWidth: "300px", borderRadius: 2, boxShadow: 3, cursor: "pointer", mb: 2 }}
-                onClick={() => setActivityRegId(activity.id)}  
-              />
-              <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  disabled={selectedFlyerIndex === 0}
-                  onClick={() => setSelectedFlyerIndex(i => i - 1)}
-                >
-                  הקודם
-                </Button>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  disabled={selectedFlyerIndex === flyers.length - 1}
-                  onClick={() => setSelectedFlyerIndex(i => i + 1)}
-                >
-                  הבא
-                </Button>
-              </Box>
-            </Paper>
+            <Grow in timeout={1200}>
+              <Card sx={{ textAlign: "center", p: 2, background: "linear-gradient(135deg, #e0f7ff, #ffffff)" }}>
+                <CardContent>
+                  <Box
+                    component="img"
+                    src={selectedFlyer.fileUrl}
+                    alt={selectedFlyer.name}
+                    sx={{
+                      width: "100%", maxWidth: 320, borderRadius: 2, boxShadow: 3, cursor: "pointer", mb: 2,
+                      transition: "0.3s", '&:hover': { transform: "scale(1.03)" }
+                    }}
+                    onClick={() => setFlyerDialogOpen(true)}
+                  />
+                  <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
+                    <Button variant="outlined" disabled={selectedFlyerIndex === 0} onClick={() => setSelectedFlyerIndex(i => i - 1)}>הקודם</Button>
+                    <Button variant="outlined" disabled={selectedFlyerIndex === flyers.length - 1} onClick={() => setSelectedFlyerIndex(i => i + 1)}>הבא</Button>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grow>
           )}
         </Grid>
       </Grid>
 
       {/* לוח שנה */}
-      <Paper sx={{ mt: 6 }}>
-        <Typography variant="h5" color="secondary.main" sx={{ p: 2 }}>
-          לוח אירועים
-        </Typography>
-        <Box sx={{ p: 2 }}>
-          <CalendarPreview activities={activities} />
-        </Box>
-      </Paper>
+      <Fade in timeout={1000}>
+        <Card sx={{ mt: 6 }}>
+          <CardContent>
+            <Typography variant="h5" color="secondary.main" gutterBottom>
+              לוח אירועים
+            </Typography>
+            <Box sx={{ pt: 2 }}>
+              <CalendarPreview activities={activities} />
+            </Box>
+          </CardContent>
+        </Card>
+      </Fade>
 
-      {/* Admin Login */}
+      {/* כפתור ניהול */}
       <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-        <Button variant="contained" size="large" onClick={() => navigate("/home")}>כניסה למערכת הניהול</Button>
+        <Button variant="contained" size="large" onClick={() => navigate("/home")}>
+          כניסה למערכת הניהול
+        </Button>
       </Box>
 
-      {/* Reply Dialog */}
+      {/* דיאלוגים */}
+      <Dialog open={Boolean(selectedActivity)} onClose={() => setSelectedActivity(null)} fullWidth maxWidth="sm">
+        <DialogTitle>{selectedActivity?.name}</DialogTitle>
+        <DialogContent dividers>
+          <Typography>תאריך: {selectedActivity?.date}</Typography>
+          <Typography>שעות: {selectedActivity?.startTime} - {selectedActivity?.endTime}</Typography>
+          <Typography sx={{ mt: 2 }}>{selectedActivity?.description || "אין תיאור זמין."}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSelectedActivity(null)}>סגור</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={flyerDialogOpen} onClose={() => setFlyerDialogOpen(false)} fullWidth maxWidth="md">
+        <DialogTitle>{selectedFlyer?.name}</DialogTitle>
+        <DialogContent dividers>
+          <Box component="img" src={selectedFlyer?.fileUrl} alt={selectedFlyer?.name} sx={{ width: "100%" }} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {}}>הרשמה</Button>
+          <Button onClick={() => setFlyerDialogOpen(false)}>סגור</Button>
+        </DialogActions>
+      </Dialog>
+
       <Dialog open={Boolean(selectedMsg)} onClose={() => setSelectedMsg(null)} fullWidth maxWidth="sm">
         <DialogTitle>השב להודעה: {selectedMsg?.title}</DialogTitle>
         <DialogContent dividers>
@@ -197,7 +277,6 @@ export default function LandingPage() {
         <DialogActions><Button onClick={() => setSelectedMsg(null)}>סגור</Button></DialogActions>
       </Dialog>
 
-      {/* Survey Dialog */}
       <Dialog open={Boolean(selectedSurvey)} onClose={() => setSelectedSurvey(null)} fullWidth maxWidth="sm">
         <DialogTitle>מילוי סקר: {selectedSurvey?.title}</DialogTitle>
         <DialogContent dividers>
@@ -206,42 +285,18 @@ export default function LandingPage() {
         <DialogActions><Button onClick={() => setSelectedSurvey(null)}>סגור</Button></DialogActions>
       </Dialog>
 
-      {/* Activity Registration Dialog */}
-      <Dialog
-        open={Boolean(activityRegId)}
-        onClose={() => setActivityRegId(null)}
-        fullWidth
-        maxWidth="sm"
-      >
+      <Dialog open={Boolean(activityRegId)} onClose={() => setActivityRegId(null)} fullWidth maxWidth="sm">
         <DialogTitle>הרשמה לפעילות</DialogTitle>
         <DialogContent>
           {participantErr && <Alert severity="error" sx={{ mb: 2 }}>{participantErr}</Alert>}
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="שם מלא"
-              value={participantName}
-              onChange={e => setParticipantName(e.target.value)}
-              fullWidth
-              error={participantName && !validParticipantName  }
-              helperText={participantName && !validParticipantName   ? "אותיות ורווחים בלבד" : " "}
-            />
-            <TextField
-              label="טלפון"
-              value={participantPhone}
-              onChange={e => setParticipantPhone(e.target.value)}
-              fullWidth
-              error={participantPhone && !validParticipantPhone}
-              helperText={participantPhone && !validParticipantPhone ? "טלפון לא תקין" : " "}
-            />
+            <TextField label="שם מלא" value={participantName} onChange={e => setParticipantName(e.target.value)} fullWidth error={participantName && !validParticipantName} helperText={participantName && !validParticipantName ? "אותיות ורווחים בלבד" : " "} />
+            <TextField label="טלפון" value={participantPhone} onChange={e => setParticipantPhone(e.target.value)} fullWidth error={participantPhone && !validParticipantPhone} helperText={participantPhone && !validParticipantPhone ? "טלפון לא תקין" : " "} />
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setActivityRegId(null)}>ביטול</Button>
-          <Button
-            variant="contained"
-            onClick={handleActivityRegister}
-            disabled={!validParticipantName   || !validParticipantPhone}
-          >
+          <Button variant="contained" onClick={handleActivityRegister} disabled={!validParticipantName || !validParticipantPhone}>
             הרשמה
           </Button>
         </DialogActions>
