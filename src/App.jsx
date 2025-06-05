@@ -30,7 +30,8 @@ import ManageUsersContainer           from "./components/ManageUsersContainer.js
 
 export default function App() {
   const { pathname } = useLocation();
-  const showNav      = pathname !== "/";
+  const hiddenRoutes = ["/", "/landingPage", "/identificationPage"];
+  const showNav = !hiddenRoutes.includes(pathname);
 
   return (
     <>

@@ -336,6 +336,13 @@ export default function GuestLandingPage() {
         </Card>
       </Fade>
 
+        {/* כפתור ניהול */}
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+            <Button variant="contained" size="large" onClick={() => navigate("/home")}>
+                כניסה למערכת הניהול
+            </Button>
+        </Box>
+
       {/* דיאלוג לפירוט פעילות בלבד */}
       <Dialog
         open={Boolean(selectedActivity)}
