@@ -41,7 +41,7 @@ export default function NavBar() {
 
       {/* nav links */}
       <NavLink to="/home"        style={linkStyle} end>
-        דף הבית
+        חזרה לתפריט
       </NavLink>
       <NavLink to="/activities"  style={linkStyle}>
         פעילויות
