@@ -1,12 +1,15 @@
-// src/components/FlyerService.js
+// =========  src/services/FlyerService.js  =========
 import { db, storage } from "../firebase";
 import {
   collection,
   addDoc,
   getDocs,
-  serverTimestamp,
-  deleteDoc,
   doc,
+  deleteDoc,
+  serverTimestamp,
+  query,
+  orderBy,
+  writeBatch,
 } from "firebase/firestore";
 import {
   ref,
@@ -15,57 +18,89 @@ import {
   deleteObject,
 } from "firebase/storage";
 
+const FLYERS_COL = "flyers";
+
 const FlyerService = {
+  /* ─── הוספת פלייאר ─── */
   async uploadFlyer(name, file) {
-    if (!name || !file) {
-      throw new Error("Missing name or file");
-    }
+    if (!name || !file) throw new Error("Name / file missing");
 
-    try {
-      const fileName = `${Date.now()}_${file.name}`;
-      const storageRef = ref(storage, `flyers/${fileName}`);
-      await uploadBytes(storageRef, file);
-      const fileUrl = await getDownloadURL(storageRef);
+    const fileName = `${Date.now()}_${file.name}`;
+    const storageRef = ref(storage, `flyers/${fileName}`);
+    await uploadBytes(storageRef, file);
+    const fileUrl = await getDownloadURL(storageRef);
 
-      await addDoc(collection(db, "flyers"), {
-        name,
-        fileUrl,
-        fileName,
-        createdAt: serverTimestamp(),
-      });
-    } catch (error) {
-      console.error("Error uploading flyer:", error);
-      throw error;
-    }
+    const nextOrder = (await getDocs(collection(db, FLYERS_COL))).size;
+
+    await addDoc(collection(db, FLYERS_COL), {
+      name,
+      fileUrl,
+      url: fileUrl,          // תאימות לאחור
+      order: nextOrder,
+      createdAt: serverTimestamp(),
+    });
   },
 
+  /* ─── שליפה + תיקון order חסר ─── */
   async getFlyers() {
-    try {
-      const snapshot = await getDocs(collection(db, "flyers"));
-      return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        name: doc.data().name,
-        fileUrl: doc.data().fileUrl ?? "",
-      }));
-    } catch (error) {
-      console.error("Error fetching flyers:", error);
-      throw error;
+    const col = collection(db, FLYERS_COL);
+
+    // קודם־כל טוענים את הכול (בלי orderBy)
+    const snap = await getDocs(col);
+    if (snap.empty) return [];                // אין מסמכים בכלל
+
+    // האם כולם מכילים order?
+    const needsFix = snap.docs.some((d) => d.data().order === undefined);
+
+    if (needsFix) {
+      // מוסיף order לכל מי שחסר
+      const batch = writeBatch(db);
+      let idx = 0;
+      // ממיינים לפי createdAt כדי לשמר סדר העלאה מקורי
+      snap.docs
+        .sort(
+          (a, b) =>
+            (a.data().createdAt?.seconds ?? 0) -
+            (b.data().createdAt?.seconds ?? 0)
+        )
+        .forEach((d) => {
+          batch.update(doc(db, FLYERS_COL, d.id), { order: idx++ });
+        });
+      await batch.commit();
     }
+
+    // עכשיו מביאים ממויין
+    const orderedSnap = await getDocs(
+      query(col, orderBy("order", "asc"))
+    );
+
+    return orderedSnap.docs.map((d) => ({
+      id: d.id,
+      name: d.data().name,
+      fileUrl:
+        d.data().fileUrl ??
+        d.data().url ??
+        d.data().imageUrl ??
+        "",
+      order: d.data().order ?? 0,
+    }));
   },
 
+  /* ─── מחיקה ─── */
   async deleteFlyer(flyer) {
-    try {
-      const path = decodeURIComponent(
-        flyer.fileUrl.split("/o/")[1].split("?")[0]
-      );
-      const storageRef = ref(storage, path);
-      await deleteObject(storageRef);
+    const path = decodeURIComponent(
+      flyer.fileUrl.split("/o/")[1].split("?")[0]
+    );
+    await deleteObject(ref(storage, path));
+    await deleteDoc(doc(db, FLYERS_COL, flyer.id));
+  },
 
-      await deleteDoc(doc(db, "flyers", flyer.id));
-    } catch (error) {
-      console.error("Error deleting flyer:", error);
-      throw error;
-    }
+  /* ─── החלפת שתי רשומות ─── */
+  async swapOrder(a, b) {
+    const batch = writeBatch(db);
+    batch.update(doc(db, FLYERS_COL, a.id), { order: a.order });
+    batch.update(doc(db, FLYERS_COL, b.id), { order: b.order });
+    await batch.commit();
   },
 };
 
