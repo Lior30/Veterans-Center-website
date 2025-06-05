@@ -26,14 +26,11 @@ export default {
     return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   },
 
-  // List only messages attached to a given activity
-  async listByActivity(activityId) {
-    const q = query(
-      messagesCol,
-      where("activityId", "==", activityId),
-      orderBy("createdAt", "desc")
-    );
-    const snap = await getDocs(q);
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  },
+  // List all messages by manual display order (smallest first)
+async list() {
+  const q = query(messagesCol, orderBy("order", "asc"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
 };
