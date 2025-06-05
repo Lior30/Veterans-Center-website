@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
+import * as XLSX from "xlsx";           // ❶
+import { saveAs } from "file-saver";
 import { db } from "../firebase";
 import {
   collection,
@@ -27,6 +29,37 @@ import {
   IconButton,
   // … שאר ה-imports הקיימים
 } from "@mui/material";
+
+
+async function fixMissingUserFields() {
+  const snap = await getDocs(collection(db, "users"));
+  const updates = [];
+
+  for (const d of snap.docs) {
+    const data = d.data();
+    const missing = {};
+
+    if (!Array.isArray(data.activities)) missing.activities = [];
+    if (!Array.isArray(data.activities_date)) missing.activities_date = [];
+    if (!Array.isArray(data.survey)) missing.survey = [];
+    if (!Array.isArray(data.survey_date)) missing.survey_date = [];
+
+    if (Object.keys(missing).length > 0) {
+      console.log("🔧 updating user:", d.id);
+      updates.push(updateDoc(doc(db, "users", d.id), missing));
+    }
+  }
+
+   await Promise.all(updates);
+    if (updates.length > 0) {
+      alert("השדות החסרים עודכנו בהצלחה.");
+    }
+
+}                           // ← סוגר את הפונקציה כאן
+
+// קריאה חד-פעמית (בחוץ)
+fixMissingUserFields();
+
 
 // מחוץ לקומפוננטה:
 function formatDate(dateValue) {
@@ -64,47 +97,76 @@ function ensureUserId(u) {
 /* -------------------------------------------------
    קומפוננטה שמציגה פירוט של משתמש בודד
 --------------------------------------------------*/
-function UserDetails({ user, filter }) {
-  const [openCats, setOpenCats] = useState({});         // {activity:true …}
+function UserDetails({ user, filter, collapsible = true }) {
+  const isActivity = filter === "activity";
+  const isSurvey   = filter === "survey";
+  const isReplies  = filter === "replies";
+  const isBoth     = filter === "both";
+  const [openCats, setOpenCats] = React.useState({});
+  const toggle = k => setOpenCats(p => ({ ...p, [k]: !p[k] }));
 
-  /** פתיחה/סגירה של קטגוריה */
-  const toggle = (cat) => setOpenCats(p => ({ ...p, [cat]: !p[cat] }));
-
-  /** אילו קטגוריות להציג לפי המסנן הכללי */
+  /* כל הקטגוריות */
   const CATS = [
-    { key: "activity", label: "פעילויות", names: user.activities, dates: user.activities_date },
-    { key: "survey",   label: "סקרים",     names: user.survey,     dates: user.survey_date    },
-    { key: "replies",  label: "הודעות",   names: user.replies,    dates: user.replies_date   },
-  ]; 
+    { key: "activity", label:"פעילויות", names: user.activities, dates: user.activities_date },
+    { key: "survey", label:"סקרים" , names: user.survey,     dates: user.survey_date    },
+    { key: "replies", label:"הודעות" ,   names: user.replies,    dates: user.replies_date   },
+  ].filter(c => {
+    if (isActivity) return c.key === "activity";
+    if (isSurvey)   return c.key === "survey";
+    if (isReplies)  return c.key === "replies";
+    if (isBoth)     return c.key === "activity" || c.key === "survey";
+    return true;                     // למסנן "all"
+  });
 
-  return (
-    <div style={{ direction: "rtl" }}>
-      {CATS.map(cat => (
-        <div key={cat.key} style={{ marginBottom: 4 }}>
-          {/* כותרת קטגוריה (▶ / ▼) */}
+return (
+  <div style={{ direction: "rtl" }}>
+    {CATS.map(cat => (
+      <div key={cat.key} style={{ marginBottom: 4 }}>
+
+        {/* כותרת קטגוריה – רק כש-collapsible=true */}
+        {collapsible && (
           <button
             onClick={() => toggle(cat.key)}
-            style={{ border: "none", background: "none", cursor: "pointer", fontWeight: "bold" }}
+            style={{
+              border: "none",
+              background: "none",
+              cursor: "pointer",
+              fontWeight: "bold",
+              width: "100%",
+              textAlign: "right",
+              direction: "rtl",
+              padding: 0,
+            }}
           >
             {openCats[cat.key] ? "▼" : "▶"} {cat.label}
           </button>
+        )}
 
-          {/* רשימת פריטים */}
-          {openCats[cat.key] && (
-            <ul style={{ margin: "4px 0 0 0", padding: "0 0 0 16px", listStyle: "disc" }}>
-              {(cat.names || []).map((name, i) => (
-                <li key={i}>
-                  {name}
-                  {cat.dates?.[i] && " — " + formatDate(cat.dates[i])}
-                </li>
-              ))}
-              {(!cat.names || cat.names.length === 0) && <li>אין נתונים</li>}
-            </ul>
-          )}
-        </div>
-      ))}
-    </div>
-  );
+        {/* הרשימה – אם collapsible=false פתוחה תמיד */}
+        {(collapsible ? openCats[cat.key] : true) && (
+          <ul
+            style={{
+              margin: "4px 0 0",
+              padding: "0 16px 0 0",
+              listStyle: "disc",
+              direction: "rtl",
+              textAlign: "right",
+            }}
+          >
+            {(cat.names || []).map((name, i) => (
+              <li key={i}>
+                {name}
+                {cat.dates?.[i] && " — " + formatDate(cat.dates[i])}
+              </li>
+            ))}
+            {(!cat.names || cat.names.length === 0) && <li>אין נתונים</li>}
+          </ul>
+        )}
+      </div>
+    ))}
+  </div>
+);
+
 }
 
 
@@ -123,12 +185,190 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   const [firstTouched,    setFirstTouched]    = useState(false);
   const [lastTouched,     setLastTouched]     = useState(false);
   const isRepliesTab = filter === "replies";
-  const [showRequests,  setShowRequests]  = useState(false); 
+
+  const showActions = ["all", "activity", "survey", "replies", "both"]
+  .includes(filter); 
+  console.log("filter:", filter, "activeTab:", activeTab, "showActions:", showActions);
+ 
+
+  const isActivity  = filter === "activity";
+  const isSurvey    = filter === "survey";
+  const isBoth      = filter === "both";
   const [openRows, setOpenRows] = useState(new Set());
   const [editUser,  setEditUser]  = useState(null);
+  const [openCats, setOpenCats] = useState({});
+  const toggle = k => setOpenCats(p => ({ ...p, [k]: !p[k] }));
+  const isReplies    = filter === "replies";
+  const [showExport, setShowExport]   = useState(false);
+  const [exportType, setExportType]   = useState("all");
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState(new Set());
+  const [selectMode, setSelectMode] = useState(false); 
+  const [userType, setUserType] = useState("");       // ← כבר יש בתצוגה אבל חסר בהגדרה
+  const [address, setAddress] = useState("");
+  const [idNumber, setIdNumber] = useState("");
+  const [notes, setNotes] = useState("");
+  const showPlus = ["replies", "survey", "activity"].includes(filter);
 
+  const isFirstValid = newFirstName.trim().length > 0;
+  const isLastValid  = newLastName.trim().length > 0;
+  const isTypeValid  = userType !== "";
 
   const [allUsers, setAllUsers] = useState([]);
+
+  async function handleAddUser() {
+  if (!isFirstValid || !isLastValid || !isPhoneValid || !isTypeValid) return;
+
+  const full = `${newFirstName.trim()} ${newLastName.trim()}`.trim();
+  const user_id = `${newFirstName.trim()}_${newLastName.trim()}_${newPhone.trim()}`;
+
+  const docRef = doc(db, "users", user_id);
+  const existing = await getDocs(query(collection(db, "users"), where("user_id", "==", user_id)));
+
+  if (!existing.empty) {
+    alert("משתמש עם שם וטלפון זהים כבר קיים");
+    return;
+  }
+
+  const newUser = {
+    first_name: newFirstName.trim(),
+    last_name: newLastName.trim(),
+    fullname: full,
+    phone: newPhone.trim(),
+    user_id,
+    is_registered: userType === "registered",
+    is_club_60:    userType === "senior",
+    address: address.trim() || null,
+    id_number: idNumber.trim() || null,
+    notes: notes.trim() || null,
+
+     activities: [],
+    activities_date: [],
+    survey: [],
+    survey_date: [],
+    replies: [],
+    replies_date: []
+  };
+  await setDoc(docRef, newUser);
+
+  try {
+    await setDoc(docRef, newUser);
+    const snap = await getDocs(collection(db, "users"));
+    const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    setAllUsers(all);
+    setShowModal(false); // סגירת חלון
+    setNewFirstName(""); setNewLastName(""); setNewPhone("");
+    setUserType(""); setAddress(""); setIdNumber(""); setNotes("");
+  } catch (e) {
+    console.error("שגיאה בהוספה:", e);
+    alert("אירעה שגיאה בהוספת המשתמש");
+  }
+}
+
+
+
+function toggleSelect(user) {                 // ← מקבל את כל האובייקט
+  const id = ensureUserId(user);              // ← מזהה קבוע ואחיד
+  setSelected(prev => {
+    const s = new Set(prev);
+    s.has(id) ? s.delete(id) : s.add(id);
+    return s;
+  });
+}
+
+function selectAllRows(checked) {
+  setSelected(
+    checked
+      ? new Set(rowsToShow.map(r => ensureUserId(r.user)))
+      : new Set()
+  );
+}
+
+function toggleSelectMode() {
+  setSelectMode(p => {
+    if (p) setSelected(new Set());   // ניקוי בחזרה למצב רגיל
+    return !p;
+  });
+}
+
+/* מחיקה מרוכזת  */
+async function deleteSelected() {
+  if (selected.size === 0) return;
+
+  const confirmed = window.confirm("האם אתה בטוח שברצונך למחוק את *כל* המשתמשים שנבחרו?");
+  if (!confirmed) return;
+
+  const promises = [];
+
+  for (const id of selected) {
+    const u = allUsers.find(x => ensureUserId(x) === id);
+    if (u) {
+      promises.push(deleteUserCore(u)); // רק מחיקה, בלי חלונות
+    }
+  }
+
+  await Promise.all(promises);     // מחכה שכולם יימחקו
+setSelected(new Set());          // מנקה את הבחירה
+
+// ריענון הרשימה מה־DB
+const fresh = await getDocs(collection(db, "users"));
+setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
+
+// רק אחרי שהכול הסתיים → הודעה
+alert("המשתמשים נמחקו בהצלחה");
+}
+
+
+  /* ----------------------------------------------------------
+   פונקציה שמקבלת "registered" | "senior" | "all" ומייצרת Excel
+-----------------------------------------------------------*/
+function exportToExcel(type = "all") {
+  // ➊ מסננים
+  const data = allUsers.filter(u => {
+    if (type === "registered") return u.is_registered && !u.is_club_60;
+    if (type === "senior")     return u.is_club_60;
+    return true;               // all
+  });
+
+  if (data.length === 0) {
+    alert("אין נתונים לייצוא");
+    return;
+  }
+
+
+
+
+  // ➋ בונים מערך אובייקטים "שטוח" – רק העמודות שרוצים בגליון
+  const rows = data.map(u => ({
+    "שם פרטי"  : u.first_name  || "",
+    "שם משפחה" : u.last_name   || "",
+    "שם מלא"   : u.fullname    || `${u.first_name||""} ${u.last_name||""}`.trim(),
+    "טלפון"     : u.phone       || "",
+    "רשום?"     : u.is_registered ? "כן" : "לא",
+    "חבר 60+"   : u.is_club_60    ? "כן" : "לא",
+    "פעילויות"  : Array.isArray(u.activities) ? u.activities.length : 0,
+    "סקרים"     : Array.isArray(u.survey)     ? u.survey.length     : 0,
+    "תגובות"    : Array.isArray(u.replies)    ? u.replies.length    : 0,
+  }));
+
+  // ➌ SheetJS: ממירים ל-worksheet ול-workbook
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Users");
+
+  // ➍ כותבים כ-Blob ושומרים
+  const wbBlob = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  const fileName =
+    type === "registered" ? "משתמשים_רשומים.xlsx" :
+    type === "senior"     ? "חברי_60+.xlsx"       :
+                            "כל_המשתמשים.xlsx";
+
+  saveAs(
+    new Blob([wbBlob], { type: "application/octet-stream" }),
+    fileName
+  );
+}
+
 
     const requests = useMemo(
   () => allUsers.filter(u => !u.is_registered && !u.is_club_60),
@@ -145,82 +385,123 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     fetchUsers();
   }, []);
 
+  /* אחרי ה-useState של search וה-useEffect שמביא users … */
+useEffect(() => {
+  const t = search.trim().toLowerCase();
+  if (!t) return;                     // אם החיפוש ריק – לא עושים כלום
+
+  /* האם נמצאה התאמה אצל רשומים? אצל 60+? */
+  let foundRegistered = false;
+  let foundSenior     = false;
+
+  for (const u of allUsers) {
+    const match =
+      (u.fullname  || "").toLowerCase().includes(t) ||
+      (u.last_name || "").toLowerCase().includes(t) ||
+      (u.phone     || "").includes(t);
+
+    if (!match) continue;
+
+    if (u.is_registered && !u.is_club_60) foundRegistered = true;
+    if (u.is_club_60)                     foundSenior     = true;
+  }
+
+  
+
+  /* אם יש התאמה רק ב-60+ → מעבר לטאב senior
+     אם יש התאמה רק ברשומים → מעבר ל-registered
+     (אם יש בשניהם – נשארים בטאב הנוכחי) */
+  if (foundSenior && !foundRegistered && activeTab !== "senior") {
+    setActiveTab("senior");
+  } else if (foundRegistered && !foundSenior && activeTab !== "registered") {
+    setActiveTab("registered");
+  }
+}, [search, allUsers, activeTab]);
+
+
 
    // פונקציה שבודקת אם משתמש מתאים ל־activeTab
   const matchesTab = u => {
-    if (activeTab === "registered")   return u.is_registered && !u.is_club_60;
-    if (activeTab === "senior")       return u.is_club_60;
+      /* אם יש חיפוש – לא להגביל לפי הטאב */
+    if (activeTab === "registered") return u.is_registered && !u.is_club_60;
+    if (activeTab === "senior")     return u.is_club_60;
     return true; // all
   }
 
+  useEffect(() => {
+  const term = search.trim().toLowerCase();
+  if (!term) return;          // אין חיפוש → לא משנים טאב
+
+  // האם יש התאמה בטאב הרשומים?
+  const foundRegistered = allUsers.some(u =>
+    u.is_registered && !u.is_club_60 &&
+    (
+      (u.fullname  || "").toLowerCase().includes(term) ||
+      (u.last_name || "").toLowerCase().includes(term) ||
+      (u.phone     || "").includes(term)
+    )
+  );
+
+  // האם יש התאמה בטאב 60+?
+  const foundSenior = allUsers.some(u =>
+    u.is_club_60 &&
+    (
+      (u.fullname  || "").toLowerCase().includes(term) ||
+      (u.last_name || "").toLowerCase().includes(term) ||
+      (u.phone     || "").includes(term)
+    )
+  );
+
+  /* אם אני בטאב רשומים ואין בו תוצאות אבל יש ב-60+ → עבור לטאב senior */
+  if (activeTab === "registered" && !foundRegistered && foundSenior) {
+    setActiveTab("senior");
+  }
+
+  /* להפך – אם אני ב-senior ואין בו תוצאות אך יש ברשומים */
+  if (activeTab === "senior" && !foundSenior && foundRegistered) {
+    setActiveTab("registered");
+  }
+}, [search, allUsers, activeTab]);
+
+
 
     // מפותחים מערכי שורות של פעילויות וסקרים
-  const rowsActivities = allUsers
-    .flatMap(u => {
-      if (!Array.isArray(u.activities)) return [];
-      return u.activities.map((activityName, idx) => ({
-        user:         u,
-        activityName,
-        activityDate: u.activities_date?.[idx] ?? ""
-      }));
-    })
+ /* ♦ פעילויות – משתמש + כמות */
+const rowsActivities = allUsers
+  .filter(u => Array.isArray(u.activities) && u.activities.length > 0)
+  .filter(matchesTab)
+  .map(u => ({
+    user:  u,
+    count: u.activities.length,
+  }));
 
-    // סינון לפי הסוג (registered/senior/unregistered)
-    .filter(row => matchesTab(row.user))
-
-    // מיון לפי תאריך מהחדש לישן
-    .sort((a, b) => new Date(b.activityDate) - new Date(a.activityDate));
-
-  const rowsSurveys = allUsers
-    .flatMap(u => {
-      if (!Array.isArray(u.survey)) return [];
-      return u.survey.map((surveyName, idx) => ({
-        user:       u,
-        surveyName,
-        surveyDate: u.survey_date?.[idx] ?? ""
-      }));
-    })
-
-      // סינון לפי הסוג
-    .filter(row => matchesTab(row.user))
-    .sort((a, b) => new Date(b.surveyDate) - new Date(a.surveyDate));
+  /* ♦ סקרים – משתמש + כמות */
+const rowsSurveys = allUsers
+  .filter(u => Array.isArray(u.survey) && u.survey.length > 0)
+  .filter(matchesTab)
+  .map(u => ({
+    user:  u,
+    count: u.survey.length,
+  }));
 
   const rowsAll = allUsers.filter(u => {
-   if (activeTab === "registered")  return u.is_registered && !u.is_club_60;
-   if (activeTab === "senior")      return u.is_club_60;
+  if (activeTab === "registered") return u.is_registered && !u.is_club_60;
+  if (activeTab === "senior")     return u.is_club_60;
    return true;
  });
+
+ /* ♦ תגובות – משתמש + כמות */
+const rowsReplies = allUsers
+  .filter(u => Array.isArray(u.replies) && u.replies.length > 0)
+  .filter(matchesTab)
+  .map(u => ({
+    user:  u,
+    count: u.replies.length,
+  }));
 
  // 2) מאחד לכל entry את ה־shape { user }
  const rowsAllWithShape = rowsAll.map(u => ({ user: u }));
 
- const rowsReplies = allUsers
-    .flatMap(u => {
-    if (!u.replies) return [];
-  // אם replies הוא כבר מערך – השתמש בו, אחרת פרק מחרוזת
-  const titles = Array.isArray(u.replies)
-    ? u.replies
-    : (typeof u.replies === "string"
-        ? u.replies.split(",")
-        : []);
-
-    const dates = Array.isArray(u.replies_date)
-    ? u.replies_date
-    : (typeof u.replies_date === "string"
-        ? u.replies_date.split(",")
-        : []);
-
-    return titles.map((title, idx) => ({
-      user: u,
-      title,
-      date: dates[idx] || ""
-    }));
-  })
-
-   // 🟢 הוספת סינון לפי הטאב (registered/senior/unregistered)
-    .filter(row => matchesTab(row.user))
-    // 🟢 מיון מהחדש לישן
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
 
   // const isRepliesTab = filter === "replies";
   // const rowsToShow = isRepliesTab ? rowsReplies : rowsAll;
@@ -239,307 +520,257 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   else if (filter === "replies")  rowsToShow = rowsReplies;
   else                             rowsToShow = rowsAllWithShape;
 
- async function approveRequest(u) {
-  // בטיחות – אם אין id ננסה ליפול ל-user_id
-  const docId = u.id || u.user_id;
-  if (!docId) return alert("לא נמצא מזהה למסמך");
-
-  await updateDoc(doc(db, "users", docId), {
-    is_registered: true,
-    is_club_60:   false,
-  });
-
-  // עדכון ה-state המקומי כדי שה-UI יתחדש בלי רענון
-  setAllUsers(prev =>
-    prev.map(p => p.id === docId ? { ...p, is_registered: true } : p)
-  );
-}
-
-async function hide(u) {
-  const docId = u.id || u.user_id;
-  if (!docId) return alert("לא נמצא מזהה למסמך");
-
-  await deleteDoc(doc(db, "users", docId));
-
-  // מסלק מה-state
-  setAllUsers(prev => prev.filter(p => p.id !== docId));
-}
-
-
-   // שגיאות שם
-  const firstError = !newFirstName.trim()
-    ? "נא למלא את השם הפרטי"
-    : !UserService.isValidName(newFirstName)
-      ? "שם פרטי לא תקין"
-      : null;
-  const lastError = !newLastName.trim()
-    ? "נא למלא את שם המשפחה"
-    : !UserService.isValidName(newLastName)
-      ? "שם משפחה לא תקין"
-      : null;
-  const isFirstValid = firstError === null;
-  const isLastValid  = lastError  === null;
-
-  
-
-  const filteredUsers = users.filter(user => {
-  if (activeTab === "registered") return user.is_registered && !user.is_club_60;
-  if (activeTab === "senior") return user.is_club_60;
-  if (activeTab === "unregistered") return !user.is_registered;
-  return true;
-});
-
-  const [userType, setUserType] = useState("");
-
-  const handleAddUser = async () => {
-    if (!newFirstName.trim() || !newLastName.trim() || !newPhone.trim() || !userType) {
-      alert("נא למלא את כל השדות");
-      return;
-    }
-
- // וידוא שהשם הפרטי ושם המשפחה תקינים
-  if (firstError || lastError) {
-    // מציג את השגיאה הרלוונטית
-    alert(firstError || lastError);
-    return;
-  }
-
-
-  const first = newFirstName.trim();
-  const last  = newLastName.trim();
-  const phone = newPhone.trim();
-
-    // ➤ כאן בודקים תקינות טלפון
-   if (!UserService.isValidPhone(phone)) {
-    alert("המספר שהוקלד אינו תקין");
-    return;
-  }
-
-  const isClub  = userType === "senior";
-  const isReg   = userType === "registered" || isClub;
-  const user_id = `${first}_${last}_${phone}`;
-
-  const userData = {
-    user_id,
-    first_name: first,
-    last_name: last,
-    phone,
-     fullname:   `${first} ${last}`, 
-    is_registered: isReg,
-    is_club_60: isClub,
-    activities:      [],          // מערך ריק
-     activities_date: [],          // מערך ריק
-     survey:          [],  // עכשיו מערך
-     survey_date:     [],   // מערך תאריכים
-     replies:         [],          // מערך ריק
-     replies_date:    [],          // מערך ריק
-  };
-  
-  const exists = manualUsers.some(u =>
-      u.user_id === user_id ||
-      (u.first_name?.toLowerCase() === first.toLowerCase() &&
-       u.last_name?.toLowerCase()  === last.toLowerCase()  &&
-       u.phone === phone)
-  );
-
-if (exists) {
-  alert("משתמש עם שם ומספר טלפון זהים כבר קיים");
-  return;
-}
-
-
-  try {
-    alert("המשתמש נוסף בהצלחה!");
-
-     const docRef = doc(db, "users", user_id);
-     await setDoc(docRef, userData, { merge: true });
-
-     setAllUsers(prev => [
-       ...prev,
-       { id: user_id, ...userData }     // מוסיפים ל־allUsers
-     ]);
-
-    setNewFirstName("");
-    setNewLastName("");
-    setNewPhone("");
-    setUserType("");
-    setShowModal(false);
-  } catch (err) {
-    console.error("שגיאה בהוספת המשתמש:", err);
-    alert("אירעה שגיאה בהוספת המשתמש");
-  }
-};
-
-const updateUserType = async (user, newType) => {
-  const isClub     = newType === "senior";
-  const isReg = newType === "registered" || isClub;
-
-  // ➊ פיצול שם מלא במקרה שאין first / last
-  const fullRaw  = user.fullname || user.fullName || "";
-  const parts    = fullRaw.trim().split(" ");
-  const first    = user.first_name || parts[0] || "";
-  const last     = user.last_name  || parts.slice(1).join(" ") || "";
-
-  const user_id  = ensureUserId({ ...user, first_name: first, last_name: last });
-
-  const baseData = {
-    user_id,
-    first_name: first,
-    last_name : last,
-    phone     : user.phone || "",
-  };
-
-  // --- חיפוש / יצירה ב-Firestore ---
-  const q    = query(collection(db, "users"), where("user_id", "==", user_id));
-  const snap = await getDocs(q);
-  let docRef = snap.docs[0]?.ref;
-
-  if (!docRef) {
-    docRef = await addDoc(collection(db, "users"), {
-      ...baseData,
-      fullname: `${first} ${last}`.trim(),
-      is_registered: isReg,
-      is_club_60:    isClub,
-    });
-  } else {
-    await updateDoc(docRef, {
-      is_registered: isReg,
-      is_club_60:    isClub,
+  const term = search.trim().toLowerCase();
+  if (term) {
+    rowsToShow = rowsToShow.filter(r => {
+      const u = r.user;
+      return (
+        (u.fullname  || "").toLowerCase().includes(term) ||
+        (u.last_name || "").toLowerCase().includes(term) ||
+        (u.phone     || "").includes(term)
+      );
     });
   }
 
-    // 🟢 עדכון ה־local state של allUsers
-  setAllUsers(prev =>
-    prev.map(u =>
-      ensureUserId(u) === user_id
-        ? { ...u, is_registered: isReg, is_club_60: isClub }
-        : u
-    )
-  );
+ /* ------------------------------------------------------------------
+   ✂️  מחיקת משתמש אחד – מסירים אותו מכל האוספים הרלוונטיים
+-------------------------------------------------------------------*/
 
-    if (newType === "registered") {
-    alert("המשתמש הועבר למשתמשים רשומים");
-  } else if (newType === "senior") {
-    alert("המשתמש נכנס לחברי מרכז ה-+60");
-  }
-
-  
-
-  // --- עדכון ה-state המקומי ---
-  setManualUsers(prev => {
-    const idx   = prev.findIndex(p => p.user_id === user_id);
-    const entry = {
-      ...baseData,
-      fullname: `${first} ${last}`.trim(),
-      is_registered: isReg,
-      is_club_60:   isClub,
-    };
-    if (idx === -1) return [...prev, entry];
-    const clone = [...prev];
-    clone[idx]  = entry;
-    return clone;
-  });
-};
-
-
-const deleteUser = async (user) => {
-  const confirmed = window.confirm("האם אתה בטוח שברצונך למחוק משתמש זה?");
-  if (!confirmed) return;
-
-  // if (!window.confirm("אתה בטוח שברצונך למחוק משתמש זה?")) return;
-
+/* ✦✦ 1.  מחיקה "שקטה" של משתמש יחיד  ✦✦
+   - בלי window.confirm ו-alert, אבל עם כל לוגיקת המחיקה וה-state  */
+async function deleteUserSilent(user) {
   const phone   = user.phone || "";
   const user_id = ensureUserId(user);
 
-// 1. מוחקים משתמש מועודכן מכל האוספים הרגילים
-const COLL = [
-  { ref: collection(db,"users"),                 whereField: ["user_id", user_id] },
-  { ref: collection(db,"activityRegistrations"), whereField: ["phone", phone] },
-  { ref: collection(db,"surveyResponses"),       whereField: ["phone", phone] },
-];
-
-for (const { ref, whereField } of COLL) {
-  const snap = await getDocs(query(ref, where(whereField[0], "==", whereField[1])));
-  for (const d of snap.docs) {
-    await deleteDoc(d.ref);
+  /* users (המסמך הראשי) */
+  try {
+    await deleteDoc(doc(db, "users", user_id));
+  } catch (err) {
+    console.error("⚠️  users delete failed:", err);
   }
-}
 
-// 2. מוחקים replies בכל הודעה בלי Composite-Index
-const messagesSnap = await getDocs(collection(db, "messages"));
-for (const msgDoc of messagesSnap.docs) {
-  const repliesRef = collection(db, "messages", msgDoc.id, "replies");
-  const snap = await getDocs(query(repliesRef, where("phone", "==", phone)));
-  for (const replyDoc of snap.docs) {
-    await deleteDoc(replyDoc.ref);
+  /* activityRegistrations / surveyResponses */
+  const COLL = [
+    { path: "activityRegistrations", field: ["phone", phone] },
+    { path: "surveyResponses",       field: ["phone", phone] }
+  ];
+  for (const { path, field } of COLL) {
+    const [f, val] = field;
+    const snap = await getDocs(query(collection(db, path), where(f, "==", val)));
+    for (const d of snap.docs) await deleteDoc(d.ref).catch(e => console.error(`⚠️  ${path}`, e));
   }
-}
 
+  /* replies */
+  const msgs = await getDocs(collection(db, "messages"));
+  for (const m of msgs.docs) {
+    const q = query(collection(db, "messages", m.id, "replies"), where("phone", "==", phone));
+    const reps = await getDocs(q);
+    for (const r of reps.docs) await deleteDoc(r.ref).catch(e => console.error("⚠️  reply", e));
+  }
 
-  // 🟢 עדכון ה־local state
+  /* עדכון סטייטים מקומיים */
   setManualUsers(prev => prev.filter(u => u.phone !== phone));
-  setAllUsers(prev => prev.filter(u => ensureUserId(u) !== user_id));
   markDeleted(phone);
-  alert("המשתמש נמחק בהצלחה");
-};
+}
 
-/**
- * מוחקת את הפריט הספציפי (פעילות/סקר/תגובה) ממסמכי המשתמש
- * @param {Object} row — האובייקט { user, activityName?, surveyName?, title?, … }
- * @param {"activity"|"survey"|"replies"} type
- */
+/* ✦✦ 2.  מחיקת-קבוצה חדשה  ✦✦ */
+async function deleteSelected() {
+  if (selected.size === 0) return;
+
+  const confirmed = window.confirm("האם אתה בטוח שאתה רוצה למחוק את כל המשתמשים?");
+  if (!confirmed) return;
+
+  const promises = [];
+  const phones   = [];
+
+  for (const id of selected) {
+    const u = allUsers.find(x => ensureUserId(x) === id);
+    if (u) {
+      phones.push(u.phone);
+      promises.push(deleteUserSilent(u));   // ← בלי חלונות דיאלוג
+    }
+  }
+
+  await Promise.all(promises);              // מחכים שכל המחיקות יסתיימו
+  setSelected(new Set());                   // איפוס הבחירה
+
+  // ריענון הרשימה פעם אחת בלבד
+  const fresh = await getDocs(collection(db, "users"));
+  setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
+
+  alert("המשתמשים נמחקו בהצלחה");
+}
+
+
+    async function deleteUserCore(user) {
+
+      const phone   = user.phone || "";
+      const user_id = ensureUserId(user);
+
+      /* 1. users (המסמך הראשי) */
+      try {
+        await deleteDoc(doc(db, "users", user_id));
+      } catch (err) {
+        console.error("⚠️  users delete failed:", err);
+      }
+
+      /* 2. activityRegistrations / surveyResponses */
+      const COLL = [
+        { path: "activityRegistrations", field: ["phone", phone] },
+        { path: "surveyResponses",       field: ["phone", phone] }
+      ];
+
+      for (const { path, field } of COLL) {
+        const [f, val] = field;
+        const snap = await getDocs(query(collection(db, path), where(f, "==", val)));
+        for (const d of snap.docs) {
+          try { await deleteDoc(d.ref); }
+          catch (e) { console.error(`⚠️  ${path} delete`, e); }
+        }
+      }
+
+      /* 3. replies – תת-אוסף messages/<msg>/replies */
+      const msgs = await getDocs(collection(db, "messages"));
+      for (const m of msgs.docs) {
+        const q = query(
+          collection(db, "messages", m.id, "replies"),
+          where("phone", "==", phone)
+        );
+        const reps = await getDocs(q);
+        for (const r of reps.docs) {
+          try { await deleteDoc(r.ref); }
+          catch (e) { console.error("⚠️  reply delete", e); }
+        }
+      }
+
+      /* 4. 🟢   עדכון ה-state המקומי + ריענון מהרשימה המלאה  */
+      setManualUsers(prev => prev.filter(u => u.phone !== phone));
+      markDeleted(phone);
+
+      const fresh = await getDocs(collection(db, "users"));
+      setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
+
+      alert("המשתמש נמחק בהצלחה");
+    }
+
+    async function deleteUser(user) {
+      const confirmed = window.confirm("האם אתה בטוח שברצונך למחוק משתמש זה?");
+      if (!confirmed) return;
+
+      await deleteUserCore(user);
+    }
+
+
+
+
 
 /** מעדכן שם משתמש בכל האוספים הרלוונטיים */
 async function saveEditedUser(u) {
-  const full  = `${u.first_name.trim()} ${u.last_name.trim()}`.trim();
+  const firstName = u.first_name?.trim() || "";
+  const lastName  = u.last_name?.trim()  || "";
+  const phone     = u.phone?.trim()      || "";
+  const fullName  = `${firstName} ${lastName}`.trim();
 
-  /* 1) users (המסמך הראשי) */
-  await updateDoc(doc(db,"users", u.id || u.user_id), {
-    first_name: u.first_name,
-    last_name : u.last_name,
-    fullname  : full,
-  });
+  // ✅ בדיקת שדות חובה
+  if (!firstName || !lastName || !phone) {
+    alert("שם פרטי, שם משפחה ומספר טלפון הם שדות חובה. נא למלא את כולם.");
+    return;
+  }
 
-  /* 2) activityRegistrations / surveyResponses / replies */
-  const phone = u.phone;
-  const coll = [
-    { ref: collection(db,"activityRegistrations") },
-    { ref: collection(db,"surveyResponses")       },
-  ];
+  const oldUserId = u.id || u.user_id;
+  const newUserId = `${firstName}_${lastName}_${phone}`;
 
-  for (const {ref} of coll) {
-    const snap = await getDocs(query(ref, where("phone","==",phone)));
+  const updatedUser = {
+    first_name: firstName,
+    last_name : lastName,
+    fullname  : fullName,
+    phone,
+    address   : u.address?.trim()    || null,
+    id_number : u.id_number?.trim()  || null,
+    notes     : u.notes?.trim()      || null,
+    user_id   : newUserId,
+    is_registered: u.is_registered || false,
+    is_club_60   : u.is_club_60    || false
+  };
+
+  // 🟡 אם Document ID השתנה → העתק ומחק
+  if (oldUserId !== newUserId) {
+    const oldRef = doc(db, "users", oldUserId);
+    const newRef = doc(db, "users", newUserId);
+    await setDoc(newRef, updatedUser);
+    await deleteDoc(oldRef);
+  } else {
+    const ref = doc(db, "users", oldUserId);
+    await updateDoc(ref, updatedUser);
+  }
+
+  // 🟢 עדכון activityRegistrations + surveyResponses לפי טלפון
+  const coll = ["activityRegistrations", "surveyResponses"];
+  for (const name of coll) {
+    const q = query(collection(db, name), where("phone", "==", phone));
+    const snap = await getDocs(q);
     for (const d of snap.docs) {
       await updateDoc(d.ref, {
-        first_name: u.first_name,
-        last_name : u.last_name,
-        fullname  : full,
+        first_name: firstName,
+        last_name: lastName,
+        fullname: fullName,
       });
     }
   }
 
-  /* 3) replies – תת-אוסף messages/<msg>/replies */
-  const msgs = await getDocs(collection(db,"messages"));
+  // 🔵 עדכון בתשובות להודעות
+  const msgs = await getDocs(collection(db, "messages"));
   for (const m of msgs.docs) {
-    const reps = await getDocs(
-      query(collection(db,"messages",m.id,"replies"), where("phone","==",phone))
+    const q = query(
+      collection(db, "messages", m.id, "replies"),
+      where("phone", "==", phone)
     );
+    const reps = await getDocs(q);
     for (const r of reps.docs) {
-      await updateDoc(r.ref,{ fullName: full });
+      await updateDoc(r.ref, { fullName });
     }
   }
 
-  /* 4) עדכון state מקומי */
+  // 🔄 עדכון ה־state
   setAllUsers(prev =>
     prev.map(p =>
-      p.phone === phone
-        ? { ...p, first_name: u.first_name, last_name: u.last_name, fullname: full }
+      (p.id === oldUserId || p.user_id === oldUserId)
+        ? { ...updatedUser, id: newUserId }
         : p
     )
   );
+
   setEditUser(null);
-  alert("השם עודכן בהצלחה");
+  alert("הפרטים עודכנו בהצלחה");
 }
+
+async function updateUserType(user, newType) {
+  const is_registered = newType === "registered";
+  const is_club_60    = newType === "senior";
+
+  const userId = user.id || user.user_id;
+  const docRef = doc(db, "users", userId);
+
+  try {
+    await updateDoc(docRef, {
+      is_registered,
+      is_club_60,
+    });
+
+    setAllUsers(prev =>
+      prev.map(u =>
+        (u.id === userId || u.user_id === userId)
+          ? { ...u, is_registered, is_club_60 }
+          : u
+      )
+    );
+  } catch (error) {
+    console.error("שגיאה בעדכון סוג המשתמש:", error);
+    alert("אירעה שגיאה בעדכון סוג המשתמש");
+  }
+}
+
+
 
 
 async function acknowledgeRow(row, type) {
@@ -608,104 +839,74 @@ async function acknowledgeRow(row, type) {
 }
 
 
+    <button
+      style={{ border:"none", background:"transparent", cursor:"pointer" }}
+      onClick={() => toggleRow(u.user_id)}
+    >
+      ⋯ 
+    </button>
+
+      function toggleRow(id, cat = "all") {
+        const key = `${id}|${cat}`;
+        setOpenRows(prev => {
+          const s = new Set(prev);
+          s.has(key) ? s.delete(key) : s.add(key);
+          return s;
+        });
+        }
+
+
 
   return (
     <>
-      <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
-      ניהול משתמשים
-    </Typography>
+    {/* ◄◄ שורת הכותרת + ייצוא ►► */}
+    <div style={{
+      display:"flex",
+      justifyContent:"space-between",
+      alignItems:"center",
+      width:"100%",
+      marginBottom:24     // רווח לפני שאר הבקרות
+    }}>
+      {/* כותרת מימין (RTL) */}
+      <Typography variant="h4" component="h1">
+        ניהול משתמשים
+      </Typography>
 
-    {/* ►► 5-ב – כפתור בקשות בין הכותרת ל-filter ◄◄ */}
-    <Box sx={{ display: "flex", alignItems: "center", mb: 3, gap: 2 }}>
+      {/* כפתור ייצוא בצד שמאל */}
+      <Button
+        variant="outlined"
+        onClick={() => setShowExport(true)}
+        sx={{ fontWeight:"bold" }}
+      >
+        ייצוא
+      </Button>
+    </div>
 
-           <button
-          onClick={() => setShowRequests(true)}
-          style={{ position:"relative", fontSize:16, padding:"6px 12px" }}
-        >
-          בקשות
-          {requests.length > 0 && (
-            <span
-              style={{
-                position:"absolute", top:-8, left:-8,
-                background:"crimson", color:"#fff",
-                borderRadius:"50%", padding:"2px 6px", fontSize:12
-              }}
-            >
-              {requests.length}
-            </span>
-          )}
-        </button>
-      </Box>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        marginBottom: 16        // ← הרווח שאת מבקשת
+      }}
+    ></div>
 
-      <Dialog
-  open={showRequests}
-  onClose={() => setShowRequests(false)}
-  fullWidth
-  maxWidth="sm"
->
-  <DialogTitle sx={{ m: 0, p: 2, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-   בקשות (משתמשים ללא סטטוס)
-   <IconButton onClick={() => setShowRequests(false)} size="small">
-     <CancelIcon />
-   </IconButton>
- </DialogTitle>
 
-  <DialogContent dividers>
-    <table  style={{ width:"100%", borderCollapse:"collapse", direction:"rtl" }}>
-      <thead>
-        <tr>
-          <th>שם מלא</th>
-          <th>טלפון</th>
-          <th style={{ textAlign: "center" }}>פעולות</th>
-        </tr>
-      </thead>
-      <tbody>
-        {requests.map(u => (
-          <tr key={u.id}>
-            
-               {/* עמודה 1 – שם מלא (מימין) */}
-      <td style={{ textAlign: "right" }}>
-        {u.fullname || `${u.first_name || ""} ${u.last_name || ""}`.trim()}
-      </td>
-
-      {/* עמודה 2 – טלפון (אמצע) */}
-      <td style={{ textAlign: "center" }}>
-        {u.phone}
-      </td>
-
-      {/* עמודה 3 – כפתורי ✔︎/✖︎ (משמאל) */}
-      <td style={{ textAlign: "center" }}>
-        <IconButton
-  size="small"
-  onClick={async () => {
-    await approveRequest(u, "registered");
-  }}
->
-  <CheckCircleOutlineIcon color="success" fontSize="small" />
-  </IconButton>
-
-  <IconButton
-    size="small"
-    onClick={async () => {
-      await hide(u);
-    }}
-  >
-    <CancelIcon color="error" fontSize="small" />
-  </IconButton>
-      </td>
-          </tr>
-        ))}
-        {requests.length === 0 && (
-          <tr>
-            <td colSpan={3} style={{ textAlign: "center", padding: 16 }}>
-              אין בקשות פתוחות
-            </td>
-          </tr>
-        )}
-      </tbody>
-    </table>
-  </DialogContent>
-</Dialog>
+      <label style={{ display:"flex", alignItems:"center", gap:8 }}>
+        חיפוש:
+        <input
+          type="text"
+          placeholder="שם / משפחה / טלפון"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{
+            padding:"4px 8px",
+            borderRadius:4,
+            border:"1px solid #ccc",
+            width:180
+          }}
+        />
+      </label>
 
 
       {/* ----------------------------------------
@@ -724,8 +925,9 @@ async function acknowledgeRow(row, type) {
         >
 
           {/* 1. Add User בצד שמאל */}
-        <button onClick={() => setShowModal(true)}>
-        </button>
+           {/* ❶ “בחר” + “הוסף משתמש” צמודים – הכי שמאלי = הוסף */}
+        <div style={{ display: "flex", gap: 4 }}>
+        </div>
 
         
         {/* SHOW בצד ימין */}
@@ -749,6 +951,8 @@ async function acknowledgeRow(row, type) {
         </label>
 
         {/* טאבים במרכז */}
+
+        
         <div
           style={{
             display: "inline-flex",
@@ -775,9 +979,35 @@ async function acknowledgeRow(row, type) {
 
 
           {/* Add User Button */}
-        <button onClick={() => setShowModal(true)}>
-          הוסף משתמש
+        {/* Add User Button */}
+
+
+      {/* כפתור בחר / בטל בחירה */}
+      <button
+        onClick={toggleSelectMode}
+        style={{ ...actionButtonStyle, marginInlineStart: 8 }}
+      >
+        {selectMode ? "בטל בחירה" : "בחר"}
+      </button>
+
+      {/* מחק נבחרים – רק כשה-selectMode פעיל */}
+      {selectMode && (
+        <button
+          onClick={deleteSelected}
+          disabled={selected.size === 0}
+          style={{
+            ...deleteButtonStyle,
+            marginInlineStart: 8,
+            opacity: selected.size ? 1 : .4,
+            cursor: selected.size ? "pointer" : "not-allowed"
+          }}
+        >
+          מחק נבחרים
         </button>
+      )}
+
+        <button onClick={() => setShowModal(true)}>הוסף משתמש</button>
+
       </div>
 
       {/* Modal */}
@@ -825,9 +1055,9 @@ async function acknowledgeRow(row, type) {
                 style={{ display: "block", width: "100%", marginTop: 4 }}
               />
             </label>
-            {firstTouched && firstError && (
-          <div style={{ color: "red", marginTop: 4 }}>{firstError}</div>
-        )}
+            {firstTouched && !isFirstValid && (
+              <div style={{ color: "red", marginTop: 4 }}>יש להזין שם פרטי</div>
+            )}
 
           </div>
 
@@ -845,9 +1075,10 @@ async function acknowledgeRow(row, type) {
                 style={{ display: "block", width: "100%", marginTop: 4 }}
               />
             </label>
-            {lastTouched && lastError && (
-          <div style={{ color: "red", marginTop: 4 }}>{lastError}</div>
-        )}
+            {lastTouched && !isLastValid && (
+              <div style={{ color: "red", marginTop: 4 }}>יש להזין שם משפחה</div>
+            )}
+
           </div>
 
           <div style={{ marginBottom: 12 }}>
@@ -863,6 +1094,7 @@ async function acknowledgeRow(row, type) {
                 style={{ display: "block", width: "100%", marginTop: 4 }}
               />
 
+
               {phoneTouched && phoneError && (
               <div style={{ color: "red", marginTop: 4 }}>
                  {phoneError}
@@ -870,6 +1102,46 @@ async function acknowledgeRow(row, type) {
              )}
             </label>
           </div>
+
+          
+          <div style={{ marginBottom: 12 }}>
+            <label>
+              תעודת זהות:
+              <input
+                type="text"
+                value={idNumber}
+                onChange={e => setIdNumber(e.target.value)}
+                style={{ display: "block", width: "100%", marginTop: 4 }}
+              />
+            </label>
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+          <label>
+            כתובת:
+            <input
+              type="text"
+              value={address}
+              onChange={e => setAddress(e.target.value)}
+              style={{ display: "block", width: "100%", marginTop: 4 }}
+            />
+          </label>
+        </div>
+
+
+          <div style={{ marginBottom: 12 }}>
+            <label>
+              הערות:
+              <textarea
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                rows={3}
+                style={{ display: "block", width: "100%", marginTop: 4 }}
+              />
+            </label>
+          </div>
+
+
           <div style={{ marginBottom: 12 }}>
           <label>
             סוג משתמש:
@@ -888,7 +1160,7 @@ async function acknowledgeRow(row, type) {
 
            <button
             onClick={handleAddUser}
-            disabled={!isPhoneValid || !isFirstValid || !isLastValid}
+            disabled={!isPhoneValid || !isFirstValid || !isLastValid || !isTypeValid}
             style={{
               ...actionButtonStyle,
               opacity:  isPhoneValid ? 1 : 0.5,
@@ -903,180 +1175,234 @@ async function acknowledgeRow(row, type) {
 
 
 
+
 {/* Users table */}
 <table style={{ width: "100%", borderCollapse: "collapse" }}>
   <thead>
     <tr>
+      {/* עמודת “בחר-הכול” מוצגת רק במצב selectMode */}
+      {selectMode && (
+        <th style={th}>
+          <input
+            type="checkbox"
+            checked={selected.size === rowsToShow.length && rowsToShow.length > 0}
+            ref={el => {
+              if (el)
+                el.indeterminate =
+                  selected.size > 0 && selected.size < rowsToShow.length;
+            }}
+            onChange={e => selectAllRows(e.target.checked)}
+          />
+        </th>
+      )}
       <th style={th}>שם מלא</th>
       <th style={th}>מספר טלפון</th>
-      {isRepliesTab && (
-        <>
-          <th style={th}>שם ההודעה</th>
-          <th style={th}>תאריך</th>
-        </>
-      )}
-      {filter === "activity" && (
-        <>
-          <th style={th}>שם הפעילות</th>
-          <th style={th}>תאריך</th>
-        </>
-      )}
-      {filter === "survey" && (
-        <>
-          <th style={th}>שם הסקר</th>
-          <th style={th}>תאריך</th>
-        </>
-      )}
+      <th style={th}>תעודת זהות</th>
+      <th style={th}>כתובת</th>
+      <th style={th}>הערות</th>
+
+
+
+      {filter === "activity" && <th style={th}>כמות פעילויות</th>}
+      {filter === "survey"   && <th style={th}>כמות סקרים</th>}
+      {filter === "replies"  && <th style={th}>כמות תגובות</th>}
+      {filter === "both"     && <th style={th}>פעילויות / סקרים</th>}
+
+      
       <th style={th}>פעולות</th>
     </tr>
   </thead>
 <tbody>
-  {rowsToShow.map((row, idx) => {
+  {rowsToShow.map((row /* , idx */) => {
     const u = row.user;
+    const checked = selected.has(ensureUserId(u));
 
-    return (
-      <React.Fragment key={idx}>
-        {/* ── שורה רגילה ── */}
-        <tr>
-          {/* כפתור ⋯ + שם מלא */}
-          <td>
+  return (
+    <React.Fragment key={ensureUserId(u)}>
+      {/* ───── ① שורה ראשית ───── */}
+      <tr>
+        {/* Check-box – רק במצב selectMode */}
+        {selectMode && (
+          <td style={td}>
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={() => toggleSelect(u)}
+            />
+
+          </td>
+        )}
+
+        {/* שם מלא + ⋯ (⋯ מוצג רק במסנן all) */}
+        <td>
+          {filter === "all" && (
             <button
-              style={{ border:"none", background:"transparent", cursor:"pointer" }}
-              onClick={() => {
-                const s = new Set(openRows);
-                s.has(u.user_id) ? s.delete(u.user_id) : s.add(u.user_id);
-                setOpenRows(s);
-              }}
+              style={{ border: "none", background: "transparent", cursor: "pointer" }}
+              onClick={() => toggleRow(u.user_id)}
             >
               ⋯
             </button>
-            {u.fullname}
+          )}
+          {u.fullname}
+        </td>
+
+        {/* טלפון */}
+        <td style={td}>{u.phone}</td>
+        <td style={td}>{u.id_number || ""}</td>
+        <td style={td}>{u.address || ""}</td>
+        <td style={td}>{u.notes || ""}</td>
+
+        {isActivity && (
+          <td
+            onClick={() => toggleRow(u.user_id, "activity")}
+            style={{ cursor: "pointer", userSelect: "none" }}
+          >
+            {row.count}
+            {showPlus && <span style={plusStyle}>➕</span>}
           </td>
+        )}
 
-          {/* מספר טלפון */}
-          <td style={td}>{u.phone}</td>
+        {isSurvey && (
+          <td
+            onClick={() => toggleRow(u.user_id, "survey")}
+            style={{ cursor: "pointer", userSelect: "none" }}
+          >
+            {row.count}
+            {showPlus && <span style={plusStyle}>➕</span>}
+          </td>
+        )}
 
-          {/* עמודות מותנות – פעילות / סקר / תגובה */}
-          {filter === "activity" && (
-            <>
-              <td>{row.activityName}</td>
-              <td>{formatDate(row.activityDate)}</td>
-            </>
-          )}
-          {filter === "survey" && (
-            <>
-              <td>{row.surveyName}</td>
-              <td>{formatDate(row.surveyDate)}</td>
-            </>
-          )}
-          {filter === "both" && (
-            <>
-              <td>{row.activityName || row.surveyName}</td>
-              <td>{formatDate(row.activityDate || row.surveyDate)}</td>
-            </>
-          )}
-          {filter === "replies" && (
-            <>
-              <td>{row.title}</td>
-              <td>{formatDate(row.date)}</td>
-            </>
-          )}
+        {isReplies && (
+          <td
+            onClick={() => toggleRow(u.user_id, "replies")}
+            style={{ cursor: "pointer", userSelect: "none" }}
+          >
+            {row.count}
+            {showPlus && <span style={plusStyle}>➕</span>}
+          </td>
+        )}
 
-          {/* פעולות */}
-          <td style={{ ...td, position:"relative" }}>
+
+        {isBoth && (
+          <>
+            <td style={{ cursor: "pointer" }}
+                onClick={() => toggleRow(u.user_id, "activity")}>
+              ➕ {u.activities?.length || 0}
+            </td>
+            <td style={{ cursor: "pointer" }}
+                onClick={() => toggleRow(u.user_id, "survey")}>
+              ➕ {u.survey?.length || 0}
+            </td>
+          </>
+        )}
+
+        {filter === "both"    && (
+          <td>{(u.activities?.length || 0) + 1} / {(u.survey?.length || 0) + 1}</td>
+        )}
+      
+          <td style={{ ...td, position: "relative" }}>
             <div style={{ display: "flex", gap: 4 }}>
-
-                {filter !== "all" && (
-                  <button
-                    onClick={() => acknowledgeRow(row, filter)}
-                    style={{
-                      fontSize: "16px",
-                      padding: "4px",
-                      color: "white",
-                      backgroundColor: "green",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer"
-                    }}
-                    title="סימן שבדקתי ולא רוצים להציג יותר"
-                  >
-                    ✓
-                  </button>
-                )}
-
+              <IconButton
+                size="small"
+                title="עריכת שם"
+                onClick={() => setEditUser(u)}
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
 
               {activeTab === "registered" && (
-                <>
-                  {/* ✎ כפתור עריכה */}
-                    <IconButton
-                      size="small"
-                      title="עריכת שם"
-                      onClick={() => setEditUser(u)}
-                    >
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                  <button
-                    type="button"
-                    style={actionButtonStyle}
-                    onClick={() => updateUserType(u, "senior")}
-                  >
-                    הוסף לחברי מרכז ה-60+
-                  </button>
-                  <button
-                    type="button"
-                    style={deleteButtonStyle}
-                    onClick={() => deleteUser(u
-
-                    )}
-                  >
-                    מחק
-                  </button>
-                </>
+                <button
+                  type="button"
+                  style={actionButtonStyle}
+                  onClick={() => updateUserType(u, "senior")}
+                >
+                  הוסף לחברי מרכז ה-60+
+                </button>
               )}
 
               {activeTab === "senior" && (
-                <>
-                 {/* ✎ כפתור עריכה גם בטאב senior */}
-                  <IconButton
-                    size="small"
-                    title="עריכת שם"
-                    onClick={() => setEditUser(u)}
-                  >
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                  <button
-                    type="button"
-                    style={actionButtonStyle}
-                    onClick={() => updateUserType(u, "registered")}
-                  >
-                    הוסף לרשומים
-                  </button>
-                  <button
-                    type="button"
-                    style={deleteButtonStyle}
-                    onClick={() => deleteUser(u)}
-                  >
-                    מחק
-                  </button>
-                </>
+                <button
+                  type="button"
+                  style={actionButtonStyle}
+                  onClick={() => updateUserType(u, "registered")}
+                >
+                  הוסף לרשומים
+                </button>
               )}
-            </div> 
+
+              <button
+                type="button"
+                style={deleteButtonStyle}
+                onClick={() => deleteUser(u)}
+              >
+                מחק
+              </button>
+            </div>
+          </td>
+
+      </tr>
+
+      {/* ───── ② שורת-פירוט מתקפלת ───── */}
+      {Array.from(openRows).some(k => k.startsWith(u.user_id)) && (
+        <tr style={{ background: "#fafafa" }}>
+          {/* תא ריק לשמירת יישור אם selectMode פעיל */}
+          {selectMode && <td></td>}
+          {/* תא ריק מתחת לעמודת השם */}
+          <td></td>
+
+          <td
+            colSpan={1}
+            style={{ padding: "4px 8px" }}
+          >
+            <UserDetails
+              user={u}
+              filter={
+                isBoth
+                  ? (openRows.has(`${u.user_id}|activity`) ? "activity"
+                    : openRows.has(`${u.user_id}|survey`) ? "survey"
+                    : filter)
+                  : filter
+              }
+              collapsible={["both","all"].includes(filter)} // ◄◄ רק כשהמסנן מציג 2-קטגוריות
+            />
           </td>
         </tr>
-
-        {/* ── שורת-הפירוט המתקפלת ── */}
-        {openRows.has(u.user_id) && (
-          <tr>
-            <td colSpan="100%" style={{ background:"#fafafa", padding:8 }}>
-              <UserDetails user={u} filter={filter} />
-            </td>
-          </tr>
-        )}
-      </React.Fragment>
-    );
-  })}
+      )}
+    </React.Fragment>
+  );
+})}
 </tbody>
         </table>
+
+        {/* ✦✦ דיאלוג ייצוא ✦✦ */}
+        <Dialog open={showExport} onClose={() => setShowExport(false)} maxWidth="xs" fullWidth>
+          <DialogTitle>ייצוא משתמשים</DialogTitle>
+          <DialogContent sx={{ display:"flex", flexDirection:"column", gap:2 }}>
+            <label>
+              בחר קבוצה:
+              <select
+                value={exportType}
+                onChange={e => setExportType(e.target.value)}
+                style={{ display:"block", width:"100%", marginTop:8 }}
+              >
+                <option value="all">כל המשתמשים</option>
+                <option value="registered">משתמשים רשומים</option>
+                <option value="senior">חברי מרכז 60+</option>
+              </select>
+            </label>
+
+            <Button
+              variant="contained" 
+              onClick={() => {
+                exportToExcel(exportType);
+                setShowExport(false);
+              }}
+            >
+              ייצוא
+            </Button>
+          </DialogContent>
+        </Dialog>
+
 
         {/* ✎ Modal עריכת שם */}
 {editUser && (
@@ -1093,6 +1419,30 @@ async function acknowledgeRow(row, type) {
         label="שם משפחה"
         defaultValue={editUser.last_name}
         onChange={e => editUser.last_name = e.target.value}
+        fullWidth
+      />
+      <TextField
+        label="מספר טלפון"
+        defaultValue={editUser.phone}
+        onChange={e => editUser.phone = e.target.value}
+        fullWidth
+      />
+      <TextField
+        label="תעודת זהות"
+        defaultValue={editUser.id_number}
+        onChange={e => editUser.id_number = e.target.value}
+        fullWidth
+      />
+      <TextField
+        label="כתובת"
+        defaultValue={editUser.address}
+        onChange={e => editUser.address = e.target.value}
+        fullWidth
+      />
+        <TextField
+        label="הערות"
+        defaultValue={editUser.notes}
+        onChange={e => editUser.notes = e.target.value}
         fullWidth
       />
       <Button
@@ -1157,4 +1507,22 @@ const deleteButtonStyle = {
   ...actionButtonStyle,
   border: "1px solid #dc3545",
   color: "#dc3545",
+};
+
+const plusBtnStyle = {
+  border: "none",
+  background: "transparent",
+  color: "#7b35ff",
+  fontSize: "18px",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  gap: 4,
+};
+
+  // מחוץ ל-render
+const plusStyle = {
+  marginInlineStart: 4,
+  color: "#7b35ff",
+  fontWeight: "bold",
 };
