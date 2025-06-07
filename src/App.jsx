@@ -17,6 +17,7 @@ import SurveyResultsList              from "./components/SurveyResultsList.jsx";
 import SurveyResultsDetail            from "./components/SurveyResultsDetail.jsx";
 import SurveyListContainer            from "./components/SurveyListContainer.jsx";
 import SurveyDetailContainer          from "./components/SurveyDetailContainer.jsx";
+import SurveyAnalysisDetail           from "./components/SurveyAnalysisDetail";
 
 import ManageMessages                 from "./components/ManageMessages.jsx";
 import CreateMessage                  from "./components/CreateMessageContainer.jsx";
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="/surveys/create"     element={<CreateSurvey />} />
         <Route path="/surveys/results"    element={<SurveyResultsList />} />
         <Route path="/surveys/results/:id" element={<SurveyResultsDetail />} />
+        <Route path="/surveys/analysis/:id" element={<SurveyAnalysisDetail />} />
 
         {/* Surveys – public */}
         <Route path="/surveys/list"       element={<SurveyListContainer />} />

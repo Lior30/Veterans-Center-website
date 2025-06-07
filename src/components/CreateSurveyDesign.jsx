@@ -1,9 +1,10 @@
+// src/components/CreateSurveyDesign.jsx
 import React from "react";
 
 export default function CreateSurveyDesign({
   headline,
-  questions,
   onHeadlineChange,
+  questions,
   onAddQuestion,
   onQuestionChange,
   onQuestionTypeChange,
@@ -13,9 +14,12 @@ export default function CreateSurveyDesign({
   onRemoveQuestion,
   onSubmit,
   onCancel,
+  activities,
+  activityId,
+  onActivityChange,
 }) {
   return (
-    <div style={{ padding: 40, maxWidth: 600, margin: "0 auto" }}>
+    <div style={{ padding: 40, maxWidth: 600, margin: "0 auto", direction: "rtl" }}>
       <h2>יצירת סקר חדש</h2>
 
       {/* Headline */}
@@ -28,6 +32,24 @@ export default function CreateSurveyDesign({
             onChange={onHeadlineChange}
             style={{ width: "100%", padding: 8, marginTop: 4 }}
           />
+        </label>
+      </div>
+
+      {/* *** UPDATED LABEL TEXT *** */}
+      <div style={{ margin: "20px 0" }}>
+        <label>
+          <strong>קשר סקר ל:</strong> {/* was "הסקר קשור ל:" */}
+          <select
+            value={activityId}
+            onChange={onActivityChange}
+            style={{ width: "100%", padding: 8, marginTop: 4 }}
+          >
+            {activities.map((act) => (
+              <option key={act.id} value={act.id}>
+                {act.title}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
 
@@ -45,14 +67,15 @@ export default function CreateSurveyDesign({
         >
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <strong>
-              שאלה מספר  {idx + 1} {q.mandatory && <span style={{ color: "red" }}>*</span>}
+              שאלה מספר {idx + 1}{" "}
+              {q.mandatory && <span style={{ color: "red" }}>*</span>}
             </strong>
             {!q.fixed && (
               <button onClick={() => onRemoveQuestion(q.id)}>הסר</button>
             )}
           </div>
 
-          {/* Text */}
+          {/* Text input */}
           <div style={{ margin: "10px 0" }}>
             <input
               type="text"
@@ -87,7 +110,7 @@ export default function CreateSurveyDesign({
             </label>
           </div>
 
-          {/* Options */}
+          {/* Options (if multiple-choice) */}
           {q.type === "multiple" && (
             <div style={{ marginLeft: 20 }}>
               {q.options.map((opt, i) => (
@@ -101,7 +124,7 @@ export default function CreateSurveyDesign({
                   />
                 </div>
               ))}
-              <button onClick={() => onAddOption(q.id)}>+ Add Option</button>
+              <button onClick={() => onAddOption(q.id)}>+ הוסף אפשרות</button>
             </div>
           )}
         </div>
