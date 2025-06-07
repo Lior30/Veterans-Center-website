@@ -16,6 +16,9 @@ const initialForm = {
   recurring: false,
   weekdays: [],     // 0=Sun … 6=Sat
   participants: [],
+  tags: [],
+  price: "",
+  location: "",
 };
 
 export default function ActivitiesContainer() {
@@ -41,13 +44,18 @@ export default function ActivitiesContainer() {
     setDialogOpen(true);
   };
 
- const handleDelete = async (row) => {
-   if (
-     window.confirm(`אתה בטוח שברצונך למחוק את הפעילות "${row.name}"?`)
-   ) {
-     await ActivityService.delete(row.id);
-   }
- };
+  const handleDelete = async (row) => {
+    if (
+      window.confirm(`אתה בטוח שברצונך למחוק את הפעילות "${row.name}"?`)
+    ) {
+      await ActivityService.delete(row.id);
+    }
+  };
+
+  const toMinutes = (timeStr) => {
+    const [hh, mm] = timeStr.split(":").map((x) => parseInt(x, 10));
+    return hh * 60 + mm;
+  };
 
   const handleDateClick = (dateStr) => {
     setForm({ ...initialForm, date: dateStr });
@@ -67,10 +75,10 @@ export default function ActivitiesContainer() {
       return;
     }
 
-  //   if (!form.tags || form.tags.length === 0) {
-  //    alert("אנא בחר לפחות תגית אחת לפעילות.");
-  //    return;
-  //  }
+    if (!form.tags || form.tags.length === 0) {
+     alert("אנא בחרי לפחות תגית אחת לפעילות.");
+     return;
+   }
     await ActivityService.save({
       ...form,
       capacity: Number(form.capacity),
