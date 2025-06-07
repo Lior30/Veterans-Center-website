@@ -1,7 +1,31 @@
 /* src/index.css */
-/* global styles go here, or leave empty */
-
-body {
+/* Global reset and RTL support */
+html,
+body,
+#root {
+  height: 100%;
   margin: 0;
-  font-family: sans-serif;
+  padding: 0;
+  direction: rtl;
+  background-color: #f5f5f5;
+}
+
+/* Box-sizing reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Default font and text color */
+body {
+  font-family: "Segoe UI", Tahoma, "Helvetica Neue", Arial, sans-serif;
+  color: #333333;
+}
+
+/* Remove scrollbars in the flyer carousel */
+.flyer-carousel::-webkit-scrollbar {
+  display: none;
+}
+.flyer-carousel {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
 }

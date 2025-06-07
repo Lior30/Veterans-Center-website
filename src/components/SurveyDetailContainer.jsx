@@ -1,78 +1,173 @@
 // src/components/SurveyDetailContainer.jsx
 import React, { useState, useEffect } from "react";
-import { doc, getDoc, collection, addDoc } from "firebase/firestore";
+import { doc, getDoc, collection, addDoc, getDocs } from "firebase/firestore";
 import { useParams, useNavigate } from "react-router-dom";
 import { db } from "../firebase.js";
 import SurveyDetailDesign from "./SurveyDetailDesign.jsx";
+import SurveyService from "../services/SurveyService.js";
+import ActivityService from "../services/ActivityService.js";
+import UserService from "../services/UserService.js";
+import { saveSurveyResponse } from "../services/SurveyService";
 
-export default function SurveyDetailContainer() {
-  const { id } = useParams();            // survey ID
+
+export default function SurveyDetailContainer({ surveyId, onClose }) {
+  const params = useParams();
+  const id = surveyId || params?.id;
   const navigate = useNavigate();
-  const [survey, setSurvey] = useState(null);
-  const [answers, setAnswers] = useState({});
 
-  // Load the survey definition
+  const [survey, setSurvey] = useState(null);
+  const [activityTitle, setActivityTitle] = useState("");
+  const [answers, setAnswers] = useState({});
+  const [errors, setErrors] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [responses, setResponses] = useState([]);
+  const [submitError, setSubmitError] = useState(null);
+
   useEffect(() => {
+    if (!id) {
+    console.error("⛔ Cannot load survey: id is undefined");
+    return;
+    }
+
     async function load() {
-      const snap = await getDoc(doc(db, "surveys", id));
-      if (snap.exists()) {
-        setSurvey({ id: snap.id, ...snap.data() });
-      } else {
-        console.error("Survey not found:", id);
+      // 1) Load the survey itself
+      const s = await SurveyService.getById(id);
+      if (!s) {
+        setSubmitError("סקר לא נמצא.");
+        return;
       }
+      setSurvey(s);
+
+      // 2) If the survey is linked to a specific activity, load its title from Firestore
+      if (s.of_activity && typeof s.of_activity === "string" && s.of_activity !== "כללי") {
+        try {
+          const actSnap = await getDoc(doc(db, "activities", s.of_activity));
+          if (actSnap.exists()) {
+            setActivityTitle(actSnap.data().name);
+          } else {
+            setActivityTitle("פעילות לא נמצאה");
+          }
+        } catch (err) {
+          console.error("שגיאה בטעינת פעילות:", err);
+          setActivityTitle("שגיאה בטעינה");
+        }
+      } else {
+          setActivityTitle("");
+      }
+
+      // 3) Load all existing responses for this survey
+      const rSnap = await getDocs(collection(db, "surveys", id, "responses"));
+      const responseData = rSnap.docs.map((d) => d.data());
+      setResponses(responseData);
+      checkIfBlocked(responseData);
     }
     load();
   }, [id]);
 
-  // Track changes to any answer
-  const handleChange = (qid, value) => {
-    setAnswers((a) => ({ ...a, [qid]: value }));
-  };
+  const checkIfBlocked = (allResponses) => {
+  const fname = (answers.firstName || "").trim();
+  const lname = (answers.lastName || "").trim();
+  const phone = (answers.phone || "").trim();
+  if (!fname || !lname || !phone) return;
 
-  // Submit with validation
-  const handleSubmit = async () => {
-    // Allow English letters, Hebrew letters (א–ת), and spaces
-    const nameRegex  = /^[A-Za-z\u05D0-\u05EA\s]+$/;
-    const phoneRegex = /^05\d{8}$/;
+  const userId = `${fname}_${lname}_${phone}`;
+  const isBlocked = allResponses.some((r) => {
+    const a = r.answers || {};
+    return `${a.firstName}_${a.lastName}_${a.phone}` === userId;
+  });
+  setBlocked(isBlocked);
+};
 
-    // Ensure all mandatory questions answered & validate name/phone
-    for (let q of survey.questions.filter((q) => q.mandatory)) {
-      const val = (answers[q.id] || "").trim();
-      if (!val) {
-        alert(`Please answer mandatory question “${q.text}.”`);
-        return;
-      }
-      if (q.text === "Full Name" && !nameRegex.test(val)) {
-        alert("Full Name must contain only letters (English or Hebrew) and spaces.");
-        return;
-      }
-      if (q.text === "Phone Number" && !phoneRegex.test(val)) {
-        alert("Phone Number must be exactly 10 digits and start with “05.”");
-        return;
+  useEffect(() => {
+  const fname = (answers.firstName || "").trim();
+  const lname = (answers.lastName || "").trim();
+  const phone = (answers.phone || "").trim();
+  if (!fname || !lname || !phone) return;
+
+  const userId = `${fname}_${lname}_${phone}`;
+  const isBlocked = responses.some((r) => {
+    const a = r.answers || {};
+    return `${a.firstName}_${a.lastName}_${a.phone}` === userId;
+  });
+  setBlocked(isBlocked);
+}, [answers, responses]);
+
+const handleChange = (qid, value) => {
+  setAnswers((prev) => {
+    const updated = { ...prev, [qid]: value };
+    return updated;
+  });
+};
+
+  const validate = () => {
+    const newErrors = {};
+    const fname = (answers.firstName || "").trim();
+    const lname = (answers.lastName || "").trim();
+    const phone = (answers.phone || "").trim();
+
+    if (!UserService.isValidName(fname)) newErrors.firstName = "שם לא תקין";
+    if (!UserService.isValidName(lname)) newErrors.lastName = "שם משפחה לא תקין";
+    if (!UserService.isValidPhone(phone)) newErrors.phone = UserService.getPhoneError(phone);
+
+    for (let q of survey.questions || []) {
+      if (q.mandatory && !answers[q.id]?.trim()) {
+        newErrors[q.id] = "שדה חובה";
       }
     }
 
-    // Save the response
-    await addDoc(collection(db, "surveys", id, "responses"), {
-      answers,
-      submittedAt: new Date(),
-    });
-
-    // Go back to the survey list
-    navigate("/surveys/list");
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleCancel = () => navigate("/surveys/list");
+  const handleSubmit = async () => {
+  const isValid = validate();
+  if (!isValid || blocked) {
+    console.warn("⛔ Submission blocked by validation or duplicate detection.");
+    return;
+  }
 
-  if (!survey) return <p>Loading…</p>;
+  try {
+    await saveSurveyResponse(id, {
+      answers,
+      submittedAt: new Date().toISOString(),
+      survey: survey.headline, // name of the survey
+      survey_date: new Date().toLocaleDateString("he-IL"), // readable date in Hebrew
+    });
+
+    setSubmitError(null);
+    setSubmitted(true);
+    if (onClose) onClose();
+    else navigate("/surveys/list");
+  } catch (err) {
+    console.error("Error submitting survey response:", err);
+    setSubmitError("שגיאה בשליחת התשובה");
+  }
+};
+
+  const handleCancel = () => {
+    if (onClose) onClose();
+    else navigate("/surveys/list");
+  };
+
+  if (!survey) return <p>טוען סקר…</p>;
+
+  console.log("survey.of_activity:", survey.of_activity);
 
   return (
+  <>
     <SurveyDetailDesign
       survey={survey}
+      activityTitle={activityTitle}
       answers={answers}
+      errors={errors}
+      blocked={blocked}
       onChange={handleChange}
       onSubmit={handleSubmit}
       onCancel={handleCancel}
+      submitted={submitted}
+      submitError={submitError}
     />
-  );
+  </>
+);
 }

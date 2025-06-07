@@ -15,6 +15,7 @@ const initialForm = {
   flyerId: "",
   recurring: false,
   weekdays: [],     // 0=Sun … 6=Sat
+  participants: [],
 };
 
 export default function ActivitiesContainer() {
@@ -40,16 +41,13 @@ export default function ActivitiesContainer() {
     setDialogOpen(true);
   };
 
-  /** Ask for confirmation and delete */
-  const handleDelete = async (row) => {
-    if (
-      window.confirm(
-        `אתה בטוח שברצונך למחוק את הפעילות "${row.name}"?`
-      )
-    ) {
-      await ActivityService.delete(row.id);
-    }
-  };
+ const handleDelete = async (row) => {
+   if (
+     window.confirm(`אתה בטוח שברצונך למחוק את הפעילות "${row.name}"?`)
+   ) {
+     await ActivityService.delete(row.id);
+   }
+ };
 
   const handleDateClick = (dateStr) => {
     setForm({ ...initialForm, date: dateStr });
@@ -68,6 +66,11 @@ export default function ActivitiesContainer() {
       alert("אנא מלא שם, תאריך, שעת התחלה ושעת סיום.");
       return;
     }
+
+  //   if (!form.tags || form.tags.length === 0) {
+  //    alert("אנא בחר לפחות תגית אחת לפעילות.");
+  //    return;
+  //  }
     await ActivityService.save({
       ...form,
       capacity: Number(form.capacity),
@@ -87,7 +90,7 @@ export default function ActivitiesContainer() {
       onTabChange={setTab}
       onNew={handleNew}
       onEdit={handleEdit}
-      onDelete={handleDelete}      // ← added
+      onDelete={handleDelete}
       onDateClick={handleDateClick}
       onEventClick={handleEventClick}
       onFormChange={setForm}

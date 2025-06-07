@@ -1,43 +1,41 @@
-import React, { useState } from "react";
-import { useNavigate }    from "react-router-dom";
-import { collection, addDoc } from "firebase/firestore";
-import { db }                from "../firebase.js";
-import CreateSurveyDesign    from "./CreateSurveyDesign.jsx";
+// src/components/CreateSurveyContainer.jsx
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import CreateSurveyDesign from "./CreateSurveyDesign.jsx";
+import SurveyService from "../services/SurveyService.js";
 
 let nextId = 1;
 
 export default function CreateSurveyContainer() {
   const navigate = useNavigate();
 
-  // Start with the two fixed mandatory questions
-  const [questions, setQuestions] = useState([
-    {
-      id: nextId++,
-      text: "Full Name",
-      type: "open",
-      options: [],
-      mandatory: true,
-      fixed: true,
-    },
-    {
-      id: nextId++,
-      text: "Phone Number",
-      type: "open",
-      options: [],
-      mandatory: true,
-      fixed: true,
-    },
-  ]);
+  const [questions, setQuestions] = useState([]);
+  
   const [headline, setHeadline] = useState("");
 
-  /* —— Handlers for headline & question edits —— */
+  // track which activity this survey is linked to
+  // "general" = no specific activity; otherwise, an activity ID
+  const [activityId, setActivityId] = useState("general");
+  const [activities, setActivities] = useState([]);
+
+  // Load all activities once (for the dropdown)
+  useEffect(() => {
+    async function loadActivities() {
+      const acts = await SurveyService.listActivities();
+      setActivities([{ id: "general", title: "כללי" }, ...acts]);
+    }
+    loadActivities();
+  }, []);
+
+  // Handlers
   const handleHeadlineChange = (e) => setHeadline(e.target.value);
+  const handleActivityChange = (e) => setActivityId(e.target.value);
 
   const handleAddQuestion = () =>
     setQuestions((qs) => [
       ...qs,
       {
-        id: nextId++,
+        id: `auto_${nextId++}`,
         text: "",
         type: "open",
         options: [],
@@ -91,27 +89,29 @@ export default function CreateSurveyContainer() {
       )
     );
 
-  /* —— Submit & Cancel —— */
+  // Submit / Cancel
   const handleSubmit = async () => {
     const title = headline.trim();
     if (!title) {
-      alert("Please enter a survey title before submitting.");
+      alert("אנא הזן כותרת לסקר לפני פרסום.");
       return;
     }
 
-    await addDoc(collection(db, "surveys"), {
+    // Build the payload – if “כללי”, set activityId=כללי
+    const payload = {
       headline: title,
       questions,
-      createdAt: new Date(),
-    });
+      of_activity: activityId === "general" ? "כללי" : activityId,
+    };
 
-    navigate("/surveys/list");
+    await SurveyService.create(payload);
+    navigate("/surveys/results");
   };
 
   const handleCancel = () => {
     if (
       window.confirm(
-        "Abort survey creation and lose all changes?"
+        "בטל יצירת סקר ותאבדו את כל השינויים?"
       )
     ) {
       navigate("/surveys");
@@ -121,8 +121,8 @@ export default function CreateSurveyContainer() {
   return (
     <CreateSurveyDesign
       headline={headline}
-      questions={questions}
       onHeadlineChange={handleHeadlineChange}
+      questions={questions}
       onAddQuestion={handleAddQuestion}
       onQuestionChange={handleQuestionChange}
       onQuestionTypeChange={handleQuestionTypeChange}
@@ -132,6 +132,9 @@ export default function CreateSurveyContainer() {
       onRemoveQuestion={handleRemoveQuestion}
       onSubmit={handleSubmit}
       onCancel={handleCancel}
+      activities={activities}
+      activityId={activityId}
+      onActivityChange={handleActivityChange}
     />
   );
 }

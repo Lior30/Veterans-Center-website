@@ -1,9 +1,10 @@
+// src/components/CreateSurveyDesign.jsx
 import React from "react";
 
 export default function CreateSurveyDesign({
   headline,
-  questions,
   onHeadlineChange,
+  questions,
   onAddQuestion,
   onQuestionChange,
   onQuestionTypeChange,
@@ -13,21 +14,42 @@ export default function CreateSurveyDesign({
   onRemoveQuestion,
   onSubmit,
   onCancel,
+  activities,
+  activityId,
+  onActivityChange,
 }) {
   return (
-    <div style={{ padding: 40, maxWidth: 600, margin: "0 auto" }}>
-      <h2>Create New Survey</h2>
+    <div style={{ padding: 40, maxWidth: 600, margin: "0 auto", direction: "rtl" }}>
+      <h2>יצירת סקר חדש</h2>
 
       {/* Headline */}
       <div style={{ margin: "20px 0" }}>
         <label>
-          <strong>Headline:</strong>
+          <strong>כותרת:</strong>
           <input
             type="text"
             value={headline}
             onChange={onHeadlineChange}
             style={{ width: "100%", padding: 8, marginTop: 4 }}
           />
+        </label>
+      </div>
+
+      {/* *** UPDATED LABEL TEXT *** */}
+      <div style={{ margin: "20px 0" }}>
+        <label>
+          <strong>קשר סקר ל:</strong> {/* was "הסקר קשור ל:" */}
+          <select
+            value={activityId}
+            onChange={onActivityChange}
+            style={{ width: "100%", padding: 8, marginTop: 4 }}
+          >
+            {activities.map((act) => (
+              <option key={act.id} value={act.id}>
+                {act.title}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
 
@@ -45,18 +67,19 @@ export default function CreateSurveyDesign({
         >
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <strong>
-              Question {idx + 1} {q.mandatory && <span style={{ color: "red" }}>*</span>}
+              שאלה מספר {idx + 1}{" "}
+              {q.mandatory && <span style={{ color: "red" }}>*</span>}
             </strong>
             {!q.fixed && (
-              <button onClick={() => onRemoveQuestion(q.id)}>Remove</button>
+              <button onClick={() => onRemoveQuestion(q.id)}>הסר</button>
             )}
           </div>
 
-          {/* Text */}
+          {/* Text input */}
           <div style={{ margin: "10px 0" }}>
             <input
               type="text"
-              placeholder="Enter question text"
+              placeholder="הקלד שאלה כאן"
               value={q.text}
               onChange={(e) => onQuestionChange(q.id, e.target.value)}
               style={{ width: "100%", padding: 6 }}
@@ -66,13 +89,13 @@ export default function CreateSurveyDesign({
           {/* Type & Mandatory */}
           <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
             <label style={{ marginRight: 20 }}>
-              Type:{" "}
+              סוג שאלה:{" "}
               <select
                 value={q.type}
                 onChange={(e) => onQuestionTypeChange(q.id, e.target.value)}
               >
-                <option value="open">Open-Ended</option>
-                <option value="multiple">Multiple-Choice</option>
+                <option value="open">שאלה פתוחה</option>
+                <option value="multiple">שאלה אמריקאית</option>
               </select>
             </label>
 
@@ -83,11 +106,11 @@ export default function CreateSurveyDesign({
                 onChange={() => onMandatoryChange(q.id)}
                 disabled={q.fixed}
               />{" "}
-              Mandatory
+              שאלת חובה
             </label>
           </div>
 
-          {/* Options */}
+          {/* Options (if multiple-choice) */}
           {q.type === "multiple" && (
             <div style={{ marginLeft: 20 }}>
               {q.options.map((opt, i) => (
@@ -101,7 +124,7 @@ export default function CreateSurveyDesign({
                   />
                 </div>
               ))}
-              <button onClick={() => onAddOption(q.id)}>+ Add Option</button>
+              <button onClick={() => onAddOption(q.id)}>+ הוסף אפשרות</button>
             </div>
           )}
         </div>
@@ -110,12 +133,12 @@ export default function CreateSurveyDesign({
       {/* Actions */}
       <div style={{ marginTop: 20 }}>
         <button onClick={onAddQuestion} style={{ marginRight: 12 }}>
-          + Add Question
+          + הוסף שאלה
         </button>
         <button onClick={onSubmit} style={{ marginRight: 8 }}>
-          ✅ Submit Survey
+          ✅ פרסם סקר
         </button>
-        <button onClick={onCancel}>← Cancel</button>
+        <button onClick={onCancel}>← ביטול</button>
       </div>
     </div>
   );

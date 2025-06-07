@@ -4,47 +4,56 @@ import {
   collection,
   getDocs,
   deleteDoc,
-  doc
+  doc,
 } from "firebase/firestore";
 import { db } from "../firebase.js";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { TextField } from "@mui/material";
 
 export default function SurveyResultsList() {
   const [surveys, setSurveys] = useState([]);
+  const [search, setSearch] = useState("");
+  const navigate = useNavigate();
 
-  // Load all surveys
   const loadSurveys = async () => {
     const snap = await getDocs(collection(db, "surveys"));
-    setSurveys(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    setSurveys(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
   };
 
   useEffect(() => {
     loadSurveys();
   }, []);
 
-  // Delete survey + all its responses
   const handleDeleteSurvey = async (surveyId) => {
-    // 1) delete each response doc
-    const responsesSnap = await getDocs(
+    const respSnap = await getDocs(
       collection(db, "surveys", surveyId, "responses")
     );
-    await Promise.all(
-      responsesSnap.docs.map(r => deleteDoc(r.ref))
-    );
-    // 2) delete the survey itself
+    await Promise.all(respSnap.docs.map((r) => deleteDoc(r.ref)));
     await deleteDoc(doc(db, "surveys", surveyId));
-    // 3) reload
     loadSurveys();
   };
 
+  const filteredSurveys = surveys.filter((s) =>
+    s.headline?.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div style={{ padding: 40, textAlign: "center" }}>
-      <h2>Surveys &amp; Results</h2>
+      <h2>סקרים ותשובות</h2>
 
-      {surveys.length === 0 ? (
-        <p>No surveys found.</p>
+      <TextField
+        label="חיפוש לפי כותרת"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        fullWidth
+        style={{ maxWidth: 500, margin: "20px auto" }}
+        inputProps={{ style: { textAlign: "right" } }}
+      />
+
+      {filteredSurveys.length === 0 ? (
+        <p>לא נמצאו סקרים להצגה.</p>
       ) : (
-        surveys.map(s => (
+        filteredSurveys.map((s) => (
           <div
             key={s.id}
             style={{
@@ -52,24 +61,31 @@ export default function SurveyResultsList() {
               padding: 16,
               margin: "10px auto",
               maxWidth: 500,
-              borderRadius: 4
+              borderRadius: 4,
             }}
           >
             <h3>{s.headline}</h3>
-            <Link to={`/surveys/results/${s.id}`}>
-              <button style={{ marginRight: 8 }}>View Responses</button>
-            </Link>
+            <button
+              onClick={() => navigate(`/surveys/results/${s.id}`)}
+              style={{ marginRight: 8 }}
+            >
+              הצג תשובות
+            </button>
+            <button
+              onClick={() => navigate(`/surveys/analysis/${s.id}`)}
+              style={{ marginRight: 8 }}
+            >
+              ניתוח סקר
+            </button>
             <button onClick={() => handleDeleteSurvey(s.id)}>
-              Delete Survey
+              מחק סקר
             </button>
           </div>
         ))
       )}
 
       <div style={{ marginTop: 20 }}>
-        <Link to="/surveys">
-          <button>← Back to Manage Surveys</button>
-        </Link>
+        <Link to="/surveys">← חזרה לניהול סקרים</Link>
       </div>
     </div>
   );

@@ -1,67 +1,144 @@
+// src/components/MessageRepliesContainer.jsx
 import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import {
   doc,
   getDoc,
   collection,
   getDocs,
+  query,
+  orderBy,
   deleteDoc,
 } from "firebase/firestore";
-import { useParams, useNavigate } from "react-router-dom";
 import { db } from "../firebase.js";
+import {
+  Container,
+  Paper,
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  IconButton,
+  Tooltip,
+  Divider,
+} from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 export default function MessageRepliesContainer() {
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const { id } = useParams();                 // ID של ההודעה
   const [message, setMessage] = useState(null);
   const [replies, setReplies] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  // ——————————— טעינת ההודעה + התגובות ———————————
   useEffect(() => {
     async function load() {
+      // ההודעה עצמה
       const msgSnap = await getDoc(doc(db, "messages", id));
-      if (msgSnap.exists()) setMessage({ id: msgSnap.id, ...msgSnap.data() });
+      if (msgSnap.exists()) {
+        setMessage({ id: msgSnap.id, ...msgSnap.data() });
+      }
 
-      const rSnap = await getDocs(collection(db, "messages", id, "replies"));
-      setReplies(rSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      // התגובות ממיונות מהחדשה לישנה
+      const q = query(
+        collection(db, "messages", id, "replies"),
+        orderBy("createdAt", "desc")          // ← שדה הקיים אצלך
+      );
+      const repSnap = await getDocs(q);
+      setReplies(repSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+
+      setLoading(false);
     }
     load();
   }, [id]);
 
-  const handleDeleteReply = async (rid) => {
-    await deleteDoc(doc(db, "messages", id, "replies", rid));
-    const rSnap = await getDocs(collection(db, "messages", id, "replies"));
-    setReplies(rSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-  };
+  // ——————————— מחיקת תגובה ———————————
+  async function handleDelete(replyId) {
+    const yes = window.confirm("למחוק את התגובה לצמיתות?");
+    if (!yes) return;
 
-  if (!message) return <p>Loading…</p>;
+    try {
+      await deleteDoc(doc(db, "messages", id, "replies", replyId));
+      // הסרה מה-state כדי לעדכן מסך מיידית
+      setReplies((prev) => prev.filter((r) => r.id !== replyId));
+    } catch (err) {
+      console.error("Failed to delete reply:", err);
+      alert("שגיאה במחיקה. נסה שוב.");
+    }
+  }
+
+  // ——————————— רנדר ———————————
+  if (loading) {
+    return (
+      <Container sx={{ py: 4 }}>
+        <Typography align="center">טוען...</Typography>
+      </Container>
+    );
+  }
+
+  if (!message) {
+    return (
+      <Container sx={{ py: 4 }}>
+        <Typography color="error" align="center">
+          ההודעה לא נמצאה
+        </Typography>
+      </Container>
+    );
+  }
 
   return (
-    <div style={{ padding: 40, maxWidth: 600, margin: "0 auto" }}>
-      <h2>Replies for: {message.title}</h2>
-      {replies.length === 0 ? (
-        <p>No replies yet.</p>
-      ) : (
-        replies.map(r => (
-          <div
-            key={r.id}
-            style={{
-              border: "1px solid #ccc",
-              padding: 12,
-              marginBottom: 16,
-              borderRadius: 4,
-              textAlign: "left",
-            }}
-          >
-            <p>
-              <strong>{r.fullname}</strong> ({r.phone})
-            </p>
-            <p>{r.replyText}</p>
-            <button onClick={() => handleDeleteReply(r.id)}>
-              Delete Reply
-            </button>
-          </div>
-        ))
-      )}
-      <button onClick={() => navigate(-1)}>← Back</button>
-    </div>
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      {/* כרטיס ההודעה */}
+      <Paper sx={{ p: 4, mb: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          {message.title}
+        </Typography>
+        <Typography variant="body1">{message.body}</Typography>
+      </Paper>
+
+      {/* רשימת התגובות */}
+      <Paper sx={{ p: 4 }}>
+        <Typography variant="h6" gutterBottom>
+          תגובות ({replies.length})
+        </Typography>
+
+        {replies.length === 0 ? (
+          <Typography align="center">אין תגובות להצגה.</Typography>
+        ) : (
+          <List disablePadding>
+            {replies.map((r, idx) => {
+              const ts =
+                r.createdAt?.toDate?.().toLocaleString("he-IL") ?? "";
+              return (
+                <React.Fragment key={r.id}>
+                  <ListItem
+                    alignItems="flex-start"
+                    secondaryAction={
+                      <Tooltip title="מחק תגובה">
+                        <IconButton
+                          edge="end"
+                          aria-label="delete"
+                          onClick={() => handleDelete(r.id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    }
+                    sx={{ alignItems: "flex-start" }}
+                  >
+                    <ListItemText
+                      primary={`${r.fullname || "אנונימי"} • ${ts}`}
+                      secondary={r.replyText}
+                      sx={{ whiteSpace: "pre-wrap" }}
+                    />
+                  </ListItem>
+                  {idx !== replies.length - 1 && <Divider component="li" />}
+                </React.Fragment>
+              );
+            })}
+          </List>
+        )}
+      </Paper>
+    </Container>
   );
 }
