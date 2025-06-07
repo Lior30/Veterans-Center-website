@@ -28,10 +28,9 @@ export default function usePublicHolidays() {
           (data.items || [])
             .filter((item) => item.category === "holiday")
             .map((item) => ({
+              date: item.date, // כדי שיהיה h.date
               title: item.hebrew || item.title,
-              start: item.date,
-              allDay: true,
-              backgroundColor: "#F48FB1",
+              name: item.hebrew || item.title, // למקרה שתקראי ל־h.name
             }))
         );
         setHolidays(combined);
