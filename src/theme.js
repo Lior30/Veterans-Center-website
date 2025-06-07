@@ -1,26 +1,37 @@
-// src/theme.js
 import { createTheme } from "@mui/material/styles";
 
 const theme = createTheme({
   direction: "rtl",
   palette: {
     primary: {
-      main: "#004080",   // כחול כהה
-      light: "#336699",
-      dark: "#00264d",
+      main: "#91278F",       // סגול כהה - צבע עיקרי
+      light: "#d36dd5",      // סגול בהיר
+      dark: "#6c1f6d",       // סגול כהה יותר
     },
     secondary: {
-      main: "#e68a00",   // כתום חם
-      light: "#ffb84d",
-      dark: "#b36100",
+      main: "#F57C00",       // כתום חם - ניגוד חזק ונגיש
+      light: "#FFB74D",      // כתום בהיר
+      dark: "#EF6C00",       // כתום כהה
+    },
+    info: {
+      main: "#673AB7",       // אינדיקציות / אזכורים
+    },
+    success: {
+      main: "#4CAF50",       // ירוק להודעות הצלחה
+    },
+    warning: {
+      main: "#FF9800",       // כתום להודעות אזהרה
+    },
+    error: {
+      main: "#E53935",       // אדום להודעות שגיאה
     },
     background: {
-      default: "#f5f5f5",
+      default: "#fdf5fc",    // רקע בהיר עם נגיעה סגולה
       paper: "#ffffff",
     },
     text: {
-      primary: "#333333",
-      secondary: "#555555",
+      primary: "#2c2c2c",
+      secondary: "#6d6d6d",
     },
   },
   typography: {
