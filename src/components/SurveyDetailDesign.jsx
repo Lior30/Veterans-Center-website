@@ -1,9 +1,10 @@
-
+// src/components/SurveyDetailDesign.jsx
 import React from "react";
 import { Box, TextField, Typography, Button } from "@mui/material";
 
 export default function SurveyDetailDesign({
   survey,
+  activityTitle,
   answers,
   errors,
   blocked,
@@ -11,21 +12,28 @@ export default function SurveyDetailDesign({
   onSubmit,
   onCancel,
   submitted,
-  submitError
+  submitError,
 }) {
   const placeholderAlign = {
     inputProps: { style: { textAlign: "right" } },
     sx: {
       "& input::placeholder": { textAlign: "right" },
       "& textarea::placeholder": { textAlign: "right" },
-    }
+    },
   };
 
   return (
     <Box sx={{ padding: 4, maxWidth: 600, margin: "0 auto", direction: "rtl" }}>
       <Typography variant="h5" gutterBottom>
-        {survey.headline} <small style={{ color: "red" }}>* שאלות חובה</small>
+        {survey.headline}{" "}
+        <small style={{ color: "red" }}>* שאלות חובה</small>
       </Typography>
+
+      {activityTitle && activityTitle !== "כללי" && (
+        <Typography variant="subtitle1" sx={{ mb: 2, fontStyle: "italic" }}>
+          קשור לפעילות: {activityTitle}
+        </Typography>
+      )}
 
       <TextField
         placeholder="שם פרטי"
@@ -64,7 +72,7 @@ export default function SurveyDetailDesign({
       />
 
       {survey.questions
-        .filter((q) => q.text !== "Full Name" && q.text !== "Phone Number")
+        .filter((q) => q.id !== "fullname" && q.id !== "phone")
         .map((q, idx) => (
           <Box key={q.id} sx={{ mb: 3 }}>
             <Typography>
@@ -72,7 +80,7 @@ export default function SurveyDetailDesign({
             </Typography>
             {q.type === "open" ? (
               <TextField
-                placeholder="ענה כאן..."
+                placeholder="ענה כאן…"
                 multiline
                 rows={3}
                 fullWidth
@@ -107,7 +115,6 @@ export default function SurveyDetailDesign({
           {submitError}
         </Typography>
       )}
-
       {blocked && (
         <Typography color="error" sx={{ mt: 2 }}>
           כבר מילאת סקר זה

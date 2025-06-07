@@ -51,12 +51,8 @@ export default function SurveyResultsDetail() {
         <p>No responses yet.</p>
       ) : (
         responses.map((resp) => {
-          // find the fixed questions
-          const fullQ  = survey.questions.find(q => q.text === "Full Name");
-          const phoneQ = survey.questions.find(q => q.text === "Phone Number");
-
-          const name  = fullQ  ? resp.answers[fullQ.id] : "";
-          const phone = phoneQ ? resp.answers[phoneQ.id] : "";
+          const name  = `${resp.answers.firstName || ""} ${resp.answers.lastName || ""}`.trim();
+          const phone = resp.answers.phone || "";
 
           return (
             <div
@@ -75,19 +71,13 @@ export default function SurveyResultsDetail() {
               </h3>
 
               {/* show the other questions/answers */}
-              {survey.questions
-                .filter(
-                  (q) =>
-                    q.text !== "Full Name" &&
-                    q.text !== "Phone Number"
-                )
-                .map((q) => (
+                  {survey.questions.map((q) => (
                   <p key={q.id}>
-                    <strong>{q.text}</strong>
-                    <br />
-                    {resp.answers[q.id]}
-                  </p>
-                ))}
+                  <strong>{q.text}</strong>
+                  <br />
+                  {resp.answers[q.id]}
+              </p>
+              ))}
 
               <button onClick={() => handleDeleteResponse(resp.id)}>
                 Delete This Response
