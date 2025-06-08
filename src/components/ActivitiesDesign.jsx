@@ -58,12 +58,10 @@ export default function ActivitiesDesign({
 }) {
   const [tagFilter, setTagFilter] = useState("ALL");
 
-
-  // allTags עכשיו נטען גם מ־localStorage וגם מה־activities,
-  // ושומר חזרה ל־localStorage רק תגיות שהמשתמש הוסיף
   const [allTags, setAllTags] = useState([]);
 
-  // 1. טען תגיות מה־API ומה־localStorage
+  const [searchQuery, setSearchQuery] = useState("");
+
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("customTags") || "[]");
     const s = new Set(stored);
@@ -71,7 +69,6 @@ export default function ActivitiesDesign({
     setAllTags([...s]);
   }, [activities]);
 
-  // 2. בכל שינוי של allTags שמור בחזרה ל־localStorage רק תגיות חדשות
   useEffect(() => {
     const defaultSet = new Set();
     activities.forEach((a) => (a.tags || []).forEach((t) => defaultSet.add(t)));
@@ -79,9 +76,10 @@ export default function ActivitiesDesign({
     localStorage.setItem("customTags", JSON.stringify(custom));
   }, [allTags, activities]);
 
-  // state לדיאלוג הוספת תגית חדשה
   const [newTagDialogOpen, setNewTagDialogOpen] = useState(false);
   const [newTagValue, setNewTagValue] = useState("");
+
+  const [removeTagDialogOpen, setRemoveTagDialogOpen] = useState(false);
 
   // פונקציה לטיפול בהוספת תגית חדשה
   const handleAddTag = () => {
@@ -93,9 +91,23 @@ export default function ActivitiesDesign({
     setNewTagDialogOpen(false);
   };
 
+  // פונקציה להסרת תגית
+  const handleRemoveTag = (tagToRemove) => {
+    // (א) הסר מ־allTags
+    setAllTags((prev) => prev.filter((t) => t !== tagToRemove));
+
+    // (ב) הסר את התגית הזו מכל הפעילויות ששייכות אליה
+    activities.forEach((act) => {
+      if (Array.isArray(act.tags) && act.tags.includes(tagToRemove)) {
+        const newTags = act.tags.filter((tg) => tg !== tagToRemove);
+        ActivityService.save({ ...act, tags: newTags });
+      }
+    });
+  };
+
   const [selAct, setSelAct] = useState(null);
   const [users, setUsers] = useState({});
- 
+
   useEffect(() => {
     if (!selAct) return;
 
@@ -126,6 +138,16 @@ export default function ActivitiesDesign({
     );
   };
 
+  // מסנכרן פעילויות לפי תגית, ולפי מחרוזת החיפוש בשדה שם
+  const filteredList = useMemo(() => {
+    return activities
+      .filter((a) => a.id)
+      .filter(
+        (a) =>
+          (tagFilter === "ALL" || (a.tags || []).includes(tagFilter)) &&
+          a.name.toLowerCase().includes(searchQuery.trim().toLowerCase())
+      );
+  }, [activities, tagFilter, searchQuery]);
 
   const events = useMemo(() => {
     const filteredActs = activities.filter(
@@ -163,40 +185,40 @@ export default function ActivitiesDesign({
     {
       field: "date",
       headerName: "תאריך",
-      width: 110,
-      headerAlign: "right",
+      width: 100,
+      headerAlign: "center",
       align: "right",
     },
     {
       field: "startTime",
       headerName: "התחלה",
-      width: 110,
-      headerAlign: "right",
+      width: 80,
+      headerAlign: "center",
       align: "right",
     },
     {
       field: "endTime",
       headerName: "סיום",
-      width: 110,
-      headerAlign: "right",
+      width: 80,
+      headerAlign: "center",
       align: "right",
     },
     {
       field: "name",
       headerName: "שם",
-      flex: 1,
-      headerAlign: "right",
+      flex: 1.5,
+      minWidth: 100,
+      headerAlign: "center",
       align: "right",
     },
     {
       field: "description",
       headerName: "תיאור",
-      flex: 1,
-      headerAlign: "right",
+      //flex: 1,
+      width: 200,
+      headerAlign: "center",
       align: "right",
     },
-
-
     {
       field: "tags",
       headerName: "תגיות",
@@ -214,8 +236,10 @@ export default function ActivitiesDesign({
       width: 90,
       headerAlign: "center",
       align: "center",
-      renderCell: ({ row }) =>
-        row.capacity ? `${row.registeredCount}/${row.capacity}` : "∞",
+      renderCell: ({ row }) => {
+        const count = Array.isArray(row.registrants) ? row.registrants.length : 0;
+        return row.capacity ? `${count}/${row.capacity}` : "∞";
+      },
     },
     {
       field: "recurring",
@@ -228,7 +252,7 @@ export default function ActivitiesDesign({
     {
       field: "actions",
       headerName: "פעולות",
-      width: 500,
+      width: 280,
       headerAlign: "center",
       align: "center",
       renderCell: (params) => (
@@ -290,12 +314,23 @@ export default function ActivitiesDesign({
 
       {tab === 0 && (
         <Box sx={{ mt: 2, textAlign: "right" }}>
-          <Button variant="contained" onClick={onNew} sx={{ mb: 2 }}>
+          <Button variant="contained" onClick={onNew} sx={{ mb: 2, ml: 2 }}>
             הוספת פעילות
           </Button>
+
+          {/* שדה חיפוש */}
+          <TextField
+            placeholder="חפש לפי שם הפעילות"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            fullWidth
+            sx={{ mb: 2 }}
+            inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
+          />
+
           <Box sx={{ height: 500 }}>
             <DataGrid
-              rows={activities.filter((r) => r.id)}
+              rows={filteredList}
               columns={columns}
               pageSize={10}
               rowsPerPageOptions={[5, 10]}
@@ -307,7 +342,7 @@ export default function ActivitiesDesign({
 
       {tab === 1 && (
         <Box sx={{ mt: 2, textAlign: "right" }}>
-          {/* עטיפה חדשה ל־ToggleButtonGroup + כפתור "הוסף תגית" */}
+          {/* עטיפה חדשה ל־ToggleButtonGroup + כפתורים "הוסף תגית" ו-"הסר תגית" */}
           <Box
             sx={{
               display: "flex",
@@ -329,12 +364,22 @@ export default function ActivitiesDesign({
               ))}
             </ToggleButtonGroup>
 
-            <Button
-              variant="outlined"
-              onClick={() => setNewTagDialogOpen(true)}
-            >
-              הוסף תגית
-            </Button>
+            <Box>
+              <Button
+                variant="outlined"
+                onClick={() => setNewTagDialogOpen(true)}
+                sx={{ mr: 1 }}
+              >
+                הוסף תגית
+              </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={() => setRemoveTagDialogOpen(true)}
+              >
+                הסר תגית
+              </Button>
+            </Box>
           </Box>
 
           <FullCalendar
@@ -395,7 +440,6 @@ export default function ActivitiesDesign({
             inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
           />
 
-          
           {/* Autocomplete לבחירת תגיות בלבד */}
           <Autocomplete
             multiple
@@ -511,6 +555,54 @@ export default function ActivitiesDesign({
             inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
           />
 
+          {/* שדה מחיר */}
+          <TextField
+            label="מחיר"
+            type="number"
+            value={form.price || ""}
+            onChange={(e) =>
+              onFormChange((f) => ({ ...f, price: e.target.value }))
+            }
+            fullWidth
+            InputLabelProps={{
+              shrink: true,
+              sx: {
+                position: "absolute",
+                top: "-6px",
+                right: "12px",
+                transform: "none",
+                backgroundColor: "#fff",
+                px: 0.5,
+                fontSize: "0.75rem",
+              },
+            }}
+            inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
+          />
+
+          {/* שדה מיקום */}
+          <TextField
+            label="מיקום"
+            type="text"
+            value={form.location || ""}
+            onChange={(e) =>
+              onFormChange((f) => ({ ...f, location: e.target.value }))
+            }
+            fullWidth
+            InputLabelProps={{
+              shrink: true,
+              sx: {
+                position: "absolute",
+                top: "-6px",
+                right: "12px",
+                transform: "none",
+                backgroundColor: "#fff",
+                px: 0.5,
+                fontSize: "0.75rem",
+              },
+            }}
+            inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
+          />
+
           <FormControlLabel
             control={
               <Checkbox
@@ -586,7 +678,6 @@ export default function ActivitiesDesign({
         </DialogActions>
       </Dialog>
 
-
       {/* דיאלוג הוספת תגית חדשה */}
       <Dialog
         open={newTagDialogOpen}
@@ -604,6 +695,42 @@ export default function ActivitiesDesign({
         <DialogActions>
           <Button onClick={() => setNewTagDialogOpen(false)}>בטל</Button>
           <Button onClick={handleAddTag}>הוסף</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* דיאלוג הסרת תגית */}
+      <Dialog
+        open={removeTagDialogOpen}
+        onClose={() => setRemoveTagDialogOpen(false)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>בחר תגית להסרה</DialogTitle>
+        <DialogContent dividers>
+          {allTags.length === 0 && <Typography>אין תגיות להסרה.</Typography>}
+          {allTags.map((t) => (
+            <Box
+              key={t}
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                py: 1,
+              }}
+            >
+              <Typography>{t}</Typography>
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => handleRemoveTag(t)}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          ))}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRemoveTagDialogOpen(false)}>סגור</Button>
         </DialogActions>
       </Dialog>
 
@@ -627,20 +754,16 @@ export default function ActivitiesDesign({
               justifyContent="space-between"
               sx={{ mb: 1 }}
             >
-
               <span style={{ textAlign: "right", flex: 1 }}>
                 {users[uid] || uid}
               </span>
-              <IconButton onClick={() => kickUser(uid)}>
-
+              <IconButton onClick={() => kickParticipant(uid)}>
                 <DeleteIcon />
               </IconButton>
             </Stack>
           ))}
         </DialogContent>
-
         <DialogActions sx={{ justifyContent: "flex-end" }}>
-
           <Button onClick={() => setSelAct(null)}>סגור</Button>
         </DialogActions>
       </Dialog>
