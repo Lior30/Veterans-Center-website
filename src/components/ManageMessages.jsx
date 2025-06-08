@@ -1,22 +1,36 @@
+// =========  src/components/ManageMessages.jsx  =========
 import React from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { Container, Box, Button, Typography } from "@mui/material";
+
+import MessageListContainer from "./MessageListContainer.jsx";
 
 export default function ManageMessages() {
+  const navigate = useNavigate();
+
   return (
-    <div style={{ padding: 40, textAlign: "center" }}>
-      <h2>ניהול הודעות</h2>
-      <div style={{ display: "inline-block", marginTop: 20 }}>
-        <Link to="/messages/create">
-          <button style={{ display: "block", width: 200, margin: "10px 0" }}>
-            יצירת הודעה חדשה
-          </button>
-        </Link>
-        <Link to="/messages/list">
-          <button style={{ display: "block", width: 200, margin: "10px 0" }}>
-            צפה בכל ההודעות 
-          </button>
-        </Link>
-      </div>
-    </div>
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      {/* כותרת + כפתור “יצירת הודעה חדשה” */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
+        <Typography variant="h4">ניהול הודעות</Typography>
+
+        <Button
+          variant="contained"
+          onClick={() => navigate("/messages/create")}
+        >
+          יצירת הודעה חדשה
+        </Button>
+      </Box>
+
+      {/* הרשימה עצמה */}
+      <MessageListContainer />
+    </Container>
   );
 }

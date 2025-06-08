@@ -1,47 +1,48 @@
-// src/components/FlyerUploader.jsx
+// =========  FlyerUploaderArea.jsx  =========
 import React, { useState, useRef } from "react";
+import FlyerService from "../services/FlyerService.js";
 
-export default function FlyerUploader({ onSubmit }) {
-  const [name, setName] = useState("");
-  const [file, setFile] = useState(null);
+export default function FlyerUploader({ onUpload }) {
+  const [name, setName]         = useState("");
+  const [file, setFile]         = useState(null);
+  const [startDate, setStart]   = useState(""); // yyyy-mm-dd
+  const [endDate, setEnd]       = useState("");
   const dropRef = useRef();
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-  };
-
-  const handleDrop = (e) => {
+  /* דרג-אנד-דרופ */
+  const handleFileChange = (e) => setFile(e.target.files[0]);
+  const handleDrop  = (e) => {
     e.preventDefault();
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) {
-      setFile(droppedFile);
+    const f = e.dataTransfer.files[0];
+    if (f) setFile(f);
+  };
+  const handleDragOver  = (e) => e.preventDefault();
+  const handleDragLeave = () => {};
+
+  /* ─── שליחה ─── */
+  const handleSubmit = async () => {
+    if (!name.trim() || !file) return alert("שם וקובץ חובה");
+    if (endDate && startDate && endDate < startDate)
+      return alert("תאריך סיום חייב להיות אחרי תאריך התחלה");
+
+    try {
+      await FlyerService.uploadFlyer(name, file, startDate, endDate);
+      setName("");
+      setFile(null);
+      setStart("");
+      setEnd("");
+      onUpload?.();           // רענון הרשימה שמגיעה מהורה
+    } catch (err) {
+      alert("העלאה נכשלה: " + err.code);
     }
-    dropRef.current.classList.remove("drag-over");
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    dropRef.current.classList.add("drag-over");
-  };
-
-  const handleDragLeave = () => {
-    dropRef.current.classList.remove("drag-over");
-  };
-
-  const handleSubmit = () => {
-    if (!name.trim() || !file) {
-      alert("אנא מלא שם ובחר קובץ.");
-      return;
-    }
-    onSubmit(name.trim(), file);
-    setName("");
-    setFile(null);
   };
 
   return (
-    <div style={{ border: "1px solid #ccc", padding: 20, borderRadius: 6, width: "20%" }}>
+    <div style={{ margin: "2rem auto", textAlign: "center", maxWidth: 400 }}>
+      <h3>העלאת פלייאר חדש</h3>
+
       <label>
-        שם הפלאייר:
+        שם:
         <input
           type="text"
           value={name}
@@ -50,6 +51,27 @@ export default function FlyerUploader({ onSubmit }) {
         />
       </label>
 
+      {/* תאריכים */}
+      <div style={{ marginTop: 10 }}>
+        <label>
+          הצג החל מ-
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStart(e.target.value)}
+          />
+        </label>
+        <label style={{ marginInlineStart: 15 }}>
+          ועד (כולל)
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEnd(e.target.value)}
+          />
+        </label>
+      </div>
+
+      {/* אזור קובץ */}
       <div
         ref={dropRef}
         onDrop={handleDrop}
@@ -57,24 +79,14 @@ export default function FlyerUploader({ onSubmit }) {
         onDragLeave={handleDragLeave}
         style={{
           marginTop: 20,
-          border: "2px dashed #aaa",
           padding: 20,
+          border: "2px dashed #ccc",
           borderRadius: 6,
-          textAlign: "center",
-          backgroundColor: "#f9f9f9",
-          width: "90%",
+          background: "#fafafa",
         }}
       >
-        {file ? (
-          <p>קובץ שנבחר: {file.name}</p>
-        ) : (
-          <p>גרור קובץ לכאן או בחר ידנית</p>
-        )}
-        <input
-          type="file"
-          onChange={handleFileChange}
-          style={{ marginTop: 10 }}
-        />
+        {file ? <p>קובץ: {file.name}</p> : <p>גרור קובץ לכאן או בחר ידנית</p>}
+        <input type="file" onChange={handleFileChange} />
       </div>
 
       <button onClick={handleSubmit} style={{ marginTop: 20 }}>
