@@ -19,31 +19,12 @@ export default function CreateMessageDesign({
   onSubmit,
 }) {
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
+    <Container maxWidth="sm" sx={{ mt: 5 }} dir="rtl">
+      <Typography variant="h5" gutterBottom textAlign="center">
+        יצירת הודעה חדשה
+      </Typography>
+
       <Stack spacing={3}>
-        <Typography variant="h5" align="center">
-          צור הודעה חדשה
-        </Typography>
-
-        <FormControl fullWidth>
-          <InputLabel id="act-label">קשר לפעילות</InputLabel>
-          <Select
-            labelId="act-label"
-            id="activityId"
-            name="activityId"
-            value={values.activityId}
-            label="קשר לפעילות"
-            onChange={onChange}
-          >
-            <MenuItem value="">כללי</MenuItem>
-            {activities.map((a) => (
-              <MenuItem key={a.id} value={a.id}>
-                {a.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
         <TextField
           label="כותרת"
           name="title"
@@ -66,8 +47,50 @@ export default function CreateMessageDesign({
           helperText={errors.body}
         />
 
+        <FormControl fullWidth>
+          <InputLabel>פעילות (לא חובה)</InputLabel>
+          <Select
+            name="activityId"
+            value={values.activityId}
+            onChange={onChange}
+            label="פעילות (לא חובה)"
+          >
+            <MenuItem value="">
+              <em>— ללא —</em>
+            </MenuItem>
+            {activities.map((a) => (
+              <MenuItem key={a.id} value={a.id}>
+                {a.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        {/* תאריכים */}
+        <TextField
+          label="הצג החל מ־"
+          name="startDate"
+          type="date"
+          InputLabelProps={{ shrink: true }}
+          value={values.startDate}
+          onChange={onChange}
+          fullWidth
+        />
+
+        <TextField
+          label="הצג עד (כולל)"
+          name="endDate"
+          type="date"
+          InputLabelProps={{ shrink: true }}
+          value={values.endDate}
+          onChange={onChange}
+          fullWidth
+          error={!!errors.endDate}
+          helperText={errors.endDate}
+        />
+
         <Button variant="contained" size="large" onClick={onSubmit}>
-          שלח
+          שמור
         </Button>
       </Stack>
     </Container>

@@ -1,5 +1,5 @@
-// src/components/MessageListContainer.jsx
-import React, { useState, useEffect } from "react";
+// =========  src/components/MessageListContainer.jsx  =========
+import React, { useState, useEffect, useRef } from "react";
 import {
   collection,
   getDocs,
@@ -15,49 +15,48 @@ import {
   Stack,
   Divider,
 } from "@mui/material";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowUpwardIcon   from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import { db } from "../firebase";
 import { Link } from "react-router-dom";
 
 export default function MessageListContainer() {
   const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading,  setLoading]  = useState(true);
 
-  /* ────────────────── טעינה ראשונית ────────────────── */
+  /* אינדקס הכרטיס שנגרר כרגע (useRef כדי לא לזרז רנדרים) */
+  const dragIndexRef = useRef(null);
+
+  /* ─────────────────────  טעינה ראשונית  ───────────────────── */
   useEffect(() => {
     async function load() {
-      // 1) מביאים הכול בלי orderBy כדי לקבל גם הודעות שחסר להן 'order'
+      // 1) מביאים הכול (גם כאלה בלי order)
       const snap = await getDocs(collection(db, "messages"));
 
-      // 2) מכינים מערך + batch לעדכון
+      // 2) מערך מקומי + batch לעדכון order חסר
       const batch = writeBatch(db);
       let maxOrder = -1;
 
       const msgs = snap.docs.map((d) => {
         const data = d.data();
-        // שמירת order המקסימלי שנמצא
         if (typeof data.order === "number" && data.order > maxOrder) {
           maxOrder = data.order;
         }
         return { id: d.id, ...data };
       });
 
-      // 3) מעניקים order חדש למי שחסר
+      // 3) נותנים order חדש לאלה שחסר
       msgs.forEach((m) => {
         if (typeof m.order !== "number") {
           maxOrder += 1;
-          m.order = maxOrder; // מוסיפים גם לאובייקט המקומי
+          m.order = maxOrder;
           batch.update(doc(db, "messages", m.id), { order: maxOrder });
         }
       });
 
-      // אם יש מה לעדכן – מבצעים commit יחיד
-      if (maxOrder >= 0 && !batch._mutations?.length === false) {
-        await batch.commit();
-      }
+      if (batch._mutations?.length) await batch.commit();
 
-      // 4) ממיינים לפי order ועוברים ל-UI
+      // 4) מיון לפי order
       msgs.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
       setMessages(msgs);
       setLoading(false);
@@ -65,13 +64,13 @@ export default function MessageListContainer() {
     load();
   }, []);
 
-  /* ────────────────── פונקציית הזזה ────────────────── */
-  async function move(idx, direction) {
-    const targetIdx = idx + direction;
-    if (targetIdx < 0 || targetIdx >= messages.length) return;
+  /* ─────────────────────  פונקציית החלפה כללית  ───────────────────── */
+  async function swapByIndex(i1, i2) {
+    if (i1 < 0 || i2 < 0 || i1 >= messages.length || i2 >= messages.length)
+      return;
 
-    const msgA = messages[idx];
-    const msgB = messages[targetIdx];
+    const msgA = messages[i1];
+    const msgB = messages[i2];
 
     try {
       const batch = writeBatch(db);
@@ -81,17 +80,35 @@ export default function MessageListContainer() {
 
       setMessages((prev) => {
         const copy = [...prev];
-        copy[idx] = msgB;
-        copy[targetIdx] = msgA;
+        copy[i1] = msgB;
+        copy[i2] = msgA;
         return copy;
       });
     } catch (err) {
-      console.error("move failed", err);
+      console.error("swap failed", err);
       alert("שגיאה בהחלפת הסדר");
     }
   }
 
-  /* ────────────────── רנדר ────────────────── */
+  /* כפתורי ↑ ↓ משתמשים בזה */
+  const move = (idx, direction) => swapByIndex(idx, idx + direction);
+
+  /* ─────────────────────  Drag handlers  ───────────────────── */
+  const handleDragStart = (idx) => () => {
+    dragIndexRef.current = idx;
+  };
+
+  const handleDragOver = (e) => e.preventDefault(); // מאפשר drop
+
+  const handleDrop = (targetIdx) => async (e) => {
+    e.preventDefault();
+    const srcIdx = dragIndexRef.current;
+    dragIndexRef.current = null;
+    if (srcIdx === null || srcIdx === targetIdx) return;
+    await swapByIndex(srcIdx, targetIdx);
+  };
+
+  /* ─────────────────────  Render  ───────────────────── */
   if (loading) return <Typography align="center">טוען...</Typography>;
 
   return (
@@ -101,7 +118,14 @@ export default function MessageListContainer() {
       </Typography>
 
       {messages.map((m, idx) => (
-        <Paper key={m.id} sx={{ p: 3, mb: 2 }}>
+        <Paper
+          key={m.id}
+          sx={{ p: 3, mb: 2, cursor: "grab" }}
+          draggable
+          onDragStart={handleDragStart(idx)}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop(idx)}
+        >
           <Stack direction="row" justifyContent="space-between" spacing={2}>
             {/* תוכן ההודעה */}
             <Stack>
@@ -109,12 +133,13 @@ export default function MessageListContainer() {
               <Typography variant="body2" color="text.secondary">
                 {m.body}
               </Typography>
+
               <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
                 <Link to={`/messages/replies/${m.id}`}>הצג תגובות</Link>
               </Stack>
             </Stack>
 
-            {/* כפתורי סדר */}
+            {/* כפתורי מיקום */}
             <Stack>
               <Tooltip title="העבר למעלה">
                 <span>

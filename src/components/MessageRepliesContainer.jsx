@@ -30,19 +30,19 @@ export default function MessageRepliesContainer() {
   const [replies, setReplies] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ——————————— טעינת ההודעה + התגובות ———————————
+  // ——————————— load message plus replies ———————————
   useEffect(() => {
     async function load() {
-      // ההודעה עצמה
+    
       const msgSnap = await getDoc(doc(db, "messages", id));
       if (msgSnap.exists()) {
         setMessage({ id: msgSnap.id, ...msgSnap.data() });
       }
 
-      // התגובות ממיונות מהחדשה לישנה
+      // replies from new to old
       const q = query(
         collection(db, "messages", id, "replies"),
-        orderBy("createdAt", "desc")          // ← שדה הקיים אצלך
+        orderBy("createdAt", "desc")          
       );
       const repSnap = await getDocs(q);
       setReplies(repSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
@@ -52,7 +52,7 @@ export default function MessageRepliesContainer() {
     load();
   }, [id]);
 
-  // ——————————— מחיקת תגובה ———————————
+  // ——————————— delete reply ———————————
   async function handleDelete(replyId) {
     const yes = window.confirm("למחוק את התגובה לצמיתות?");
     if (!yes) return;
@@ -67,7 +67,7 @@ export default function MessageRepliesContainer() {
     }
   }
 
-  // ——————————— רנדר ———————————
+  // ——————————— render ———————————
   if (loading) {
     return (
       <Container sx={{ py: 4 }}>
@@ -88,7 +88,7 @@ export default function MessageRepliesContainer() {
 
   return (
     <Container maxWidth="sm" sx={{ py: 4 }}>
-      {/* כרטיס ההודעה */}
+      {/* message card */}
       <Paper sx={{ p: 4, mb: 3 }}>
         <Typography variant="h5" gutterBottom>
           {message.title}
@@ -96,7 +96,7 @@ export default function MessageRepliesContainer() {
         <Typography variant="body1">{message.body}</Typography>
       </Paper>
 
-      {/* רשימת התגובות */}
+      {/* array for replies */}
       <Paper sx={{ p: 4 }}>
         <Typography variant="h6" gutterBottom>
           תגובות ({replies.length})
