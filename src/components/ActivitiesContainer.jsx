@@ -67,10 +67,10 @@ export default function ActivitiesContainer() {
       return;
     }
 
-    if (!form.tags || form.tags.length === 0) {
-     alert("אנא בחרי לפחות תגית אחת לפעילות.");
-     return;
-   }
+  //   if (!form.tags || form.tags.length === 0) {
+  //    alert("אנא בחר לפחות תגית אחת לפעילות.");
+  //    return;
+  //  }
     await ActivityService.save({
       ...form,
       capacity: Number(form.capacity),

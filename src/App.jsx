@@ -4,6 +4,8 @@ import { Routes, Route, useLocation } from "react-router-dom";
 
 import NavBar                         from "./components/NavBar.jsx";
 import LandingPage                    from "./components/LandingPage.jsx";
+import GuestLandingPage               from "./components/GuestLandingPage.jsx";
+import IdentifyPage                   from "./components/IdentificationPage.jsx";
 import Home                           from "./components/Home.jsx";
 
 import ActivitiesContainer            from "./components/ActivitiesContainer.jsx";
@@ -15,6 +17,7 @@ import SurveyResultsList              from "./components/SurveyResultsList.jsx";
 import SurveyResultsDetail            from "./components/SurveyResultsDetail.jsx";
 import SurveyListContainer            from "./components/SurveyListContainer.jsx";
 import SurveyDetailContainer          from "./components/SurveyDetailContainer.jsx";
+import SurveyAnalysisDetail           from "./components/SurveyAnalysisDetail";
 
 import ManageMessages                 from "./components/ManageMessages.jsx";
 import CreateMessage                  from "./components/CreateMessageContainer.jsx";
@@ -28,15 +31,22 @@ import ManageUsersContainer           from "./components/ManageUsersContainer.js
 
 export default function App() {
   const { pathname } = useLocation();
-  const showNav      = pathname !== "/";
+  const hiddenRoutes = ["/", "/landingPage", "/identificationPage"];
+  const showNav = !hiddenRoutes.includes(pathname);
 
   return (
     <>
       {showNav && <NavBar />}
 
       <Routes>
-        {/* Public landing */}
-        <Route path="/"                   element={<LandingPage />} />
+        {/* Public (guest) landing page */}
+        <Route path="/"                   element={<GuestLandingPage />} />
+
+        {/* registered landing page */}
+        <Route path="/landingPage"        element={<LandingPage />} />
+
+        {/* identification page */}
+        <Route path="/identificationPage" element={<IdentifyPage />} />
 
         {/* Admin home & system */}
         <Route path="/home"               element={<Home />} />
@@ -49,6 +59,7 @@ export default function App() {
         <Route path="/surveys/create"     element={<CreateSurvey />} />
         <Route path="/surveys/results"    element={<SurveyResultsList />} />
         <Route path="/surveys/results/:id" element={<SurveyResultsDetail />} />
+        <Route path="/surveys/analysis/:id" element={<SurveyAnalysisDetail />} />
 
         {/* Surveys – public */}
         <Route path="/surveys/list"       element={<SurveyListContainer />} />

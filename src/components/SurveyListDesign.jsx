@@ -1,9 +1,14 @@
-
+// src/components/SurveyListDesign.jsx
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { TextField } from "@mui/material";
 
-export default function SurveyListDesign({ surveys }) {
+export default function SurveyListDesign({
+  surveys,
+  onDeleteSurvey,
+  onViewResponses,
+  onAnalyze,
+}) {
   const [search, setSearch] = useState("");
 
   const filteredSurveys = surveys.filter((s) =>
@@ -12,7 +17,7 @@ export default function SurveyListDesign({ surveys }) {
 
   return (
     <div style={{ padding: 40, textAlign: "center" }}>
-      <h2>צפייה ומענה על סקרים</h2>
+      <h2>סקרים ותשובות</h2>
 
       <TextField
         label="חיפוש לפי כותרת"
@@ -34,13 +39,25 @@ export default function SurveyListDesign({ surveys }) {
               padding: 16,
               margin: "10px auto",
               maxWidth: 500,
-              borderRadius: 4
+              borderRadius: 4,
             }}
           >
             <h3>{s.headline}</h3>
-            <Link to={`/surveys/take/${s.id}`}>
-              <button>למילוי הסקר</button>
-            </Link>
+            <button
+              onClick={() => onViewResponses(s.id)}
+              style={{ marginRight: 8 }}
+            >
+              הצג תשובות
+            </button>
+            <button
+              onClick={() => onAnalyze(s.id)}
+              style={{ marginRight: 8 }}
+            >
+              ניתוח סקר
+            </button>
+            <button onClick={() => onDeleteSurvey(s.id)}>
+              מחק סקר
+            </button>
           </div>
         ))
       )}
