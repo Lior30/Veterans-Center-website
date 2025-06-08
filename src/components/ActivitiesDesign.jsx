@@ -58,14 +58,10 @@ export default function ActivitiesDesign({
 }) {
   const [tagFilter, setTagFilter] = useState("ALL");
 
-  // allTags עכשיו נטען גם מ־localStorage וגם מה־activities,
-  // ושומר חזרה ל־localStorage רק תגיות שהמשתמש הוסיף
   const [allTags, setAllTags] = useState([]);
 
-  // state לחיפוש
   const [searchQuery, setSearchQuery] = useState("");
 
-  // 1. טען תגיות מה־API ומה־localStorage
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("customTags") || "[]");
     const s = new Set(stored);
@@ -73,7 +69,6 @@ export default function ActivitiesDesign({
     setAllTags([...s]);
   }, [activities]);
 
-  // 2. בכל שינוי של allTags שמור בחזרה ל־localStorage רק תגיות חדשות
   useEffect(() => {
     const defaultSet = new Set();
     activities.forEach((a) => (a.tags || []).forEach((t) => defaultSet.add(t)));
@@ -81,11 +76,9 @@ export default function ActivitiesDesign({
     localStorage.setItem("customTags", JSON.stringify(custom));
   }, [allTags, activities]);
 
-  // state לדיאלוג הוספת תגית חדשה
   const [newTagDialogOpen, setNewTagDialogOpen] = useState(false);
   const [newTagValue, setNewTagValue] = useState("");
 
-  // state לדיאלוג הסרת תגית
   const [removeTagDialogOpen, setRemoveTagDialogOpen] = useState(false);
 
   // פונקציה לטיפול בהוספת תגית חדשה
@@ -244,7 +237,6 @@ export default function ActivitiesDesign({
       headerAlign: "center",
       align: "center",
       renderCell: ({ row }) => {
-        // אם יש שדה רשימת נרשמים (registrants), נספור
         const count = Array.isArray(row.registrants) ? row.registrants.length : 0;
         return row.capacity ? `${count}/${row.capacity}` : "∞";
       },
