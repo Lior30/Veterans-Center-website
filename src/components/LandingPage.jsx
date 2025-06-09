@@ -1,691 +1,554 @@
-// ==================  src/components/LandingPage.jsx  ==================
+// src/components/LandingPage.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  AppBar,
+  Toolbar,
+  IconButton,
+  Box,
   Container,
-  Card,
-  CardContent,
   Grid,
   Typography,
   Button,
-  Box,
+  Card,
+  CardContent,
+  CardActionArea,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Stack,
   TextField,
   Alert,
-  Grow,
-  Fade,
   Snackbar,
-  useMediaQuery,
+  Chip,
   useTheme,
-  Menu,
-  MenuItem,
+  useMediaQuery,
+  styled,
+  Fade,
+  Grow,
 } from "@mui/material";
-import CloseIcon   from "@mui/icons-material/Close";
-import EventIcon   from "@mui/icons-material/Event";
+import {
+  PersonAdd as PersonAddIcon,
+  WhatsApp as WhatsAppIcon,
+  Facebook as FacebookIcon,
+  Info as InfoIcon,
+  Article as ArticleIcon,
+  Event as EventIcon,
+  Home as HomeIcon,
+  Phone as PhoneIcon,
+  Mail as MailIcon,
+  LocationOn as LocationOnIcon,
+  ArrowBackIosNew as ArrowBackIosNewIcon,
+  ArrowForwardIos as ArrowForwardIosIcon,
+} from "@mui/icons-material";
 
-import MessageService  from "../services/MessageService.js";
-import SurveyService   from "../services/SurveyService.js";
+import MessageService from "../services/MessageService.js";
+import Logo from "/logo.jpeg";
+import SurveyService from "../services/SurveyService.js";
 import ActivityService from "../services/ActivityService.js";
-import FlyerService    from "../services/FlyerService.js";
-import UserService     from "../services/UserService.js";
+import FlyerService from "../services/FlyerService.js";
+import UserService from "../services/UserService.js";
+import CalendarPreview from "./CalendarPreview.jsx";
+import ReplyContainer from "./ReplyContainer.jsx";
+import SurveyDetailContainer from "./SurveyDetailContainer.jsx";
 
-import CalendarPreview         from "./CalendarPreview.jsx";
-import ReplyContainer          from "./ReplyContainer.jsx";
-import SurveyDetailContainer   from "./SurveyDetailContainer.jsx";
+// Styled components
+const HeroSection = styled(Box)(({ theme }) => ({
+  backgroundColor: "#cce6f9",
+  padding: theme.spacing(6, 0),
+}));
+
+const FeatureCard = styled(Card)(({ theme }) => ({
+  borderRadius: theme.shape.borderRadius * 2,
+  boxShadow: theme.shadows[4],
+  transition: "transform 0.3s",
+  "&:hover": { transform: "translateY(-4px)" },
+}));
+
+const SectionTitle = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  marginBottom: theme.spacing(2),
+  "& svg": { marginRight: theme.spacing(1), color: theme.palette.primary.main },
+}));
+
+const CtaButton = styled(Button)(({ theme, color }) => ({
+  textTransform: "none",
+  marginRight: theme.spacing(2),
+  marginTop: theme.spacing(2),
+  backgroundColor:
+    color === "primary"
+      ? "#a8c13f"
+      : color === "secondary"
+      ? "#f07a3e"
+      : "#005c9c",
+  "&:hover": {
+    backgroundColor:
+      color === "primary"
+        ? "#8ba536"
+        : color === "secondary"
+        ? "#d06533"
+        : "#004a80",
+  },
+}));
+
+const Footer = styled(Box)(({ theme }) => ({
+  backgroundColor: "#005c9c",
+  color: "#fff",
+  padding: theme.spacing(6, 0),
+}));
 
 export default function LandingPage() {
-  const navigate   = useNavigate();
-  const theme      = useTheme();
-  const isMobile   = useMediaQuery(theme.breakpoints.down("sm"));
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  /* ─────────────────────  state  ───────────────────── */
-  const [messages,  setMessages]        = useState([]);
-  const [surveys,   setSurveys]         = useState([]);
-  const [activities,setActivities]      = useState([]);
-  const [flyers,    setFlyers]          = useState([]);
+  // Data states
+  const [flyers, setFlyers] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [surveys, setSurveys] = useState([]);
 
-  const [selectedFlyerIndex, setSelectedFlyerIndex] = useState(0);
-  const selectedFlyer       = flyers[selectedFlyerIndex] || null;
-  const [flyerDialogOpen,   setFlyerDialogOpen]   = useState(false);
-
-  const [activityRegId,     setActivityRegId]     = useState(null);
-  const [participantName,   setParticipantName]   = useState("");
-  const [participantPhone,  setParticipantPhone]  = useState("");
-  const [participantErr,    setParticipantErr]    = useState("");
-
-  const [selectedMsg,       setSelectedMsg]       = useState(null);
-  const [selectedSurvey,    setSelectedSurvey]    = useState(null);
-  const [selectedActivity,  setSelectedActivity]  = useState(null);
-
-  const [snackbarOpen,      setSnackbarOpen]      = useState(false);
-
-  /* תצוגת “אווירה” מתחלפת */
-  const moodImages = ["/image1.png", "/image2.png", "/image3.png"];
+  // UI states
+  const [currentFlyer, setCurrentFlyer] = useState(0);
   const [imageIndex, setImageIndex] = useState(0);
-
-  /* תגיות סינון פעילויות */
-  const [selectedTags,  setSelectedTags]  = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
-  const [anchorEl,      setAnchorEl]      = useState(null);
-  const openMenu = Boolean(anchorEl);
-  const handleOpenMenu  = (e) => setAnchorEl(e.currentTarget);
-  const handleCloseMenu = () => setAnchorEl(null);
+  const [dialog, setDialog] = useState({ type: "", data: null });
+  const [snackbar, setSnackbar] = useState({ open: false, message: "" });
 
-  /* ─────────────────────  פעילות / תגיות  ───────────────────── */
+  // Registration form
+  const [regInfo, setRegInfo] = useState({ name: "", phone: "" });
+  const [regError, setRegError] = useState("");
+
+  const moodImages = ["/image1.png", "/image2.png", "/image3.png"];
+
+  // Fetch data once
   useEffect(() => {
+    FlyerService.getActiveFlyers().then(setFlyers).catch(console.error);
+    MessageService.listActive()
+      .then((ms) => setMessages(ms.filter((m) => !m.activityId)))
+      .catch(console.error);
+    SurveyService.list().then(setSurveys).catch(console.error);
     const unsub = ActivityService.subscribe((list) => {
       setActivities(list);
-      const tags = Array.from(new Set(list.flatMap((a) => a.tags || [])));
-      setAvailableTags(tags);
+      setAvailableTags([...new Set(list.flatMap((a) => a.tags || []))]);
     });
     return () => unsub();
   }, []);
 
-  /* ─────────────────────  תמונות אווירה  ───────────────────── */
+  // Mood carousel
   useEffect(() => {
-    const interval = setInterval(
+    const id = setInterval(
       () => setImageIndex((i) => (i + 1) % moodImages.length),
       4000
     );
-    return () => clearInterval(interval);
+    return () => clearInterval(id);
   }, []);
 
-  /* ─────────────────────  הודעות • סקרים • פלייארים  ───────────────────── */
-  useEffect(() => {
-    MessageService.listActive()          // ← משתמשים בלוגיקה החדשה
-      .then((ms) => setMessages(ms.filter((m) => !m.activityId)))
-      .catch(console.error);
+  // Simple validation
+  const validName = /^[A-Za-z\u0590-\u05FF ]+$/.test(regInfo.name.trim());
+  const validPhone = UserService.isValidPhone(regInfo.phone.trim());
 
-    SurveyService.list()
-      .then(setSurveys)
-      .catch(console.error);
+  // Handlers
+  const handleNextFlyer = () =>
+    setCurrentFlyer((i) => Math.min(i + 1, flyers.length - 1));
+  const handlePrevFlyer = () =>
+    setCurrentFlyer((i) => Math.max(i - 1, 0));
+  const toggleTag = (tag) =>
+    setSelectedTags((s) =>
+      s.includes(tag) ? s.filter((x) => x !== tag) : [...s, tag]
+    );
 
-    FlyerService.getActiveFlyers()       // ← משתמשים בלוגיקה החדשה
-      .then(setFlyers)
-      .catch(console.error);
-  }, []);
-
-  /* ─────────────────────  הרשמה לפעילות  ───────────────────── */
-  const validParticipantName  =
-    /^[A-Za-z\u0590-\u05FF\s]+$/.test(participantName.trim());
-  const validParticipantPhone =
-    UserService.isValidPhone(participantPhone.trim());
-
-  const handleActivityRegister = async () => {
-    if (!validParticipantName || !validParticipantPhone) {
-      setParticipantErr("שם חייב אותיות בלבד, טלפון תקין (05XXXXXXXX)");
-      return;
-    }
-    try {
-      const user = await UserService.findOrCreate({
-        name : participantName.trim(),
-        phone: participantPhone.trim(),
-      });
-      await ActivityService.registerUser(activityRegId, {
-        name : user.name,
-        phone: user.phone,
-      });
-      setSnackbarOpen(true);
-      setActivityRegId(null);
-      setParticipantName("");
-      setParticipantPhone("");
-      setParticipantErr("");
-    } catch (e) {
-      console.error("Registration error:", e);
-      setParticipantErr("שגיאה בהרשמה, נסה/י שוב");
-    }
-  };
-
-  /* ─────────────────────  פעילויות בשבוע הקרוב + סינון תגיות ───────────────────── */
-  const getUpcomingWeekActivities = useCallback(() => {
-    const now   = new Date();
-    const week  = new Date(now);
-    week.setDate(now.getDate() + 7);
-
+  const upcoming = useCallback(() => {
+    const now = Date.now(),
+      week = now + 7 * 86400000;
     return activities.filter((a) => {
-      const d       = new Date(a.date);
-      const inWeek  = d >= now && d <= week;
-      const hasTag  =
-        selectedTags.length === 0 ||
-        (a.tags || []).some((t) => selectedTags.includes(t));
-      return inWeek && hasTag;
+      const d = new Date(a.date).getTime();
+      return (
+        d >= now &&
+        d <= week &&
+        (selectedTags.length === 0 ||
+          (a.tags || []).some((t) => selectedTags.includes(t)))
+      );
     });
   }, [activities, selectedTags]);
 
-  /* ─────────────────────  Render  ───────────────────── */
+  const openDialog = (type, data) => setDialog({ type, data });
+  const closeDialog = () => setDialog({ type: "", data: null });
+
+  const handleRegister = async () => {
+    if (!validName || !validPhone)
+      return setRegError("נא למלא שם וטלפון תקינים");
+    try {
+      const user = await UserService.findOrCreate({
+        name: regInfo.name.trim(),
+        phone: regInfo.phone.trim(),
+      });
+      await ActivityService.registerUser(dialog.data, {
+        name: user.name,
+        phone: user.phone,
+      });
+      setSnackbar({ open: true, message: "ההרשמה בוצעה בהצלחה" });
+      closeDialog();
+      setRegInfo({ name: "", phone: "" });
+      setRegError("");
+    } catch {
+      setRegError("שגיאה, נסה שוב");
+    }
+  };
+
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* ------------------------------------------------- כותרת */}
-      <Fade in timeout={800}>
-        <Box
-          sx={{
-            display       : "flex",
-            alignItems    : "center",
-            justifyContent: "center",
-            mb            : 2,
-            gap           : 2,
-            flexDirection : isMobile ? "column" : "row",
-          }}
+    <Box>
+<AppBar position="static" color="transparent" elevation={0}>
+  <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
+    {/* לוגו בצד שמאל */}
+   <Box
+  component="img"
+  src={Logo}
+  alt="לוגו המרכז"
+  sx={{
+    height: { xs: 20, sm: 50 },   // 30px בטלפונים (xs), 50px בכל הגדלים הגדולים יותר
+    cursor: "pointer"
+  }}
+  onClick={() => navigate("/")}
+/>
+
+    {/* אייקונים בצד ימין */}
+    <Box>
+      <IconButton color="primary"><EventIcon /></IconButton>
+      <IconButton color="primary"><InfoIcon /></IconButton>
+      <IconButton color="primary"><ArticleIcon /></IconButton>
+      <IconButton color="primary"><FacebookIcon /></IconButton>
+      <IconButton color="primary"><WhatsAppIcon /></IconButton>
+      <IconButton color="primary"><PersonAddIcon /></IconButton>
+    </Box>
+  </Toolbar>
+</AppBar>
+
+      <HeroSection
+  sx={{
+    backgroundImage: `url('/image1.png')`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    height: isMobile ? 300 : 500,
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+  }}
+>
+  {/* רקע כהה חצי-שקוף מעל התמונה */}
+  <Box
+    sx={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      backgroundColor: "rgba(0,0,0,0.4)",
+      zIndex: 0,
+    }}
+  />
+
+ 
+
+  {/* התוכן עצמה */}
+  <Container sx={{ position: "relative", zIndex: 1 }}>
+    <Grid container spacing={4} alignItems="center">
+      <Grid item xs={12} md={6}>
+        <Typography
+          variant={isMobile ? "h4" : "h3"}
+          sx={{ color: "#fff", fontWeight: "bold", mb: 2 }}
         >
-          <Typography variant="h3" color="primary.main" textAlign="center">
-            מרכז ותיקים בית הכרם
-          </Typography>
+          מרכז ותיקים בית הכרם
+        </Typography>
+        <Typography sx={{ color: "#fff", mb: 3 }}>
+          ברוכים הבאים למועדון שמביא לכם פעילויות, הרצאות ורווחה בכל יום!
+        </Typography>
+        <Box>
+          {/* עדכון צבע כפתורים לניואנסים של ירוק וכתום מהתמונה */}
+          <CtaButton
+            color="primary"
+            variant="contained"
+            onClick={() => navigate("/subscribe")}
+            sx={{
+              backgroundColor: "#94c11f",
+              "&:hover": { backgroundColor: "#7aa01a" },
+            }}
+          >
+            רכשו מנוי חודשי
+          </CtaButton>
+          <CtaButton
+            color="secondary"
+            variant="contained"
+            onClick={() => navigate("/register-workshop")}
+            sx={{
+              backgroundColor: "#f28c28",
+              "&:hover": { backgroundColor: "#d27a21" },
+            }}
+          >
+            הרשמה לסדנה
+          </CtaButton>
+          <CtaButton
+            color="default"
+            variant="contained"
+            onClick={() => navigate("/home")}
+            sx={{
+              backgroundColor: "#005c9c",
+              "&:hover": { backgroundColor: "#004a80" },
+            }}
+          >
+            כניסה לניהול
+          </CtaButton>
+        </Box>
+      </Grid>
+      {/* רווח בצד ימין */}
+      <Grid item xs={12} md={6} />
+    </Grid>
+  </Container>
+</HeroSection>
+
+ <Container sx={{ py: 4, maxWidth: "100% !important" }}>
+  <SectionTitle>
+    <EventIcon />
+    <Typography variant="h5">פליירים, לוח פעילויות והודעות</Typography>
+  </SectionTitle>
+  <Grid container spacing={4} alignItems="flex-start">
+    
+    {/* פליירים – צד שמאל */}
+    <Grid item xs={12} sm={6} md={4} lg={4} xl={4} sx={{ display: "flex", justifyContent: "center" }}>
+      <FeatureCard sx={{ p: 2, width: "100%", maxWidth: 480 }}>
+        <CardActionArea onClick={() => openDialog("flyer", flyers[currentFlyer]?.activityId)}>
           <Box
             component="img"
-            src="/logo.jpeg"
-            alt="לוגו"
-            sx={{ height: isMobile ? 40 : 60 }}
+            src={flyers[currentFlyer]?.fileUrl}
+            alt="פלייר"
+            sx={{
+              width: "100%",
+              height: { xs: 280, sm: 360, md: 500 },
+              objectFit: "cover",
+              borderRadius: 2,
+            }}
           />
+        </CardActionArea>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+          <IconButton onClick={handlePrevFlyer} disabled={currentFlyer === 0}>
+            <ArrowBackIosNewIcon />
+          </IconButton>
+          <IconButton onClick={handleNextFlyer} disabled={currentFlyer === flyers.length - 1}>
+            <ArrowForwardIosIcon />
+          </IconButton>
+        </Box>
+      </FeatureCard>
+    </Grid>
+
+    {/* קלנדר – אמצע */}
+    <Grid item xs={12} sm={6} md={4} lg={4} xl={4} sx={{ display: "flex", justifyContent: "center" }}>
+      <Fade in>
+        <Box sx={{ width: "100%", maxWidth: 600 }}>
+          <CalendarPreview activities={activities} />
         </Box>
       </Fade>
+    </Grid>
 
-      {/* ------------------------------------------------- פלייארים + תמונות אווירה */}
-      <Box
-        sx={{
-          mt            : 2,
-          display       : "flex",
-          flexDirection : isMobile ? "column" : "row",
-          justifyContent: "center",
-          gap           : 2,
-        }}
-      >
-        {/* --------- פלייארים */}
-        <Card sx={{ flex: 1, p: 2 }}>
-          <CardContent sx={{ textAlign: "center" }}>
-            {selectedFlyer ? (
-              <>
-                <Box
-                  component="img"
-                  src={selectedFlyer.fileUrl}
-                  alt={selectedFlyer.name}
-                  sx={{
-                    width      : "100%",
-                    maxWidth   : 320,
-                    borderRadius: 2,
-                    boxShadow  : 3,
-                    cursor     : "pointer",
-                    mb         : 2,
-                    transition : "0.3s",
-                    "&:hover"  : { transform: "scale(1.03)" },
-                  }}
-                  onClick={() => setFlyerDialogOpen(true)}
-                />
-                <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
-                  <Button
-                    variant="outlined"
-                    disabled={selectedFlyerIndex === 0}
-                    onClick={() =>
-                      setSelectedFlyerIndex((i) => i - 1)
-                    }
-                  >
-                    הקודם
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    disabled={selectedFlyerIndex === flyers.length - 1}
-                    onClick={() =>
-                      setSelectedFlyerIndex((i) => i + 1)
-                    }
-                  >
-                    הבא
-                  </Button>
-                </Box>
-              </>
-            ) : (
-              <Typography>אין פליירים להצגה.</Typography>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* --------- תמונות אווירה */}
-        <Card sx={{ flex: 1, p: 2 }}>
-          <CardContent sx={{ textAlign: "center" }}>
-            <Typography variant="h6" gutterBottom>
-              תמונות אווירה
-            </Typography>
-            <Box
-              component="img"
-              src={moodImages[imageIndex]}
-              alt={`תמונת אווירה ${imageIndex + 1}`}
-              sx={{
-                width      : "100%",
-                maxWidth   : 320,
-                borderRadius: 2,
-                boxShadow  : 3,
-                transition : "0.5s ease-in-out",
-              }}
-            />
-          </CardContent>
-        </Card>
-      </Box>
-
-      {/* ------------------------------------------------- פעילויות השבוע */}
-      <Fade in timeout={1000}>
-        <Card sx={{ mt: 4 }}>
-          <CardContent>
-            <Typography
-              variant="h5"
-              color="primary.main"
-              gutterBottom
-              sx={{ display: "flex", alignItems: "center", gap: 1 }}
-            >
-              <EventIcon /> פעילויות השבוע
-            </Typography>
-
-            {/* סינון תגיות */}
-            <Box
-              sx={{
-                mb      : 2,
-                display : "flex",
-                gap     : 1,
-                flexWrap: "wrap",
-              }}
-            >
-              <Button variant="outlined" onClick={handleOpenMenu}>
-                סנן לפי תגית
-              </Button>
-              {selectedTags.length > 0 && (
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={() => setSelectedTags([])}
-                >
-                  ביטול סינון
+    {/* הודעות – צד ימין */}
+    <Grid item xs={12} sm={6} md={4} lg={4} xl={4}>
+      <SectionTitle>
+        <ArticleIcon />
+        <Typography variant="h6">הודעות אחרונות</Typography>
+      </SectionTitle>
+      <Grid container spacing={2}>
+        {messages.map((m) => (
+          <Grid item xs={12} key={m.id}>
+            <FeatureCard>
+              <CardContent>
+                <Typography fontWeight="bold">{m.title}</Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  {m.body?.slice(0, 80)}...
+                </Typography>
+                <Button size="small" onClick={() => openDialog("message", m.id)} sx={{ mt: 1 }}>
+                  השב
                 </Button>
-              )}
-              <Menu anchorEl={anchorEl} open={openMenu} onClose={handleCloseMenu}>
-                {availableTags.map((tag) => (
-                  <MenuItem
-                    key={tag}
-                    onClick={() => {
-                      setSelectedTags((prev) =>
-                        prev.includes(tag)
-                          ? prev.filter((t) => t !== tag)
-                          : [...prev, tag]
-                      );
-                    }}
-                    selected={selectedTags.includes(tag)}
-                  >
-                    {tag}
-                  </MenuItem>
-                ))}
-              </Menu>
-            </Box>
-
-            {/* כרטיסיות פעילות */}
-            <Box
-              sx={{
-                display      : "flex",
-                flexDirection: isMobile ? "column" : "row",
-                overflowX    : isMobile ? "visible" : "auto",
-                gap          : 2,
-              }}
-            >
-              {getUpcomingWeekActivities().length > 0 ? (
-                getUpcomingWeekActivities().map((a) => (
-                  <Card
-                    key={a.id}
-                    sx={{
-                      minWidth      : isMobile ? "100%" : 260,
-                      p             : 2,
-                      backgroundColor: "#faf5fb",
-                      border        : "1px solid #91278F",
-                    }}
-                  >
-                    <Typography variant="h6" color="primary.main">
-                      {a.name}
-                    </Typography>
-                    <Typography variant="body2">תאריך: {a.date}</Typography>
-                    <Typography variant="body2">
-                      שעה: {a.startTime} - {a.endTime}
-                    </Typography>
-                    <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => setSelectedActivity(a)}
-                      >
-                        פרטים
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        onClick={() => setActivityRegId(a.id)}
-                      >
-                        הרשמה
-                      </Button>
-                    </Box>
-                  </Card>
-                ))
-              ) : (
-                <Typography>אין פעילויות מתוכננות לשבוע הקרוב.</Typography>
-              )}
-            </Box>
-          </CardContent>
-        </Card>
-      </Fade>
-
-      {/* ------------------------------------------------- הודעות + סקרים */}
-      <Grid
-        container
-        spacing={4}
-        sx={{ mt: 4, flexDirection: isMobile ? "column" : "row" }}
-      >
-        <Grid item xs={12} md={8}>
-          <Stack spacing={4}>
-            {/* ---- הודעות ---- */}
-            <Grow in timeout={500}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h5" color="primary.main" gutterBottom>
-                    הודעות אחרונות
-                  </Typography>
-                  {messages.length > 0 ? (
-                    <Box sx={{ display: "flex", overflowX: "auto", gap: 2 }}>
-                      {messages.map((m) => (
-                        <Card
-                          key={m.id}
-                          sx={{
-                            minWidth  : 220,
-                            p         : 2,
-                            flexShrink: 0,
-                            transition: "0.3s",
-                            "&:hover" : { boxShadow: 6 },
-                          }}
-                        >
-                          <Typography variant="h6">{m.title}</Typography>
-                          <Typography variant="body2">{m.body}</Typography>
-                          <Button
-                            size="small"
-                            sx={{ mt: 1 }}
-                            variant="outlined"
-                            onClick={() => setSelectedMsg(m)}
-                          >
-                            השב
-                          </Button>
-                        </Card>
-                      ))}
-                    </Box>
-                  ) : (
-                    <Typography>אין הודעות להצגה.</Typography>
-                  )}
-                </CardContent>
-              </Card>
-            </Grow>
-
-            {/* ---- סקרים ---- */}
-            <Grow in timeout={800}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h5" color="primary.main" gutterBottom>
-                    סקרים פתוחים
-                  </Typography>
-                  {surveys.length > 0 ? (
-                    <Box sx={{ display: "flex", overflowX: "auto", gap: 2 }}>
-                      {surveys.map((s) => (
-                        <Card
-                          key={s.id}
-                          sx={{
-                            minWidth  : 240,
-                            p         : 2,
-                            flexShrink: 0,
-                            display   : "flex",
-                            flexDirection: "column",
-                            justifyContent: "space-between",
-                            transition: "0.3s",
-                            "&:hover" : { boxShadow: 6 },
-                          }}
-                        >
-                          <Typography
-                            variant="subtitle1"
-                            fontWeight="bold"
-                            gutterBottom
-                            noWrap
-                            title={s.headline}
-                          >
-                            סקר: {s.headline || "ללא שם"}
-                          </Typography>
-                          <Button
-                            variant="contained"
-                            fullWidth
-                            onClick={() => setSelectedSurvey(s)}
-                          >
-                            למילוי הסקר
-                          </Button>
-                        </Card>
-                      ))}
-                    </Box>
-                  ) : (
-                    <Typography>אין סקרים זמינים כעת.</Typography>
-                  )}
-                </CardContent>
-              </Card>
-            </Grow>
-          </Stack>
-        </Grid>
+              </CardContent>
+            </FeatureCard>
+          </Grid>
+        ))}
       </Grid>
+    </Grid>
 
-      {/* ------------------------------------------------- לוח שנה */}
-      <Fade in timeout={1000}>
-        <Card sx={{ mt: 6 }}>
-          <CardContent>
-            <Typography variant="h5" color="primary.main" gutterBottom>
-              לוח אירועים
-            </Typography>
-            <Box sx={{ pt: 2 }}>
-              <CalendarPreview activities={activities} />
-            </Box>
-          </CardContent>
-        </Card>
-      </Fade>
+  </Grid>
+</Container>
 
-      {/* ------------------------------------------------- כפתור ניהול */}
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-        <Button
-          variant="contained"
-          size="large"
-          sx={{
-            px          : 6,
-            py          : 1.5,
-            fontWeight  : 700,
-            borderRadius: 10,
-            boxShadow   : 3,
-            background  : "linear-gradient(90deg, #91278F 0%, #D81B60 100%)",
-            color       : "white",
-            "&:hover"   : {
-              background:
-                "linear-gradient(90deg, #7a1e78 0%, #b1144e 100%)",
-            },
-          }}
-          onClick={() => navigate("/home")}
-        >
+
+      {/* 4. Activities */}
+      <Container sx={{ py: 4 }}>
+        <SectionTitle>
+          <EventIcon />
+          <Typography variant="h5">פעילויות השבוע</Typography>
+        </SectionTitle>
+        <Box mb={2}>
+          {availableTags.map((tag) => (
+            <Chip
+              key={tag}
+              label={tag}
+              onClick={() => toggleTag(tag)}
+              color={selectedTags.includes(tag) ? "secondary" : "default"}
+              sx={{ mr: 1, mb: 1 }}
+            />
+          ))}
+        </Box>
+        <Grid container spacing={2}>
+          {upcoming().map((a) => (
+            <Grid item xs={12} sm={6} md={4} key={a.id}>
+              <Grow in>
+                <FeatureCard>
+                  <CardContent>
+                    <Typography variant="h6">{a.name}</Typography>
+                    <Typography>
+                      {a.date} | {a.startTime}–{a.endTime}
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      sx={{ mt: 2 }}
+                      onClick={() => openDialog("register", a.id)}
+                    >
+                      הרשמה
+                    </Button>
+                  </CardContent>
+                </FeatureCard>
+              </Grow>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+
+     {/* 5. Messages & Surveys */}
+<Container sx={{ py: 4 }}>
+  <Grid container spacing={4}>
+    <Grid item xs={12} md={6}>
+      <SectionTitle>
+        <ArticleIcon />
+        <Typography variant="h5">סקרים פתוחים</Typography>
+      </SectionTitle>
+      <Grid container spacing={2}>
+        {surveys.map((s) => (
+          <Grid item xs={12} sm={6} key={s.id}>
+            <FeatureCard>
+              <CardContent>
+                <Typography noWrap>{s.headline}</Typography>
+                <Button size="small" onClick={() => openDialog("survey", s.id)}>
+                  למילוי
+                </Button>
+              </CardContent>
+            </FeatureCard>
+          </Grid>
+        ))}
+      </Grid>
+    </Grid>
+  </Grid>
+</Container>
+
+     
+      {/* 7. Admin Button */}
+      <Container sx={{ textAlign: "center", py: 4 }}>
+        <Button variant="contained" size="large" onClick={() => navigate("/home")}>
           כניסה למערכת הניהול
         </Button>
-      </Box>
+      </Container>
 
-      {/* ------------------------------------------------- דיאלוגים */}
-      {/* 1. פרטי פעילות */}
-      <Dialog
-        open={Boolean(selectedActivity)}
-        onClose={() => setSelectedActivity(null)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>{selectedActivity?.name}</DialogTitle>
-        <DialogContent dividers>
-          <Typography>תאריך: {selectedActivity?.date}</Typography>
-          <Typography>
-            שעות: {selectedActivity?.startTime} - {selectedActivity?.endTime}
-          </Typography>
-          <Typography sx={{ mt: 2 }}>
-            {selectedActivity?.description || "אין תיאור זמין."}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSelectedActivity(null)}>סגור</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* 2. צפייה מלאה בפלייר */}
-      <Dialog
-        open={flyerDialogOpen}
-        onClose={() => setFlyerDialogOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>
-          {selectedFlyer?.name}
-          <Button
-            onClick={() => setFlyerDialogOpen(false)}
-            sx={{ position: "absolute", top: 8, right: 8 }}
-          >
-            <CloseIcon />
-          </Button>
-        </DialogTitle>
-        <DialogContent dividers>
-          <Stack
-            direction="row"
-            justifyContent="center"
-            spacing={2}
-            sx={{ mb: 2 }}
-          >
-            <Button
-              variant="outlined"
-              onClick={() => {
-                const activity = activities.find(
-                  (a) => a.id === selectedFlyer?.activityId
-                );
-                if (activity) {
-                  setFlyerDialogOpen(false);
-                  setSelectedActivity(activity);
-                }
-              }}
-              disabled={!selectedFlyer?.activityId}
-            >
-              לפרטים
-            </Button>
-            <Button
-              variant="contained"
-              onClick={() => {
-                setFlyerDialogOpen(false);
-                setActivityRegId(selectedFlyer?.activityId || "flyer");
-              }}
-            >
-              להרשמה
-            </Button>
-          </Stack>
-          <Box
-            component="img"
-            src={selectedFlyer?.fileUrl}
-            alt={selectedFlyer?.name}
-            sx={{ width: "100%", borderRadius: 2 }}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* 3. השבת הודעה */}
-      <Dialog
-        open={Boolean(selectedMsg)}
-        onClose={() => setSelectedMsg(null)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>השב להודעה: {selectedMsg?.title}</DialogTitle>
-        <DialogContent dividers>
-          <ReplyContainer
-            messageId={selectedMsg?.id}
-            onClose={() => setSelectedMsg(null)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSelectedMsg(null)}>סגור</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* 4. מילוי סקר */}
-      <Dialog
-        open={Boolean(selectedSurvey)}
-        onClose={() => setSelectedSurvey(null)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>מילוי סקר: {selectedSurvey?.headline}</DialogTitle>
-        <DialogContent dividers>
-          <SurveyDetailContainer
-            surveyId={selectedSurvey?.id}
-            onClose={() => setSelectedSurvey(null)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSelectedSurvey(null)}>סגור</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* 5. הרשמה לפעילות */}
-      <Dialog
-        open={Boolean(activityRegId)}
-        onClose={() => setActivityRegId(null)}
-        fullWidth
-        maxWidth="sm"
-      >
+      {/* 8. Dialogs */}
+      <Dialog open={dialog.type === "register"} onClose={closeDialog} fullWidth>
         <DialogTitle>הרשמה לפעילות</DialogTitle>
         <DialogContent>
-          {participantErr && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {participantErr}
-            </Alert>
-          )}
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="שם מלא"
-              value={participantName}
-              onChange={(e) => setParticipantName(e.target.value)}
-              fullWidth
-              error={participantName && !validParticipantName}
-              helperText={
-                participantName && !validParticipantName
-                  ? "אותיות ורווחים בלבד"
-                  : " "
-              }
-            />
-            <TextField
-              label="טלפון"
-              value={participantPhone}
-              onChange={(e) => setParticipantPhone(e.target.value)}
-              fullWidth
-              error={participantPhone && !validParticipantPhone}
-              helperText={
-                participantPhone && !validParticipantPhone
-                  ? "טלפון לא תקין"
-                  : " "
-              }
-            />
-          </Stack>
+          {regError && <Alert severity="error">{regError}</Alert>}
+          <TextField
+            fullWidth
+            label="שם"
+            margin="normal"
+            value={regInfo.name}
+            onChange={(e) => setRegInfo((i) => ({ ...i, name: e.target.value }))}
+          />
+          <TextField
+            fullWidth
+            label="טלפון"
+            margin="normal"
+            value={regInfo.phone}
+            onChange={(e) => setRegInfo((i) => ({ ...i, phone: e.target.value }))}
+          />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setActivityRegId(null)}>ביטול</Button>
-          <Button
-            variant="contained"
-            onClick={handleActivityRegister}
-            disabled={!validParticipantName || !validParticipantPhone}
-          >
-            הרשמה
-          </Button>
+          <Button onClick={closeDialog}>ביטול</Button>
+          <Button onClick={handleRegister}>שלח</Button>
         </DialogActions>
       </Dialog>
 
-      {/* ------------------------------------------------- Snackbar */}
+      <Dialog open={dialog.type === "message"} onClose={closeDialog} fullWidth>
+        <DialogTitle>השב להודעה</DialogTitle>
+        <DialogContent>
+          <ReplyContainer messageId={dialog.data} onClose={closeDialog} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDialog}>סגור</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={dialog.type === "survey"} onClose={closeDialog} fullWidth>
+        <DialogTitle>מילוי סקר</DialogTitle>
+        <DialogContent>
+          <SurveyDetailContainer surveyId={dialog.data} onClose={closeDialog} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDialog}>סגור</Button>
+        </DialogActions>
+      </Dialog>
+
       <Snackbar
-        open={snackbarOpen}
+        open={snackbar.open}
         autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-        message="ההרשמה לפעילות בוצעה בהצלחה!"
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+        message={snackbar.message}
       />
-    </Container>
+
+      {/* 9. Footer */}
+      <Footer>
+        <Container>
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={3}>
+              <Box display="flex" alignItems="center" mb={1}>
+                <HomeIcon sx={{ mr: 1 }} /> מרכז ותיקים בית הכרם
+              </Box>
+              <Button sx={{ color: "#fff", textTransform: "none" }}>לחץ לכנס לאתר</Button>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Typography variant="subtitle1">צרו קשר</Typography>
+              <Box display="flex" alignItems="center" mt={1}>
+                <PhoneIcon sx={{ mr: 1 }} /> 03-5250717
+              </Box>
+              <Box display="flex" alignItems="center" mt={1}>
+                <LocationOnIcon sx={{ mr: 1 }} /> בית הכרם
+              </Box>
+              <Box display="flex" alignItems="center" mt={1}>
+                <MailIcon sx={{ mr: 1 }} /> המייל של אסנת
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Typography variant="subtitle1">מדיניות</Typography>
+              <Box mt={1}>מדיניות פרטיות</Box>
+              <Box>תנאי שימוש</Box>
+              <Box>ביטול השתתפות</Box>
+              <Box>הצהרת נגישות</Box>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Typography variant="subtitle1">קישורים</Typography>
+              <Box mt={1}>הרצאות</Box>
+              <Box>אודותינו</Box>
+              <Box>התחברות</Box>
+              <Box>צרו קשר</Box>
+            </Grid>
+          </Grid>
+        </Container>
+      </Footer>
+    </Box>
   );
 }
