@@ -1,11 +1,27 @@
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { Box } from "@mui/material";
+
 
 /* tiny helper for DRY inline styles */
-const pill     = { padding: "6px 10px", margin: "0 4px", textDecoration: "none", borderRadius: 6,
-                   fontWeight: 500, fontSize: "0.95rem" };
-const active   = { background: "#1976d2", color: "white" };
-const inactive = { color: "#1976d2" };
+const pill = {
+    padding: "6px 10px",
+    margin: "0 4px",
+    textDecoration: "none",
+    borderRadius: 6,
+    fontWeight: 500,
+    fontSize: "0.95rem"
+  };
+
+  const active = {
+    background: "#8e2c88", // סגול כהה יותר
+    color: "black"
+  };
+
+  const inactive = {
+    color: "white" // טקסט שחור במקום כחול
+  };
+
 
 export default function NavBar() {
   const navigate = useNavigate();
@@ -19,12 +35,15 @@ export default function NavBar() {
         alignItems: "center",
         gap: 4,
         flexWrap: "wrap",
-        background: "#f2f6fc",
-        padding: "8px 12px",
+        background: "#9c27b0", // אותו סגול כמו הרקע של הפס
+        padding: "18px 15px",
         borderRadius: 8,
         marginBottom: 20,
       }}
     >
+
+
+
       {/* Back & Home */}
       <button
         onClick={() => navigate(-1)}
@@ -40,9 +59,9 @@ export default function NavBar() {
       </button>
 
       {/* nav links */}
-      <NavLink to="/home"        style={linkStyle} end>
+      {/* <NavLink to="/home"        style={linkStyle} end>
         חזרה לתפריט
-      </NavLink>
+      </NavLink> */}
       <NavLink to="/activities"  style={linkStyle}>
         פעילויות
       </NavLink>
@@ -59,5 +78,6 @@ export default function NavBar() {
         משתמשים
       </NavLink>
     </nav>
+    
   );
 }
