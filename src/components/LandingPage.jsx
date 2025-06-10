@@ -48,9 +48,15 @@ import SurveyService from "../services/SurveyService.js";
 import ActivityService from "../services/ActivityService.js";
 import FlyerService from "../services/FlyerService.js";
 import UserService from "../services/UserService.js";
+import IdentifyPage from "./IdentificationPage.jsx";
 import CalendarPreview from "./CalendarPreview.jsx";
 import ReplyContainer from "./ReplyContainer.jsx";
 import SurveyDetailContainer from "./SurveyDetailContainer.jsx";
+
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+// import FeatureCard from './FeatureCard';     // wherever you keep it
+// import SectionTitle from './SectionTitle';   // likewise
+
 
 // Styled components
 const HeroSection = styled(Box)(({ theme }) => ({
@@ -122,6 +128,34 @@ export default function LandingPage() {
   const [regError, setRegError] = useState("");
 
   const moodImages = ["/image1.png", "/image2.png", "/image3.png"];
+
+  const auth = getAuth();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Subscribe to auth state changes
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      console.log('🔥 auth user is:', u);
+      setUser(u);
+    });
+    return unsubscribe;
+  }, [auth]);
+
+
+
+  const [justIdentified, setJustIdentified] = useState(
+    sessionStorage.getItem('justIdentified') === 'true'
+  );
+  const [openIdentify, setOpenIdentify] = useState(false);
+
+  const handleIdentifySuccess = () => {
+    console.log('[LandingPage] handleIdentifySuccess called');
+    sessionStorage.setItem('justIdentified', 'true');
+    setJustIdentified(true);
+    setOpenIdentify(false);
+    navigate('/');  // or '/', whatever route shows this page
+  };
+
 
   // Fetch data once
   useEffect(() => {
@@ -300,6 +334,18 @@ export default function LandingPage() {
           >
             כניסה לניהול
           </CtaButton>
+          <CtaButton
+            color="default"
+            variant="contained"
+            onClick={() => setOpenIdentify(true)}
+            sx={{
+              backgroundColor: "#ffca28",       // bright yellow
+              color: "#000",
+              "&:hover": { backgroundColor: "#fbc02d" },
+            }}
+        >
+          הזדהות
+          </CtaButton>
         </Box>
       </Grid>
       {/* רווח בצד ימין */}
@@ -352,35 +398,43 @@ export default function LandingPage() {
     </Grid>
 
     {/* הודעות – צד ימין */}
-    <Grid item xs={12} sm={6} md={4} lg={4} xl={4}>
-      <SectionTitle>
-        <ArticleIcon />
-        <Typography variant="h6">הודעות אחרונות</Typography>
-      </SectionTitle>
-      <Grid container spacing={2}>
-        {messages.map((m) => (
-          <Grid item xs={12} key={m.id}>
-            <FeatureCard>
-              <CardContent>
-                <Typography fontWeight="bold">{m.title}</Typography>
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  {m.body?.slice(0, 80)}...
-                </Typography>
-                <Button size="small" onClick={() => openDialog("message", m.id)} sx={{ mt: 1 }}>
-                  השב
-                </Button>
-              </CardContent>
-            </FeatureCard>
-          </Grid>
-        ))}
-      </Grid>
-    </Grid>
+      <Grid item xs={12} sm={6} md={4} lg={4} xl={4}>
+        <SectionTitle>
+          <ArticleIcon />
+          <Typography variant="h6">הודעות אחרונות</Typography>
+        </SectionTitle>
 
+        <Grid container spacing={2}>
+          {messages.map((m) => (
+            <Grid item xs={12} key={m.id}>
+              <FeatureCard>
+                <CardContent>
+                  <Typography fontWeight="bold">{m.title}</Typography>
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    {m.body?.slice(0, 80)}...
+                  </Typography>
+
+                  {/* only show “השב” if user is signed in */}
+                  {justIdentified && (
+                    <Button
+                      size="small"
+                      onClick={() => openDialog('message', m.id)}
+                      sx={{ mt: 1 }}
+                    >
+                      השב
+                    </Button>
+                  )}
+                </CardContent>
+              </FeatureCard>
+            </Grid>
+          ))}
+        </Grid>
+      </Grid>
   </Grid>
 </Container>
 
 
-      {/* 4. Activities */}
+      {/* 4. Activities - פעילויות השבוע */}
       <Container sx={{ py: 4 }}>
         <SectionTitle>
           <EventIcon />
@@ -423,6 +477,7 @@ export default function LandingPage() {
         </Grid>
       </Container>
 
+
      {/* 5. Messages & Surveys */}
 <Container sx={{ py: 4 }}>
   <Grid container spacing={4}>
@@ -437,9 +492,11 @@ export default function LandingPage() {
             <FeatureCard>
               <CardContent>
                 <Typography noWrap>{s.headline}</Typography>
-                <Button size="small" onClick={() => openDialog("survey", s.id)}>
-                  למילוי
-                </Button>
+                {justIdentified && (
+                  <Button size="small" onClick={() => openDialog("survey", s.id)}>
+                    למילוי
+                  </Button>
+                )}
               </CardContent>
             </FeatureCard>
           </Grid>
@@ -549,6 +606,21 @@ export default function LandingPage() {
           </Grid>
         </Container>
       </Footer>
+
+       <Dialog
+        open={openIdentify}
+        onClose={() => setOpenIdentify(false)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>הזדהות</DialogTitle>
+        <DialogContent>
+          <IdentifyPage onSuccess={handleIdentifySuccess} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenIdentify(false)}>ביטול</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
