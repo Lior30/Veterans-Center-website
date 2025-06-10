@@ -1,5 +1,5 @@
 // src/components/LandingPage.jsx
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   AppBar,
@@ -114,6 +114,9 @@ export default function LandingPage() {
   const [activities, setActivities] = useState([]);
   const [messages, setMessages] = useState([]);
   const [surveys, setSurveys] = useState([]);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const calendarRef = useRef(null); // בראש הקומפוננטה
+
 
   // UI states
   const [currentFlyer, setCurrentFlyer] = useState(0);
@@ -193,6 +196,10 @@ export default function LandingPage() {
     setSelectedTags((s) =>
       s.includes(tag) ? s.filter((x) => x !== tag) : [...s, tag]
     );
+    const scrollToCalendar = () => {
+  calendarRef.current?.scrollIntoView({ behavior: "smooth" });
+};
+
 
   const upcoming = useCallback(() => {
     const now = Date.now(),
@@ -250,13 +257,25 @@ export default function LandingPage() {
 
     {/* אייקונים בצד ימין */}
     <Box>
-      <IconButton color="primary"><EventIcon /></IconButton>
-      <IconButton color="primary"><InfoIcon /></IconButton>
-      <IconButton color="primary"><ArticleIcon /></IconButton>
-      <IconButton color="primary"><FacebookIcon /></IconButton>
-      <IconButton color="primary"><WhatsAppIcon /></IconButton>
-      <IconButton color="primary"><PersonAddIcon /></IconButton>
-    </Box>
+ <IconButton
+  color="primary"
+  component="a"
+  href="https://www.facebook.com/share/19XnwdCFnz/?mibextid=wwXIfr"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  <FacebookIcon />
+</IconButton>
+
+  <IconButton color="primary" onClick={() => setInfoOpen(true)}>
+  <InfoIcon />
+</IconButton>
+
+<IconButton color="primary" onClick={scrollToCalendar}>
+  <EventIcon />
+</IconButton>
+</Box>
+
   </Toolbar>
 </AppBar>
 
@@ -265,7 +284,7 @@ export default function LandingPage() {
     backgroundImage: `url('/image1.png')`,
     backgroundSize: "cover",
     backgroundPosition: "center",
-    height: isMobile ? 300 : 500,
+height: isMobile ? 200 : 350,
     position: "relative",
     display: "flex",
     alignItems: "center",
@@ -300,52 +319,55 @@ export default function LandingPage() {
           ברוכים הבאים למועדון שמביא לכם פעילויות, הרצאות ורווחה בכל יום!
         </Typography>
         <Box>
-          {/* עדכון צבע כפתורים לניואנסים של ירוק וכתום מהתמונה */}
-          <CtaButton
-            color="primary"
-            variant="contained"
-            onClick={() => navigate("/subscribe")}
-            sx={{
-              backgroundColor: "#94c11f",
-              "&:hover": { backgroundColor: "#7aa01a" },
-            }}
-          >
-            רכשו מנוי חודשי
-          </CtaButton>
-          <CtaButton
-            color="secondary"
-            variant="contained"
-            onClick={() => navigate("/register-workshop")}
-            sx={{
-              backgroundColor: "#f28c28",
-              "&:hover": { backgroundColor: "#d27a21" },
-            }}
-          >
-            הרשמה לסדנה
-          </CtaButton>
-          <CtaButton
-            color="default"
-            variant="contained"
-            onClick={() => navigate("/home")}
-            sx={{
-              backgroundColor: "#005c9c",
-              "&:hover": { backgroundColor: "#004a80" },
-            }}
-          >
-            כניסה לניהול
-          </CtaButton>
-          <CtaButton
-            color="default"
-            variant="contained"
-            onClick={() => setOpenIdentify(true)}
-            sx={{
-              backgroundColor: "#ffca28",       // bright yellow
-              color: "#000",
-              "&:hover": { backgroundColor: "#fbc02d" },
-            }}
-        >
-          הזדהות
-          </CtaButton>
+    <Box>
+  {!justIdentified && (
+    <CtaButton
+      color="default"
+      variant="contained"
+      onClick={() => setOpenIdentify(true)}
+      sx={{
+        backgroundColor: "#ffca28",
+        color: "#000",
+        "&:hover": { backgroundColor: "#fbc02d" },
+      }}
+    >
+      הזדהות
+    </CtaButton>
+  )}
+
+  <CtaButton
+    color="secondary"
+    variant="contained"
+    component="a"
+    href="https://wa.me/0523705021"
+        target="_blank"
+    rel="noopener noreferrer"
+    startIcon={<WhatsAppIcon />}
+    sx={{
+      backgroundColor: "#25D366",
+      color: "#fff",
+      "&:hover": { backgroundColor: "#1ebe5d" },
+    }}
+  >
+    צור קשר בוואטסאפ
+  </CtaButton>
+
+  <CtaButton
+    color="primary"
+    variant="contained"
+    component="a"
+    href="tel:0523705021"
+    startIcon={<PhoneIcon />}
+    sx={{
+      backgroundColor: "#2196f3",
+      "&:hover": { backgroundColor: "#1976d2" },
+    }}
+  >
+    התקשר
+  </CtaButton>
+</Box>
+
+
         </Box>
       </Grid>
       {/* רווח בצד ימין */}
@@ -359,123 +381,150 @@ export default function LandingPage() {
     <EventIcon />
     <Typography variant="h5">פליירים, לוח פעילויות והודעות</Typography>
   </SectionTitle>
-  <Grid container spacing={4} alignItems="flex-start">
-    
-    {/* פליירים – צד שמאל */}
-    <Grid item xs={12} sm={6} md={4} lg={4} xl={4} sx={{ display: "flex", justifyContent: "center" }}>
-      <FeatureCard sx={{ p: 2, width: "100%", maxWidth: 480 }}>
-        <CardActionArea onClick={() => openDialog("flyer", flyers[currentFlyer]?.activityId)}>
-          <Box
-            component="img"
-            src={flyers[currentFlyer]?.fileUrl}
-            alt="פלייר"
-            sx={{
-              width: "100%",
-              height: { xs: 280, sm: 360, md: 500 },
-              objectFit: "cover",
-              borderRadius: 2,
-            }}
-          />
-        </CardActionArea>
-        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-          <IconButton onClick={handlePrevFlyer} disabled={currentFlyer === 0}>
-            <ArrowBackIosNewIcon />
-          </IconButton>
-          <IconButton onClick={handleNextFlyer} disabled={currentFlyer === flyers.length - 1}>
-            <ArrowForwardIosIcon />
-          </IconButton>
-        </Box>
-      </FeatureCard>
-    </Grid>
+<Box
+  sx={{
+    display: "flex",
+    flexDirection: { xs: "column", md: "row" },
+    gap: 4,
+    alignItems: "stretch",
+    justifyContent: "center",
+    width: "100%",
+    flexWrap: "wrap",
+  }}
+>
+  {/* עמודת ימין: פליירים + הודעות */}
+  <Box
+    sx={{
+      display: "flex",
+      flexDirection: "column",
+      flex: 1,
+      gap: 2,
+      maxWidth: 420,
+    }}
+  >
+    {/* פליירים */}
+<FeatureCard
+  sx={{
+    flex: "0 0 auto",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    alignItems: "center",
+    p: 2,
+    minHeight: 500,
+  }}
+>
+  <CardActionArea
+    onClick={() => openDialog("flyer", flyers[currentFlyer]?.activityId)}
+    sx={{ display: "flex", justifyContent: "center", width: "100%" }}
+  >
+    <Box
+      component="img"
+      src={flyers[currentFlyer]?.fileUrl}
+      alt="פלייר"
+      sx={{
+        maxHeight: 400,
+        width: "100%",
+        objectFit: "contain",
+        borderRadius: 2,
+      }}
+    />
+  </CardActionArea>
 
-    {/* קלנדר – אמצע */}
-    <Grid item xs={12} sm={6} md={4} lg={4} xl={4} sx={{ display: "flex", justifyContent: "center" }}>
-      <Fade in>
-        <Box sx={{ width: "100%", maxWidth: 600 }}>
-          <CalendarPreview activities={activities} />
-        </Box>
-      </Fade>
-    </Grid>
+  <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mt: 2 }}>
+    <IconButton onClick={handlePrevFlyer} disabled={currentFlyer === 0}>
+      <ArrowBackIosNewIcon />
+    </IconButton>
 
-    {/* הודעות – צד ימין */}
-      <Grid item xs={12} sm={6} md={4} lg={4} xl={4}>
-        <SectionTitle>
-          <ArticleIcon />
-          <Typography variant="h6">הודעות אחרונות</Typography>
-        </SectionTitle>
+    <Button
+      variant="contained"
+      color="success"
+      onClick={() => openDialog("register", flyers[currentFlyer]?.activityId)}
+      startIcon={<EventIcon />}
+      sx={{
+        mx: 2,
+        px: 4,
+        py: 1,
+        fontWeight: "bold",
+        fontSize: "1rem",
+        transition: "transform 0.2s ease-in-out",
+        "&:hover": {
+          transform: "scale(1.05)",
+        },
+      }}
+    >
+      הרשמה מהירה
+    </Button>
 
-        <Grid container spacing={2}>
-          {messages.map((m) => (
-            <Grid item xs={12} key={m.id}>
-              <FeatureCard>
-                <CardContent>
-                  <Typography fontWeight="bold">{m.title}</Typography>
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    {m.body?.slice(0, 80)}...
-                  </Typography>
+    <IconButton onClick={handleNextFlyer} disabled={currentFlyer === flyers.length - 1}>
+      <ArrowForwardIosIcon />
+    </IconButton>
+  </Box>
+</FeatureCard>
 
-                  {/* only show “השב” if user is signed in */}
-                  {justIdentified && (
-                    <Button
-                      size="small"
-                      onClick={() => openDialog('message', m.id)}
-                      sx={{ mt: 1 }}
-                    >
-                      השב
-                    </Button>
-                  )}
-                </CardContent>
-              </FeatureCard>
-            </Grid>
-          ))}
-        </Grid>
+    {/* הודעות */}
+<FeatureCard sx={{ flex: "0 0 35%", overflowY: "auto", p: 2 }}>
+  ...      <SectionTitle>
+        <ArticleIcon />
+        <Typography variant="h6">הודעות אחרונות</Typography>
+      </SectionTitle>
+
+      <Grid container spacing={2}>
+        {messages.map((m) => (
+          <Grid item xs={12} key={m.id}>
+            <FeatureCard>
+              <CardContent>
+                <Typography fontWeight="bold">{m.title}</Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  {m.body?.slice(0, 80)}...
+                </Typography>
+                {justIdentified && (
+                  <Button
+                    size="small"
+                    onClick={() => openDialog("message", m.id)}
+                    sx={{ mt: 1 }}
+                  >
+                    השב
+                  </Button>
+                )}
+              </CardContent>
+            </FeatureCard>
+          </Grid>
+        ))}
       </Grid>
-  </Grid>
+    </FeatureCard>
+  </Box>
+
+<FeatureCard
+  sx={{
+    flex: 1,
+    p: 1, // padding פנימי גדול יותר
+    minWidth: 400,
+    maxWidth: 700,
+    mx: "auto", // מרווח אוטומטי משני הצדדים כדי למרכז
+    my: 2,      // מרווח מלמעלה ולמטה
+    backgroundColor: "#f9f9f9",
+    border: "1px solid #ddd",
+    borderRadius: 2,
+  }}
+>
+  <Box
+    ref={calendarRef}
+    sx={{
+      width: "100%",
+      height: "auto",
+    }}
+  >
+    <CalendarPreview />
+  </Box>
+</FeatureCard>
+
+</Box>
+
+
 </Container>
 
 
-      {/* 4. Activities - פעילויות השבוע */}
-      <Container sx={{ py: 4 }}>
-        <SectionTitle>
-          <EventIcon />
-          <Typography variant="h5">פעילויות השבוע</Typography>
-        </SectionTitle>
-        <Box mb={2}>
-          {availableTags.map((tag) => (
-            <Chip
-              key={tag}
-              label={tag}
-              onClick={() => toggleTag(tag)}
-              color={selectedTags.includes(tag) ? "secondary" : "default"}
-              sx={{ mr: 1, mb: 1 }}
-            />
-          ))}
-        </Box>
-        <Grid container spacing={2}>
-          {upcoming().map((a) => (
-            <Grid item xs={12} sm={6} md={4} key={a.id}>
-              <Grow in>
-                <FeatureCard>
-                  <CardContent>
-                    <Typography variant="h6">{a.name}</Typography>
-                    <Typography>
-                      {a.date} | {a.startTime}–{a.endTime}
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      sx={{ mt: 2 }}
-                      onClick={() => openDialog("register", a.id)}
-                    >
-                      הרשמה
-                    </Button>
-                  </CardContent>
-                </FeatureCard>
-              </Grow>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
 
 
      {/* 5. Messages & Surveys */}
@@ -515,6 +564,23 @@ export default function LandingPage() {
       </Container>
 
       {/* 8. Dialogs */}
+      <Dialog open={infoOpen} onClose={() => setInfoOpen(false)}>
+  <DialogTitle>מידע נוסף</DialogTitle>
+  <DialogContent>
+    <Typography>
+      לפרטים נוספים ניתן ליצור קשר במספר:{" "}
+      <strong>
+        <a href="tel:0523705021" style={{ color: "#1976d2", textDecoration: "none" }}>
+          052-3705021
+        </a>
+      </strong>
+    </Typography>
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={() => setInfoOpen(false)}>סגור</Button>
+  </DialogActions>
+</Dialog>
+
       <Dialog open={dialog.type === "register"} onClose={closeDialog} fullWidth>
         <DialogTitle>הרשמה לפעילות</DialogTitle>
         <DialogContent>

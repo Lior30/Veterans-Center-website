@@ -1,6 +1,8 @@
 // src/components/CalendarPreview.jsx
 import React, { useEffect, useMemo, useState } from "react";
+import { useRef } from "react";
 import FullCalendar                      from "@fullcalendar/react";
+import timeGridPlugin from "@fullcalendar/timegrid";
 import dayGridPlugin                     from "@fullcalendar/daygrid";
 import interactionPlugin                 from "@fullcalendar/interaction";
 import heLocale                          from "@fullcalendar/core/locales/he";
@@ -28,6 +30,8 @@ export default function CalendarPreview() {
   /* live activities */
   const [activities, setActivities] = useState([]);
   useEffect(() => ActivityService.subscribe(setActivities), []);
+const [calendarView, setCalendarView] = useState("timeGridWeek");
+const calendarRef = useRef(null);
 
   /* 🇮🇱 public holidays */
   const holidays = usePublicHolidays();
@@ -170,6 +174,28 @@ try {
 
   return (
     <>
+   <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+  <Button
+    variant={calendarView === "timeGridWeek" ? "contained" : "outlined"}
+    onClick={() => {
+      setCalendarView("timeGridWeek");
+      calendarRef.current?.getApi().changeView("timeGridWeek");
+    }}
+  >
+    לוח שבועי
+  </Button>
+  <Button
+    variant={calendarView === "dayGridMonth" ? "contained" : "outlined"}
+    onClick={() => {
+      setCalendarView("dayGridMonth");
+      calendarRef.current?.getApi().changeView("dayGridMonth");
+    }}
+  >
+    כל פעילויות החודש
+  </Button>
+</Stack>
+
+
       {/* tag filter bar */}
       <ToggleButtonGroup
         exclusive
@@ -185,17 +211,51 @@ try {
         ))}
       </ToggleButtonGroup>
 
-      <FullCalendar
-        plugins={[dayGridPlugin, interactionPlugin]}
-        initialView="dayGridMonth"
-        locale={heLocale}
-        height="auto"
-        events={events}
-        headerToolbar={false}
-        selectable={false}
-        editable={false}
-        eventClick={handleEventClick}
-      />
+ <FullCalendar
+  ref={calendarRef}
+  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+  initialView="timeGridWeek"
+  locale={heLocale}
+  height="auto"
+  events={events}
+  headerToolbar={false}
+  selectable={false}
+  editable={false}
+  eventClick={handleEventClick}
+  slotMinTime="08:00:00"
+  slotMaxTime="22:00:00"
+slotDuration="01:00:00"
+slotLabelInterval="01:00"
+eventTimeFormat={{
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+}}
+
+  slotLabelFormat={{
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }}
+eventContent={(arg) => {
+  const viewType = calendarRef.current?.getApi().view.type;
+  const timeText = arg.timeText;
+
+  return (
+    <div className="custom-event">
+      <b>
+        {viewType === "dayGridMonth" ? `${timeText} ` : ""}
+        {arg.event.title}
+      </b>
+    </div>
+  );
+}}
+
+/>
+
+
+
+
 
       {/* registration dialog */}
       <Dialog
