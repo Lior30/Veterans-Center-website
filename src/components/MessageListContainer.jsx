@@ -5,6 +5,8 @@ import {
   getDocs,
   writeBatch,
   doc,
+  deleteDoc,
+  updateDoc,
 } from "firebase/firestore";
 import {
   Container,
@@ -13,27 +15,42 @@ import {
   IconButton,
   Tooltip,
   Stack,
-  Divider,
+  TextField,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
-import ArrowUpwardIcon   from "@mui/icons-material/ArrowUpward";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import { db } from "../firebase";
 import { Link } from "react-router-dom";
 
 export default function MessageListContainer() {
-  const [messages, setMessages] = useState([]);
-  const [loading,  setLoading]  = useState(true);
-
-  /* אינדקס הכרטיס שנגרר כרגע (useRef כדי לא לזרז רנדרים) */
+  const [messages, setMessages]           = useState([]);
+  const [loading, setLoading]             = useState(true);
+  const [editingId, setEditingId]         = useState(null);
+  const [editTitle, setEditTitle]         = useState("");
+  const [editBody, setEditBody]           = useState("");
+  const [editActivity, setEditActivity]   = useState("");
+  const [editStartDate, setEditStartDate] = useState(""); // YYYY-MM-DD
+  const [editEndDate, setEditEndDate]     = useState(""); // YYYY-MM-DD
   const dragIndexRef = useRef(null);
 
-  /* ─────────────────────  טעינה ראשונית  ───────────────────── */
+  // replace with your real options or load from Firestore
+  const activityOptions = [
+    "פעילות א'",
+    "פעילות ב'",
+    "פעילות ג'",
+  ];
+
+  /* ─── Load messages & normalize order ─── */
   useEffect(() => {
     async function load() {
-      // 1) מביאים הכול (גם כאלה בלי order)
       const snap = await getDocs(collection(db, "messages"));
-
-      // 2) מערך מקומי + batch לעדכון order חסר
       const batch = writeBatch(db);
       let maxOrder = -1;
 
@@ -45,7 +62,6 @@ export default function MessageListContainer() {
         return { id: d.id, ...data };
       });
 
-      // 3) נותנים order חדש לאלה שחסר
       msgs.forEach((m) => {
         if (typeof m.order !== "number") {
           maxOrder += 1;
@@ -55,8 +71,6 @@ export default function MessageListContainer() {
       });
 
       if (batch._mutations?.length) await batch.commit();
-
-      // 4) מיון לפי order
       msgs.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
       setMessages(msgs);
       setLoading(false);
@@ -64,52 +78,91 @@ export default function MessageListContainer() {
     load();
   }, []);
 
-  /* ─────────────────────  פונקציית החלפה כללית  ───────────────────── */
+  /* ─── Swap by index ─── */
   async function swapByIndex(i1, i2) {
-    if (i1 < 0 || i2 < 0 || i1 >= messages.length || i2 >= messages.length)
-      return;
+    if (
+      i1 < 0 || i2 < 0 ||
+      i1 >= messages.length || i2 >= messages.length
+    ) return;
 
-    const msgA = messages[i1];
-    const msgB = messages[i2];
-
+    const a = messages[i1], b = messages[i2];
     try {
       const batch = writeBatch(db);
-      batch.update(doc(db, "messages", msgA.id), { order: msgB.order });
-      batch.update(doc(db, "messages", msgB.id), { order: msgA.order });
+      batch.update(doc(db, "messages", a.id), { order: b.order });
+      batch.update(doc(db, "messages", b.id), { order: a.order });
       await batch.commit();
 
       setMessages((prev) => {
         const copy = [...prev];
-        copy[i1] = msgB;
-        copy[i2] = msgA;
+        [copy[i1], copy[i2]] = [copy[i2], copy[i1]];
         return copy;
       });
     } catch (err) {
-      console.error("swap failed", err);
-      alert("שגיאה בהחלפת הסדר");
+      console.error(err);
+      alert("שגיאה בהחלפת סדר ההודעות");
     }
   }
+  const move = (idx, dir) => swapByIndex(idx, idx + dir);
 
-  /* כפתורי ↑ ↓ משתמשים בזה */
-  const move = (idx, direction) => swapByIndex(idx, idx + direction);
-
-  /* ─────────────────────  Drag handlers  ───────────────────── */
-  const handleDragStart = (idx) => () => {
-    dragIndexRef.current = idx;
-  };
-
-  const handleDragOver = (e) => e.preventDefault(); // מאפשר drop
-
-  const handleDrop = (targetIdx) => async (e) => {
+  /* ─── Drag handlers ─── */
+  const handleDragStart = (idx) => () => { dragIndexRef.current = idx; };
+  const handleDragOver  = (e) => e.preventDefault();
+  const handleDrop      = (targetIdx) => async (e) => {
     e.preventDefault();
-    const srcIdx = dragIndexRef.current;
+    const src = dragIndexRef.current;
     dragIndexRef.current = null;
-    if (srcIdx === null || srcIdx === targetIdx) return;
-    await swapByIndex(srcIdx, targetIdx);
+    if (src == null || src === targetIdx) return;
+    await swapByIndex(src, targetIdx);
   };
 
-  /* ─────────────────────  Render  ───────────────────── */
-  if (loading) return <Typography align="center">טוען...</Typography>;
+  /* ─── Delete ─── */
+  const handleDelete = async (id) => {
+    if (!window.confirm("מחק את ההודעה הזו?")) return;
+    await deleteDoc(doc(db, "messages", id));
+    setMessages((prev) => prev.filter((m) => m.id !== id));
+  };
+
+  /* ─── Begin editing ─── */
+  const startEditing = (m) => {
+    setEditingId(m.id);
+    setEditTitle(m.title || "");
+    setEditBody(m.body || "");
+    setEditActivity(m.activity || "");
+    setEditStartDate(m.startDate || "");
+    setEditEndDate(m.endDate || "");
+  };
+  const cancelEditing = () => setEditingId(null);
+
+  /* ─── Save edits ─── */
+  const saveEditing = async () => {
+    const ref = doc(db, "messages", editingId);
+    await updateDoc(ref, {
+      title: editTitle,
+      body: editBody,
+      activity: editActivity,
+      startDate: editStartDate,
+      endDate: editEndDate,
+    });
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === editingId
+          ? {
+              ...m,
+              title: editTitle,
+              body: editBody,
+              activity: editActivity,
+              startDate: editStartDate,
+              endDate: editEndDate,
+            }
+          : m
+      )
+    );
+    setEditingId(null);
+  };
+
+  /* ─── Render ─── */
+  if (loading)
+    return <Typography align="center">טוען...</Typography>;
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
@@ -120,51 +173,153 @@ export default function MessageListContainer() {
       {messages.map((m, idx) => (
         <Paper
           key={m.id}
-          sx={{ p: 3, mb: 2, cursor: "grab" }}
-          draggable
-          onDragStart={handleDragStart(idx)}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop(idx)}
+          sx={{ p: 3, mb: 2 }}
+          draggable={editingId === null}
+          onDragStart={editingId === null ? handleDragStart(idx) : undefined}
+          onDragOver={editingId === null ? handleDragOver : undefined}
+          onDrop={editingId === null ? handleDrop(idx) : undefined}
         >
-          <Stack direction="row" justifyContent="space-between" spacing={2}>
-            {/* תוכן ההודעה */}
-            <Stack>
-              <Typography variant="h6">{m.title}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                {m.body}
+          {editingId === m.id ? (
+            // ─── EDIT FORM ───
+            <Stack spacing={2}>
+              <Typography variant="h6" align="center">
+                עריכת הודעה
               </Typography>
 
-              <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
-                <Link to={`/messages/replies/${m.id}`}>הצג תגובות</Link>
+              <TextField
+                label="כותרת"
+                fullWidth
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+              />
+
+              <TextField
+                label="תוכן"
+                fullWidth
+                multiline
+                rows={4}
+                value={editBody}
+                onChange={(e) => setEditBody(e.target.value)}
+              />
+
+              <FormControl fullWidth>
+                <InputLabel>פעילות (לא חובה)</InputLabel>
+                <Select
+                  value={editActivity}
+                  label="פעילות (לא חובה)"
+                  onChange={(e) => setEditActivity(e.target.value)}
+                >
+                  <MenuItem value="">ללא פעילות</MenuItem>
+                  {activityOptions.map((opt) => (
+                    <MenuItem key={opt} value={opt}>
+                      {opt}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <TextField
+                label="הצג מ־"
+                type="date"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                value={editStartDate}
+                onChange={(e) => setEditStartDate(e.target.value)}
+              />
+
+              <TextField
+                label="הצג עד (כולל)"
+                type="date"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                value={editEndDate}
+                onChange={(e) => setEditEndDate(e.target.value)}
+              />
+
+              <Stack direction="row" spacing={1} justifyContent="flex-end">
+                <Button onClick={cancelEditing}>ביטול</Button>
+                <Button
+                  variant="contained"
+                  onClick={saveEditing}
+                  disabled={!editTitle.trim()}
+                >
+                  שמור
+                </Button>
               </Stack>
             </Stack>
+          ) : (
+            // ─── DISPLAY MODE ───
+            <Stack direction="row" justifyContent="space-between" spacing={2}>
+              <Stack>
+                <Typography variant="h6">{m.title}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {m.body}
+                </Typography>
+                {m.activity && (
+                  <Typography variant="caption">
+                    פעילות: {m.activity}
+                  </Typography>
+                )}
+                {m.startDate && (
+                  <Typography variant="caption" display="block">
+                    מ־ {m.startDate}  
+                    {m.endDate && ` — עד ${m.endDate}`}
+                  </Typography>
+                )}
+                <Link to={`/messages/replies/${m.id}`}>
+                  הצג תגובות
+                </Link>
+              </Stack>
 
-            {/* כפתורי מיקום */}
-            <Stack>
-              <Tooltip title="העבר למעלה">
-                <span>
-                  <IconButton
-                    size="small"
-                    disabled={idx === 0}
-                    onClick={() => move(idx, -1)}
-                  >
-                    <ArrowUpwardIcon />
-                  </IconButton>
-                </span>
-              </Tooltip>
-              <Tooltip title="העבר למטה">
-                <span>
-                  <IconButton
-                    size="small"
-                    disabled={idx === messages.length - 1}
-                    onClick={() => move(idx, +1)}
-                  >
-                    <ArrowDownwardIcon />
-                  </IconButton>
-                </span>
-              </Tooltip>
+              <Stack>
+                <Tooltip title="העבר למעלה">
+                  <span>
+                    <IconButton
+                      size="small"
+                      disabled={idx === 0}
+                      onClick={() => move(idx, -1)}
+                    >
+                      <ArrowUpwardIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+
+                <Tooltip title="העבר למטה">
+                  <span>
+                    <IconButton
+                      size="small"
+                      disabled={idx === messages.length - 1}
+                      onClick={() => move(idx, +1)}
+                    >
+                      <ArrowDownwardIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+
+                <Tooltip title="ערוך">
+                  <span>
+                    <IconButton
+                      size="small"
+                      onClick={() => startEditing(m)}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+
+                <Tooltip title="מחק">
+                  <span>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDelete(m.id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              </Stack>
             </Stack>
-          </Stack>
+          )}
         </Paper>
       ))}
     </Container>
