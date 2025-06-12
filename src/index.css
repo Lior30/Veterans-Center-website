@@ -29,3 +29,7 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;     /* Firefox */
 }
+
+.fc .fc-daygrid-day.fc-day-today {
+  background-color: #d1b6d3 !important;
+}

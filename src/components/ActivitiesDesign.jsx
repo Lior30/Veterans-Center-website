@@ -19,6 +19,10 @@ import {
   Stack,
   ToggleButton,
   ToggleButtonGroup,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { DataGrid } from "@mui/x-data-grid";
@@ -189,6 +193,7 @@ export default function ActivitiesDesign({
       headerAlign: "center",
       align: "right",
     },
+    
     {
       field: "startTime",
       headerName: "התחלה",
@@ -211,25 +216,32 @@ export default function ActivitiesDesign({
       headerAlign: "center",
       align: "right",
     },
-    {
-      field: "description",
-      headerName: "תיאור",
-      //flex: 1,
-      width: 200,
-      headerAlign: "center",
-      align: "right",
+{
+  field: "description",
+  headerName: "תיאור",
+  flex: 1,
+  minWidth: 200,
+  headerAlign: "center",
+  align: "right",
+  // <-- הוספה של class ייחודי
+  cellClassName: "multi-line-cell",
+},
+
+  
+  {
+    field: "registrationCondition",
+    headerName: "תנאי הרשמה",
+    width: 120,
+    headerAlign: "center",
+    align: "center",
+    renderCell: (params) => {
+      const v = params.value;
+      if (v === "member60")       return "חבר מרכז 60+";
+      if (v === "registeredUser") return "משתמש רשום";
+      return "-";
     },
-    {
-      field: "tags",
-      headerName: "תגיות",
-      width: 120,
-      headerAlign: "center",
-      align: "center",
-      valueGetter: (params) => {
-        const t = Array.isArray(params?.row?.tags) ? params.row.tags : [];
-        return t.join(", ");
-      },
-    },
+  },
+
     {
       field: "capacity",
       headerName: "קיבולת",
@@ -244,7 +256,7 @@ export default function ActivitiesDesign({
     {
       field: "recurring",
       headerName: "חוזרת?",
-      width: 100,
+      width: 80,
       headerAlign: "center",
       align: "center",
       valueFormatter: ({ value }) => (value ? "כן" : "לא"),
@@ -335,6 +347,30 @@ export default function ActivitiesDesign({
               pageSize={10}
               rowsPerPageOptions={[5, 10]}
               getRowId={(r) => r.id ?? r.tempId}
+                // 1. גובה שורה אוטומטי
+              getRowHeight={() => 'auto'}
+              // 2. כדי שגם המכולה עצמה תתאים את הגובה הכולל
+              autoHeight
+              sx={{
+              '& .MuiDataGrid-cell': {
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center', 
+              },
+              '& .multi-line-cell': {
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center', 
+                whiteSpace: 'normal',
+                wordBreak: 'break-word',
+                lineHeight: 1.3,
+                paddingTop: '8px',
+                paddingBottom: '8px',
+              },
+              '& .MuiDataGrid-row': {
+                maxHeight: 'none !important',
+              },
+            }}
             />
           </Box>
         </Box>
@@ -344,47 +380,47 @@ export default function ActivitiesDesign({
         <Box sx={{ mt: 2, textAlign: "right" }}>
           {/* עטיפה חדשה ל־ToggleButtonGroup + כפתורים "הוסף תגית" ו-"הסר תגית" */}
           <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              mb: 2,
-            }}
-          >
-            <ToggleButtonGroup
-              exclusive
-              value={tagFilter}
-              onChange={(_, v) => setTagFilter(v || "ALL")}
-            >
-              <ToggleButton value="ALL">הכל</ToggleButton>
-              {allTags.map((t) => (
-                <ToggleButton key={t} value={t}>
-                  {t}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
+  sx={{
+    display: "flex",
+    alignItems: "center",
+    gap: 1,     // מרווח אופקי בין התגיות לכפתורים
+    mb: 2,
+  }}
+>
+  <ToggleButtonGroup
+    exclusive
+    value={tagFilter}
+    onChange={(_, v) => setTagFilter(v || "ALL")}
+  >
+    <ToggleButton value="ALL">הכל</ToggleButton>
+    {allTags.map((t) => (
+      <ToggleButton key={t} value={t}>
+        {t}
+      </ToggleButton>
+    ))}
+  </ToggleButtonGroup>
 
-            <Box>
-              <Button
-                variant="outlined"
-                onClick={() => setNewTagDialogOpen(true)}
-                sx={{ mr: 1 }}
-              >
-                הוסף תגית
-              </Button>
-              <Button
-                variant="outlined"
-                color="error"
-                onClick={() => setRemoveTagDialogOpen(true)}
-              >
-                הסר תגית
-              </Button>
-            </Box>
-          </Box>
+  {/* הכפתורים עכשיו ישר אחרי ה־ToggleButtonGroup, באותה שורה */}
+  <Button
+    variant="outlined"
+    onClick={() => setNewTagDialogOpen(true)}
+  >
+    הוסף תגית
+  </Button>
+  <Button
+    variant="outlined"
+    color="error"
+    onClick={() => setRemoveTagDialogOpen(true)}
+  >
+    הסר תגית
+  </Button>
+</Box>
+
 
           <FullCalendar
             plugins={[dayGridPlugin, interactionPlugin]}
             initialView="dayGridMonth"
+            
             locale={heLocale}
             direction="rtl"
             events={events}
@@ -395,6 +431,7 @@ export default function ActivitiesDesign({
               center: "title",
               right: "",
             }}
+            buttonIcons={false}
             height={600}
           />
         </Box>
@@ -552,7 +589,7 @@ export default function ActivitiesDesign({
                 fontSize: "0.75rem",
               },
             }}
-            inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
+            inputProps={{ dir: "rtl", style: { textAlign: "right" }, min:0 }}
           />
 
           {/* שדה מחיר */}
@@ -576,8 +613,36 @@ export default function ActivitiesDesign({
                 fontSize: "0.75rem",
               },
             }}
-            inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
+            inputProps={{ dir: "rtl", style: { textAlign: "right" }, min:0 }}
           />
+
+         {/* שדה תנאי הרשמה */}
+<TextField
+  select
+  label="תנאי הרשמה"
+  value={form.registrationCondition || ""}
+  onChange={(e) =>
+    onFormChange((f) => ({ ...f, registrationCondition: e.target.value }))
+  }
+  fullWidth
+  InputLabelProps={{
+    shrink: true,
+    sx: {
+      position: "absolute",
+      top: "-6px",
+      right: "12px",
+      transform: "none",
+      backgroundColor: "#fff",
+      px: 0.5,
+      fontSize: "0.75rem",
+    },
+  }}
+  inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
+>
+  <MenuItem value="member60">חבר מרכז 60+</MenuItem>
+  <MenuItem value="registeredUser">משתמש רשום</MenuItem>
+</TextField>
+
 
           {/* שדה מיקום */}
           <TextField
