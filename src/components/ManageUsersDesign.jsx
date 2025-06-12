@@ -7,12 +7,12 @@ import {
   collectionGroup,
   doc,
   setDoc,
+  getDoc,
   getDocs,
   query,
   where,
   updateDoc,
-  deleteDoc,
-  addDoc
+  deleteDoc
 } from "firebase/firestore";
 import UserService from "../services/UserService";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
@@ -216,18 +216,20 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
   const [allUsers, setAllUsers] = useState([]);
 
+  
+
   async function handleAddUser() {
   if (!isFirstValid || !isLastValid || !isPhoneValid || !isTypeValid) return;
 
   const full = `${newFirstName.trim()} ${newLastName.trim()}`.trim();
-  const user_id = `${newFirstName.trim()}_${newLastName.trim()}_${newPhone.trim()}`;
+  const phone   = newPhone.replace(/\D/g, "");      // רק ספרות
+  const userRef = doc(db, "users", phone); 
 
-  const docRef = doc(db, "users", user_id);
-  const existing = await getDocs(query(collection(db, "users"), where("user_id", "==", user_id)));
-
-  if (!existing.empty) {
-    alert("משתמש עם שם וטלפון זהים כבר קיים");
-    return;
+try{
+  const snap = await getDoc(userRef);
+  if (snap.exists()) {
+    alert("מספר הטלפון הזה כבר קיים במערכת ❗");
+    return; // או throw Error כדי לטפל במקום אחר
   }
 
   const newUser = {
@@ -235,7 +237,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     last_name: newLastName.trim(),
     fullname: full,
     phone: newPhone.trim(),
-    user_id,
+    user_id: phone,
     is_registered: userType === "registered",
     is_club_60:    userType === "senior",
     address: address.trim() || null,
@@ -249,13 +251,12 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     replies: [],
     replies_date: []
   };
-  await setDoc(docRef, newUser);
+  await setDoc(userRef, newUser);
 
-  try {
-    await setDoc(docRef, newUser);
-    const snap = await getDocs(collection(db, "users"));
-    const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    setAllUsers(all);
+    const snapAll = await getDocs(collection(db, "users"));
+     setAllUsers(snapAll.docs.map(d => ({ id: d.id, ...d.data() })));
+    // // const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // setAllUsers(all);
     setShowModal(false); // סגירת חלון
     setNewFirstName(""); setNewLastName(""); setNewPhone("");
     setUserType(""); setAddress(""); setIdNumber(""); setNotes("");
@@ -678,7 +679,7 @@ async function saveEditedUser(u) {
   }
 
   const oldUserId = u.id || u.user_id;
-  const newUserId = `${firstName}_${lastName}_${phone}`;
+  const docId = phone.trim(); 
 
   const updatedUser = {
     first_name: firstName,
