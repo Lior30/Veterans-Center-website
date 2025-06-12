@@ -16,6 +16,7 @@ const initialForm = {
   recurring: false,
   weekdays: [],     // 0=Sun … 6=Sat
   participants: [],
+  registrationCondition: "",
   tags: [],
   price: "",
   location: "",
@@ -76,9 +77,26 @@ export default function ActivitiesContainer() {
     }
 
     if (!form.tags || form.tags.length === 0) {
-     alert("אנא בחרי לפחות תגית אחת לפעילות.");
-     return;
-   }
+      alert("אנא בחרי לפחות תגית אחת לפעילות.");
+      return;
+    }
+
+     if (Number(form.capacity) < 0) {
+      alert("הקיבולת חייבת להיות 0 או יותר");
+      return;
+    }
+    if (Number(form.price) < 0) {
+      alert("המחיר חייב להיות 0 או יותר");
+      return;
+    }
+
+    const startMinutes = toMinutes(form.startTime);
+    const endMinutes = toMinutes(form.endTime);
+    if (endMinutes - startMinutes < 30) {
+      alert("שעת הסיום חייבת להיות לפחות חצי שעה אחרי שעת ההתחלה.");
+      return;
+    }
+
     await ActivityService.save({
       ...form,
       capacity: Number(form.capacity),
