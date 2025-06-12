@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+// ============  src/components/PublicMessageBoardContainer.js  ============
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Card,
@@ -8,32 +9,78 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
 } from "@mui/material";
+
 import MessageService from "../services/MessageService.js";
 import ReplyContainer from "./ReplyContainer.jsx";
 
+/**
+ * לוח הודעות ציבורי עם גרירה-ושחרור לשינוי סדר.
+ */
 export default function PublicMessageBoardContainer() {
-  const [messages, setMessages]       = useState([]);
+  const [messages,    setMessages]    = useState([]);
   const [selectedMsg, setSelectedMsg] = useState(null);
+  const dragIndexRef = useRef(null);            // כדי לזכור מי נגרר
 
+  /* ─── טעינת ההודעות ─── */
   useEffect(() => {
-    MessageService.list()
-      .then(ms => setMessages(ms.filter(m => !m.activityId)))
+    MessageService.listActive()
+      .then((ms) => setMessages(ms.filter((m) => !m.activityId)))
       .catch(console.error);
   }, []);
 
+  /* ─── Handlers לגרירה ─── */
+  const handleDragStart = (idx) => () => {
+    dragIndexRef.current = idx;
+  };
+
+  const handleDragOver = (e) => e.preventDefault();
+
+  const handleDrop = (targetIdx) => async (e) => {
+    e.preventDefault();
+    const srcIdx = dragIndexRef.current;
+    if (srcIdx === null || srcIdx === targetIdx) return;
+
+    const msgA = messages[srcIdx];
+    const msgB = messages[targetIdx];
+
+    try {
+      await MessageService.swapOrder(
+        { id: msgA.id, order: msgA.order },
+        { id: msgB.id, order: msgB.order }
+      );
+
+      // עדכון מקומי מהיר
+      const updated = [...messages];
+      updated[srcIdx]   = msgB;
+      updated[targetIdx] = msgA;
+      setMessages(updated);
+    } catch (err) {
+      console.error("swapOrder failed:", err);
+    } finally {
+      dragIndexRef.current = null;
+    }
+  };
+
+  /* ─── UI ─── */
   return (
     <>
       <Box>
-        {messages.map(m => (
-          <Card key={m.id} sx={{ mb: 2 }}>
+        {messages.map((m, idx) => (
+          <Card
+            key={m.id}
+            sx={{ mb: 2, cursor: "grab" }}
+            draggable
+            onDragStart={handleDragStart(idx)}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop(idx)}
+          >
             <CardContent>
               <Typography variant="h6">{m.title}</Typography>
               <Typography variant="body2" sx={{ mt: 1 }}>
                 {m.body}
               </Typography>
-              {/* וודאי שאין כאן שום RouterLink או navigate */}
               <Button
                 variant="outlined"
                 size="small"
@@ -47,7 +94,7 @@ export default function PublicMessageBoardContainer() {
         ))}
       </Box>
 
-      {/* דיאלוג השב בתוך אותו עמוד */}
+      {/* דיאלוג השבה */}
       <Dialog
         open={Boolean(selectedMsg)}
         onClose={() => setSelectedMsg(null)}

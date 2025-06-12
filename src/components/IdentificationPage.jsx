@@ -1,6 +1,5 @@
 // src/components/IdentifyPage.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import {
   Container,
@@ -13,25 +12,22 @@ import {
 
 const auth = getAuth();
 
-// Formula: generate email/password from phone number
 const generateEmailPassword = (phoneNumber) => {
   const digitsOnly = phoneNumber.replace(/\D/g, '');
-  const email = `vet${digitsOnly}@veterans.com`;            // vet0551234567@veterans.com
-  const password = `Vet!${digitsOnly}#2025`;               // e.g. Vet!0551234567#2025
-  return { email, password };
+  return {
+    email: `vet${digitsOnly}@veterans.com`,
+    password: `Vet!${digitsOnly}#2025`
+  };
 };
 
-// Simple 10-digit validation (starts with 05)
 const isValidPhone = (phone) => /^05\d{8}$/.test(phone.replace(/\D/g, ''));
 
-const IdentifyPage = () => {
-  const navigate = useNavigate();
+export default function IdentifyPage({ onSuccess }) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [message, setMessage] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // If sign-in fails, show this “contact admin” message:
-  const ADMIN_CONTACT = 'לפרטים והרשמה לאתר, אנא צרו קשר, במספר: 052-370-5021';
+  const ADMIN_CONTACT = 'לפרטים והרשמה לאתר, אנא צרו קשר במספר: 052-370-5021';
 
   const handleLogin = async () => {
     const trimmed = phoneNumber.trim();
@@ -45,12 +41,18 @@ const IdentifyPage = () => {
 
     try {
       const { email, password } = generateEmailPassword(trimmed);
+      console.log('[IdentifyPage] attempting login with', email, password);
       await signInWithEmailAndPassword(auth, email, password);
 
-      // Success: redirect to the registered-users landing page:
+      console.log('[IdentifyPage] login succeeded');
       setLoading(false);
-      navigate('/landingPage');
+      // only call onSuccess here
+      if (typeof onSuccess === 'function') {
+        console.log('[IdentifyPage] calling onSuccess()');
+        onSuccess();
+      }
     } catch (e) {
+      console.error('[IdentifyPage] login failed', e);
       setLoading(false);
       setMessage(ADMIN_CONTACT);
     }
@@ -59,7 +61,7 @@ const IdentifyPage = () => {
   return (
     <Container maxWidth="xs" sx={{ mt: 2, mb: 2 }}>
       <Typography variant="h6" align="center" gutterBottom>
-        הזדהות:
+        הזדהות
       </Typography>
 
       <TextField
@@ -70,9 +72,7 @@ const IdentifyPage = () => {
         fullWidth
         margin="normal"
         error={phoneNumber && !isValidPhone(phoneNumber)}
-        helperText={
-          phoneNumber && !isValidPhone(phoneNumber) ? 'פורמט לא תקין' : ' '
-        }
+        helperText={phoneNumber && !isValidPhone(phoneNumber) ? 'פורמט לא תקין' : ' '}
       />
 
       <Button
@@ -92,6 +92,4 @@ const IdentifyPage = () => {
       )}
     </Container>
   );
-};
-
-export default IdentifyPage;
+}

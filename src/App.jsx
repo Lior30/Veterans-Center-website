@@ -4,7 +4,6 @@ import { Routes, Route, useLocation } from "react-router-dom";
 
 import NavBar                         from "./components/NavBar.jsx";
 import LandingPage                    from "./components/LandingPage.jsx";
-import GuestLandingPage               from "./components/GuestLandingPage.jsx";
 import IdentifyPage                   from "./components/IdentificationPage.jsx";
 import Home                           from "./components/Home.jsx";
 
@@ -39,11 +38,11 @@ export default function App() {
       {showNav && <NavBar />}
 
       <Routes>
-        {/* Public (guest) landing page */}
-        <Route path="/"                   element={<GuestLandingPage />} />
+        {/* registeredlanding page */}
+        <Route path="/"                   element={<LandingPage />} />
 
-        {/* registered landing page */}
-        <Route path="/landingPage"        element={<LandingPage />} />
+        {/* registered landing page
+        <Route path="/landingPage"        element={<LandingPage />} /> */}
 
         {/* identification page */}
         <Route path="/identificationPage" element={<IdentifyPage />} />

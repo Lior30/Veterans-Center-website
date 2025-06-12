@@ -1,44 +1,57 @@
+// =========  src/components/CreateMessageContainer.jsx  =========
 import { useState, useEffect } from "react";
-import CreateMessageDesign from "./CreateMessageDesign";
-import MessageService from "../services/MessageService";
-import ActivityService from "../services/ActivityService";
-import { Snackbar, Alert } from "@mui/material";
+import CreateMessageDesign   from "./CreateMessageDesign.jsx";
+import MessageService        from "../services/MessageService.js";
+import ActivityService       from "../services/ActivityService.js";
+import { Snackbar, Alert }   from "@mui/material";
 
 export default function CreateMessageContainer() {
   const [activities, setActivities] = useState([]);
+
   const [values, setValues] = useState({
-    title: "",
-    body: "",
+    title     : "",
+    body      : "",
     activityId: "",
+    startDate : "",   // yyyy-mm-dd
+    endDate   : "",
   });
-  const [errors, setErrors] = useState({});
+
+  const [errors,  setErrors]  = useState({});
   const [success, setSuccess] = useState(false);
 
+  /* ─── מאזין חי לפעילויות (במקום list()) ─── */
   useEffect(() => {
-    const unsubscribe = ActivityService.subscribe((acts) =>
-      setActivities(acts)
-    );
-    return () => unsubscribe();
+    const unsub = ActivityService.subscribe(setActivities);
+    return () => unsub();   // cleanup בהחלפת דף
   }, []);
 
-  const onChange = (e) => {
-    const { name, value } = e.target;
-    setValues((prev) => ({ ...prev, [name]: value }));
-  };
+  /* ─── שינויי טופס ─── */
+  const onChange = (e) =>
+    setValues({ ...values, [e.target.name]: e.target.value });
 
+  /* ─── שליחה ─── */
   const onSubmit = async () => {
     const errs = {};
-    if (!values.title) errs.title = "יש להזין כותרת";
-    if (!values.body) errs.body = "יש להזין תוכן";
-    if (Object.keys(errs).length) {
-      setErrors(errs);
-      return;
-    }
+    if (!values.title.trim()) errs.title = "יש להזין כותרת";
+    if (!values.body.trim())  errs.body  = "יש להזין תוכן";
+    if (values.endDate && values.startDate && values.endDate < values.startDate)
+      errs.endDate = "תאריך סיום חייב להיות אחרי תאריך התחלה";
 
-    await MessageService.create(values);
-    setValues({ title: "", body: "", activityId: "" });
-    setErrors({});
-    setSuccess(true);
+    if (Object.keys(errs).length) return setErrors(errs);
+
+    try {
+      await MessageService.create(values);
+      setValues({
+        title     : "",
+        body      : "",
+        activityId: "",
+        startDate : "",
+        endDate   : "",
+      });
+      setSuccess(true);
+    } catch (err) {
+      alert("שמירת הודעה נכשלה: " + err.code);
+    }
   };
 
   return (
@@ -54,14 +67,9 @@ export default function CreateMessageContainer() {
         open={success}
         autoHideDuration={3000}
         onClose={() => setSuccess(false)}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert
-          onClose={() => setSuccess(false)}
-          severity="success"
-          sx={{ width: "100%" }}
-        >
-          ההודעה נשלחה בהצלחה
+        <Alert severity="success" onClose={() => setSuccess(false)}>
+          ההודעה נשמרה בהצלחה!
         </Alert>
       </Snackbar>
     </>

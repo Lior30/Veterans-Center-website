@@ -859,18 +859,22 @@ async function acknowledgeRow(row, type) {
 
   return (
     <>
+    <Box sx={{ maxWidth: "1200px", margin: "0 auto", padding: 4 }}>
     {/* ◄◄ שורת הכותרת + ייצוא ►► */}
     <div style={{
       display:"flex",
       justifyContent:"space-between",
       alignItems:"center",
       width:"100%",
-      marginBottom:24     // רווח לפני שאר הבקרות
+      marginBottom:30    // רווח לפני שאר הבקרות
     }}>
       {/* כותרת מימין (RTL) */}
+      {/* <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 4, mb: 2 }}> */}
+
       <Typography variant="h4" component="h1">
         ניהול משתמשים
       </Typography>
+            
 
       {/* כפתור ייצוא בצד שמאל */}
       <Button
@@ -878,8 +882,10 @@ async function acknowledgeRow(row, type) {
         onClick={() => setShowExport(true)}
         sx={{ fontWeight:"bold" }}
       >
-        ייצוא
+        ייצוא ל- Excel
       </Button>
+      {/* </Box> */}
+
     </div>
 
     <div
@@ -892,7 +898,7 @@ async function acknowledgeRow(row, type) {
     ></div>
 
 
-      <label style={{ display:"flex", alignItems:"center", gap:8 }}>
+      <label style={{ display:"flex", alignItems:"center", gap:8, marginTop: 16 }}>
         חיפוש:
         <input
           type="text"
@@ -907,6 +913,8 @@ async function acknowledgeRow(row, type) {
           }}
         />
       </label>
+      
+    
 
 
       {/* ----------------------------------------
@@ -921,6 +929,7 @@ async function acknowledgeRow(row, type) {
           width: "100%",
           marginBottom: 16,
           height: "40px",
+          marginTop: 16,
         }}
         >
 
@@ -938,6 +947,7 @@ async function acknowledgeRow(row, type) {
             display: "flex",
             alignItems: "center",
             gap: 8,
+
           }}
         >
           הצג:
@@ -982,33 +992,35 @@ async function acknowledgeRow(row, type) {
         {/* Add User Button */}
 
 
-      {/* כפתור בחר / בטל בחירה */}
+  {/* כפתור הוספה + בחר + מחק נבחרים */}
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <button
         onClick={toggleSelectMode}
-        style={{ ...actionButtonStyle, marginInlineStart: 8 }}
+        style={{ ...actionButtonStyle }}
       >
         {selectMode ? "בטל בחירה" : "בחר"}
       </button>
 
-      {/* מחק נבחרים – רק כשה-selectMode פעיל */}
       {selectMode && (
         <button
           onClick={deleteSelected}
           disabled={selected.size === 0}
           style={{
             ...deleteButtonStyle,
-            marginInlineStart: 8,
-            opacity: selected.size ? 1 : .4,
-            cursor: selected.size ? "pointer" : "not-allowed"
+            opacity: selected.size ? 1 : 0.4,
+            cursor: selected.size ? "pointer" : "not-allowed",
           }}
         >
           מחק נבחרים
         </button>
       )}
 
-        <button onClick={() => setShowModal(true)}>הוסף משתמש</button>
+      <button onClick={() => setShowModal(true)}>הוסף משתמש</button>
+    </div>
+    </div>
 
-      </div>
+
+
 
       {/* Modal */}
       {showModal && (
@@ -1040,6 +1052,7 @@ async function acknowledgeRow(row, type) {
           </button>
 
           <h2>הוספת משתמש</h2>
+
 
           <div style={{ marginBottom: 12 }}>
             <label>
@@ -1169,8 +1182,10 @@ async function acknowledgeRow(row, type) {
           >
             הוספה
           </button>
+          
 
         </div>
+                 
       )}
 
 
@@ -1398,7 +1413,8 @@ async function acknowledgeRow(row, type) {
                 setShowExport(false);
               }}
             >
-              ייצוא
+             
+              ייצוא  
             </Button>
           </DialogContent>
         </Dialog>
@@ -1455,7 +1471,8 @@ async function acknowledgeRow(row, type) {
   </Dialog>
 )}
 
-    </>
+     </Box>
+        </>
   ); 
 }
 

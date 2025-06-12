@@ -33,3 +33,35 @@ body {
 .fc .fc-daygrid-day.fc-day-today {
   background-color: #d1b6d3 !important;
 }
+/* עיצוב מותאם לפעילויות בלוח השנה */
+.custom-event {
+  font-weight: bold;
+  animation: fadeInEvent 0.4s ease-in;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+/* אנימציית כניסה רכה */
+@keyframes fadeInEvent {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* הקטנת גובה שורות לוח השבוע */
+.fc-timegrid-slot {
+  height:2em !important;
+}
+/* נסיון להכריח שבלוח שבועי אירועים יוצגו אחד מתחת לשני */
+.fc-v-event {
+  width: 100% !important;          /* שיתפסו את כל השורה */
+  margin-bottom: 4px !important;   /* רווח בין אירועים */
+  clear: both !important;          /* כל אירוע מתחיל שורה חדשה */
+  float: none !important;
+  display: block !important;
+}
