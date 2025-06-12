@@ -64,9 +64,9 @@ export default function ManageUsersContainer() {
             if (!u.phone) return;
             const id = ensureUserId(u);
             setDoc(
-              doc(db, "users", id),
+              doc(db, "users", docId),
               {
-                user_id:      id,
+                user_id:      docId,
                 first_name:   u.first_name,
                 last_name:    u.last_name,
                 phone:        u.phone,
