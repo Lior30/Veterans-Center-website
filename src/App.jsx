@@ -9,6 +9,10 @@ import Home                           from "./components/Home.jsx";
 
 import ActivitiesContainer            from "./components/ActivitiesContainer.jsx";
 import FlyerManager                   from "./components/FlyerManager.jsx";
+import HomepageImagesContainer from "./components/HomepageImagesContainer.jsx";
+
+// import HomepageImagesDesign from "./components/HomepageImagesDesign.jsx";
+
 
 import Surveys                        from "./components/Surveys.jsx";
 import CreateSurvey                   from "./components/CreateSurveyContainer.jsx";
@@ -64,6 +68,9 @@ export default function App() {
         <Route path="/surveys/list"       element={<SurveyListContainer />} />
         <Route path="/surveys/take/:id"   element={<SurveyDetailContainer />} />
 
+        <Route path="/HomepageImages" element={<HomepageImagesContainer />} />
+
+
         {/* Messages – admin */}
         <Route path="/messages"           element={<ManageMessages />} />
         <Route path="/messages/create"    element={<CreateMessage />} />
@@ -77,6 +84,7 @@ export default function App() {
         // <Route path="/messages/reply/:id" element={<ReplyContainer />} />
         */}
       </Routes>
+
     </>
   );
 }
