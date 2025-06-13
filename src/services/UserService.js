@@ -16,7 +16,7 @@ export default class UserService {
     return snap.exists() ? { id: snap.id, ...snap.data() } : null;
   }
 
-    static isValidPhone(phone) {
+  static isValidPhone(phone) {
     return /^(?:050|052|053|054|051|055)\d{7}$/.test(phone);
   }
 
