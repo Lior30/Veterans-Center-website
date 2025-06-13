@@ -74,6 +74,12 @@ export default function NavBar() {
       <NavLink to="/messages"    style={linkStyle}>
         הודעות
       </NavLink>
+            <NavLink to="/flyers"      style={linkStyle}>
+        פליירים
+      </NavLink>
+      <NavLink to="/HomepageImages"     style={linkStyle}>
+      תמונות אווירה
+      </NavLink>
       <NavLink to="/manage-users" style={linkStyle}>
         משתמשים
       </NavLink>
