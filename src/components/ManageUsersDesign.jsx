@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import * as XLSX from "xlsx";           // ❶
 import { saveAs } from "file-saver";
-import { db } from "../firebase";
+import { db, auth } from "../firebase"; // <-- add auth here
+import { createUserWithEmailAndPassword } from "firebase/auth";
 import {
   collection,
   collectionGroup,
@@ -29,8 +30,7 @@ import {
   IconButton,
   // … שאר ה-imports הקיימים
 } from "@mui/material";
-
-
+import { generateEmailPassword } from "./IdentificationPage";
 async function fixMissingUserFields() {
   const snap = await getDocs(collection(db, "users"));
   const updates = [];
@@ -219,162 +219,167 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   
 
   async function handleAddUser() {
-  if (!isFirstValid || !isLastValid || !isPhoneValid || !isTypeValid) return;
+    if (!isFirstValid || !isLastValid || !isPhoneValid || !isTypeValid) return;
 
-  const full = `${newFirstName.trim()} ${newLastName.trim()}`.trim();
-  const phone   = newPhone.replace(/\D/g, "");      // רק ספרות
-  const userRef = doc(db, "users", phone); 
+    const full = `${newFirstName.trim()} ${newLastName.trim()}`.trim();
+    const phone   = newPhone.replace(/\D/g, "");      // רק ספרות
+    const userRef = doc(db, "users", phone); 
 
-try{
-  const snap = await getDoc(userRef);
-  if (snap.exists()) {
-    alert("מספר הטלפון הזה כבר קיים במערכת ❗");
-    return; // או throw Error כדי לטפל במקום אחר
-  }
+    try{
+      const snap = await getDoc(userRef);
+      if (snap.exists()) {
+        alert("מספר הטלפון הזה כבר קיים במערכת ❗");
+        return; // או throw Error כדי לטפל במקום אחר
+      }
 
-  const newUser = {
-    first_name: newFirstName.trim(),
-    last_name: newLastName.trim(),
-    fullname: full,
-    phone: newPhone.trim(),
-    user_id: phone,
-    is_registered: userType === "registered",
-    is_club_60:    userType === "senior",
-    address: address.trim() || null,
-    id_number: idNumber.trim() || null,
-    notes: notes.trim() || null,
+      const newUser = {
+        first_name: newFirstName.trim(),
+        last_name: newLastName.trim(),
+        fullname: full,
+        phone: newPhone.trim(),
+        user_id: phone,
+        is_registered: userType === "registered",
+        is_club_60:    userType === "senior",
+        address: address.trim() || null,
+        id_number: idNumber.trim() || null,
+        notes: notes.trim() || null,
 
-     activities: [],
-    activities_date: [],
-    survey: [],
-    survey_date: [],
-    replies: [],
-    replies_date: []
-  };
-  await setDoc(userRef, newUser);
+        activities: [],
+        activities_date: [],
+        survey: [],
+        survey_date: [],
+        replies: [],
+        replies_date: []
+      };
+      await setDoc(userRef, newUser);
 
-    const snapAll = await getDocs(collection(db, "users"));
-     setAllUsers(snapAll.docs.map(d => ({ id: d.id, ...d.data() })));
-    // // const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    // setAllUsers(all);
-    setShowModal(false); // סגירת חלון
-    setNewFirstName(""); setNewLastName(""); setNewPhone("");
-    setUserType(""); setAddress(""); setIdNumber(""); setNotes("");
-  } catch (e) {
-    console.error("שגיאה בהוספה:", e);
-    alert("אירעה שגיאה בהוספת המשתמש");
-  }
-}
+      const snapAll = await getDocs(collection(db, "users"));
+      setAllUsers(snapAll.docs.map(d => ({ id: d.id, ...d.data() })));
+      // // const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // setAllUsers(all);
+      setShowModal(false); // סגירת חלון
+      setNewFirstName(""); setNewLastName(""); setNewPhone("");
+      setUserType(""); setAddress(""); setIdNumber(""); setNotes("");
 
+      // add the user to the authentication list
+      const { email, password } = generateEmailPassword (newPhone.trim()); // Generating the email and password of the auth of the user.
 
+      await createUserWithEmailAndPassword(auth, email, password);  //Creating the auth user with the generated email and password.
 
-function toggleSelect(user) {                 // ← מקבל את כל האובייקט
-  const id = ensureUserId(user);              // ← מזהה קבוע ואחיד
-  setSelected(prev => {
-    const s = new Set(prev);
-    s.has(id) ? s.delete(id) : s.add(id);
-    return s;
-  });
-}
-
-function selectAllRows(checked) {
-  setSelected(
-    checked
-      ? new Set(rowsToShow.map(r => ensureUserId(r.user)))
-      : new Set()
-  );
-}
-
-function toggleSelectMode() {
-  setSelectMode(p => {
-    if (p) setSelected(new Set());   // ניקוי בחזרה למצב רגיל
-    return !p;
-  });
-}
-
-/* מחיקה מרוכזת  */
-async function deleteSelected() {
-  if (selected.size === 0) return;
-
-  const confirmed = window.confirm("האם אתה בטוח שברצונך למחוק את *כל* המשתמשים שנבחרו?");
-  if (!confirmed) return;
-
-  const promises = [];
-
-  for (const id of selected) {
-    const u = allUsers.find(x => ensureUserId(x) === id);
-    if (u) {
-      promises.push(deleteUserCore(u)); // רק מחיקה, בלי חלונות
+      alert("המשתמש נוסף בהצלחה!"); // הודעת הצלחה
+      console.log("משתמש נוסף:", newUser);
+    } catch (e) {
+        console.error("שגיאה בהוספה:", e);
+        alert("אירעה שגיאה בהוספת המשתמש");
     }
   }
 
+
+
+  function toggleSelect(user) {                 // ← מקבל את כל האובייקט
+    const id = ensureUserId(user);              // ← מזהה קבוע ואחיד
+    setSelected(prev => {
+      const s = new Set(prev);
+      s.has(id) ? s.delete(id) : s.add(id);
+      return s;
+    });
+  }
+
+  function selectAllRows(checked) {
+    setSelected(
+      checked
+        ? new Set(rowsToShow.map(r => ensureUserId(r.user)))
+        : new Set()
+    );
+  }
+
+  function toggleSelectMode() {
+    setSelectMode(p => {
+      if (p) setSelected(new Set());   // ניקוי בחזרה למצב רגיל
+      return !p;
+    });
+  }
+
+  /* מחיקה מרוכזת  */
+  async function deleteSelected() {
+    if (selected.size === 0) return;
+
+    const confirmed = window.confirm("האם אתה בטוח שברצונך למחוק את *כל* המשתמשים שנבחרו?");
+    if (!confirmed) return;
+
+    const promises = [];
+
+    for (const id of selected) {
+      const u = allUsers.find(x => ensureUserId(x) === id);
+      if (u) {
+        promises.push(deleteUserCore(u)); // רק מחיקה, בלי חלונות
+      }
+    }
+
   await Promise.all(promises);     // מחכה שכולם יימחקו
-setSelected(new Set());          // מנקה את הבחירה
+  setSelected(new Set());          // מנקה את הבחירה
 
-// ריענון הרשימה מה־DB
-const fresh = await getDocs(collection(db, "users"));
-setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
+  // ריענון הרשימה מה־DB
+  const fresh = await getDocs(collection(db, "users"));
+  setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
 
-// רק אחרי שהכול הסתיים → הודעה
-alert("המשתמשים נמחקו בהצלחה");
-}
-
-
-  /* ----------------------------------------------------------
-   פונקציה שמקבלת "registered" | "senior" | "all" ומייצרת Excel
------------------------------------------------------------*/
-function exportToExcel(type = "all") {
-  // ➊ מסננים
-  const data = allUsers.filter(u => {
-    if (type === "registered") return u.is_registered && !u.is_club_60;
-    if (type === "senior")     return u.is_club_60;
-    return true;               // all
-  });
-
-  if (data.length === 0) {
-    alert("אין נתונים לייצוא");
-    return;
+  // רק אחרי שהכול הסתיים → הודעה
+  alert("המשתמשים נמחקו בהצלחה");
   }
 
 
+    /* ----------------------------------------------------------
+    פונקציה שמקבלת "registered" | "senior" | "all" ומייצרת Excel
+  -----------------------------------------------------------*/
+  function exportToExcel(type = "all") {
+    // ➊ מסננים
+    const data = allUsers.filter(u => {
+      if (type === "registered") return u.is_registered && !u.is_club_60;
+      if (type === "senior")     return u.is_club_60;
+      return true;               // all
+    });
+
+    if (data.length === 0) {
+      alert("אין נתונים לייצוא");
+      return;
+    }
+
+    // ➋ בונים מערך אובייקטים "שטוח" – רק העמודות שרוצים בגליון
+    const rows = data.map(u => ({
+      "שם פרטי"  : u.first_name  || "",
+      "שם משפחה" : u.last_name   || "",
+      "שם מלא"   : u.fullname    || `${u.first_name||""} ${u.last_name||""}`.trim(),
+      "טלפון"     : u.phone       || "",
+      "רשום?"     : u.is_registered ? "כן" : "לא",
+      "חבר 60+"   : u.is_club_60    ? "כן" : "לא",
+      "פעילויות"  : Array.isArray(u.activities) ? u.activities.length : 0,
+      "סקרים"     : Array.isArray(u.survey)     ? u.survey.length     : 0,
+      "תגובות"    : Array.isArray(u.replies)    ? u.replies.length    : 0,
+    }));
+
+    // ➌ SheetJS: ממירים ל-worksheet ול-workbook
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Users");
+
+    // ➍ כותבים כ-Blob ושומרים
+    const wbBlob = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const fileName =
+      type === "registered" ? "משתמשים_רשומים.xlsx" :
+      type === "senior"     ? "חברי_60+.xlsx"       :
+                              "כל_המשתמשים.xlsx";
+
+    saveAs(
+      new Blob([wbBlob], { type: "application/octet-stream" }),
+      fileName
+    );
+  }
 
 
-  // ➋ בונים מערך אובייקטים "שטוח" – רק העמודות שרוצים בגליון
-  const rows = data.map(u => ({
-    "שם פרטי"  : u.first_name  || "",
-    "שם משפחה" : u.last_name   || "",
-    "שם מלא"   : u.fullname    || `${u.first_name||""} ${u.last_name||""}`.trim(),
-    "טלפון"     : u.phone       || "",
-    "רשום?"     : u.is_registered ? "כן" : "לא",
-    "חבר 60+"   : u.is_club_60    ? "כן" : "לא",
-    "פעילויות"  : Array.isArray(u.activities) ? u.activities.length : 0,
-    "סקרים"     : Array.isArray(u.survey)     ? u.survey.length     : 0,
-    "תגובות"    : Array.isArray(u.replies)    ? u.replies.length    : 0,
-  }));
-
-  // ➌ SheetJS: ממירים ל-worksheet ול-workbook
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Users");
-
-  // ➍ כותבים כ-Blob ושומרים
-  const wbBlob = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-  const fileName =
-    type === "registered" ? "משתמשים_רשומים.xlsx" :
-    type === "senior"     ? "חברי_60+.xlsx"       :
-                            "כל_המשתמשים.xlsx";
-
-  saveAs(
-    new Blob([wbBlob], { type: "application/octet-stream" }),
-    fileName
-  );
-}
-
-
-    const requests = useMemo(
+  const requests = useMemo(
   () => allUsers.filter(u => !u.is_registered && !u.is_club_60),
   [allUsers]
-);
+  );
 
   useEffect(() => {
     // טען את כל המשתמשים מאוסף users
@@ -387,41 +392,41 @@ function exportToExcel(type = "all") {
   }, []);
 
   /* אחרי ה-useState של search וה-useEffect שמביא users … */
-useEffect(() => {
-  const t = search.trim().toLowerCase();
-  if (!t) return;                     // אם החיפוש ריק – לא עושים כלום
+  useEffect(() => {
+    const t = search.trim().toLowerCase();
+    if (!t) return;                     // אם החיפוש ריק – לא עושים כלום
 
-  /* האם נמצאה התאמה אצל רשומים? אצל 60+? */
-  let foundRegistered = false;
-  let foundSenior     = false;
+    /* האם נמצאה התאמה אצל רשומים? אצל 60+? */
+    let foundRegistered = false;
+    let foundSenior     = false;
 
-  for (const u of allUsers) {
-    const match =
-      (u.fullname  || "").toLowerCase().includes(t) ||
-      (u.last_name || "").toLowerCase().includes(t) ||
-      (u.phone     || "").includes(t);
+    for (const u of allUsers) {
+      const match =
+        (u.fullname  || "").toLowerCase().includes(t) ||
+        (u.last_name || "").toLowerCase().includes(t) ||
+        (u.phone     || "").includes(t);
 
-    if (!match) continue;
+      if (!match) continue;
 
-    if (u.is_registered && !u.is_club_60) foundRegistered = true;
-    if (u.is_club_60)                     foundSenior     = true;
-  }
+      if (u.is_registered && !u.is_club_60) foundRegistered = true;
+      if (u.is_club_60)                     foundSenior     = true;
+    }
 
-  
+    
 
-  /* אם יש התאמה רק ב-60+ → מעבר לטאב senior
-     אם יש התאמה רק ברשומים → מעבר ל-registered
-     (אם יש בשניהם – נשארים בטאב הנוכחי) */
-  if (foundSenior && !foundRegistered && activeTab !== "senior") {
-    setActiveTab("senior");
-  } else if (foundRegistered && !foundSenior && activeTab !== "registered") {
-    setActiveTab("registered");
-  }
-}, [search, allUsers, activeTab]);
+    /* אם יש התאמה רק ב-60+ → מעבר לטאב senior
+      אם יש התאמה רק ברשומים → מעבר ל-registered
+      (אם יש בשניהם – נשארים בטאב הנוכחי) */
+    if (foundSenior && !foundRegistered && activeTab !== "senior") {
+      setActiveTab("senior");
+    } else if (foundRegistered && !foundSenior && activeTab !== "registered") {
+      setActiveTab("registered");
+    }
+  }, [search, allUsers, activeTab]);
 
 
 
-   // פונקציה שבודקת אם משתמש מתאים ל־activeTab
+  // פונקציה שבודקת אם משתמש מתאים ל־activeTab
   const matchesTab = u => {
       /* אם יש חיפוש – לא להגביל לפי הטאב */
     if (activeTab === "registered") return u.is_registered && !u.is_club_60;
@@ -430,78 +435,78 @@ useEffect(() => {
   }
 
   useEffect(() => {
-  const term = search.trim().toLowerCase();
-  if (!term) return;          // אין חיפוש → לא משנים טאב
+    const term = search.trim().toLowerCase();
+    if (!term) return;          // אין חיפוש → לא משנים טאב
 
-  // האם יש התאמה בטאב הרשומים?
-  const foundRegistered = allUsers.some(u =>
-    u.is_registered && !u.is_club_60 &&
-    (
-      (u.fullname  || "").toLowerCase().includes(term) ||
-      (u.last_name || "").toLowerCase().includes(term) ||
-      (u.phone     || "").includes(term)
-    )
-  );
+    // האם יש התאמה בטאב הרשומים?
+    const foundRegistered = allUsers.some(u =>
+      u.is_registered && !u.is_club_60 &&
+      (
+        (u.fullname  || "").toLowerCase().includes(term) ||
+        (u.last_name || "").toLowerCase().includes(term) ||
+        (u.phone     || "").includes(term)
+      )
+    );
 
-  // האם יש התאמה בטאב 60+?
-  const foundSenior = allUsers.some(u =>
-    u.is_club_60 &&
-    (
-      (u.fullname  || "").toLowerCase().includes(term) ||
-      (u.last_name || "").toLowerCase().includes(term) ||
-      (u.phone     || "").includes(term)
-    )
-  );
+    // האם יש התאמה בטאב 60+?
+    const foundSenior = allUsers.some(u =>
+      u.is_club_60 &&
+      (
+        (u.fullname  || "").toLowerCase().includes(term) ||
+        (u.last_name || "").toLowerCase().includes(term) ||
+        (u.phone     || "").includes(term)
+      )
+    );
 
-  /* אם אני בטאב רשומים ואין בו תוצאות אבל יש ב-60+ → עבור לטאב senior */
-  if (activeTab === "registered" && !foundRegistered && foundSenior) {
-    setActiveTab("senior");
-  }
+    /* אם אני בטאב רשומים ואין בו תוצאות אבל יש ב-60+ → עבור לטאב senior */
+    if (activeTab === "registered" && !foundRegistered && foundSenior) {
+      setActiveTab("senior");
+    }
 
-  /* להפך – אם אני ב-senior ואין בו תוצאות אך יש ברשומים */
-  if (activeTab === "senior" && !foundSenior && foundRegistered) {
-    setActiveTab("registered");
-  }
-}, [search, allUsers, activeTab]);
+    /* להפך – אם אני ב-senior ואין בו תוצאות אך יש ברשומים */
+    if (activeTab === "senior" && !foundSenior && foundRegistered) {
+      setActiveTab("registered");
+    }
+  }, [search, allUsers, activeTab]);
 
 
 
-    // מפותחים מערכי שורות של פעילויות וסקרים
- /* ♦ פעילויות – משתמש + כמות */
-const rowsActivities = allUsers
-  .filter(u => Array.isArray(u.activities) && u.activities.length > 0)
-  .filter(matchesTab)
-  .map(u => ({
-    user:  u,
-    count: u.activities.length,
-  }));
+  // מפותחים מערכי שורות של פעילויות וסקרים
+  /* ♦ פעילויות – משתמש + כמות */
+  const rowsActivities = allUsers
+    .filter(u => Array.isArray(u.activities) && u.activities.length > 0)
+    .filter(matchesTab)
+    .map(u => ({
+      user:  u,
+      count: u.activities.length,
+    }));
 
   /* ♦ סקרים – משתמש + כמות */
-const rowsSurveys = allUsers
-  .filter(u => Array.isArray(u.survey) && u.survey.length > 0)
-  .filter(matchesTab)
-  .map(u => ({
-    user:  u,
-    count: u.survey.length,
-  }));
+  const rowsSurveys = allUsers
+    .filter(u => Array.isArray(u.survey) && u.survey.length > 0)
+    .filter(matchesTab)
+    .map(u => ({
+      user:  u,
+      count: u.survey.length,
+    }));
 
   const rowsAll = allUsers.filter(u => {
-  if (activeTab === "registered") return u.is_registered && !u.is_club_60;
-  if (activeTab === "senior")     return u.is_club_60;
-   return true;
- });
+    if (activeTab === "registered") return u.is_registered && !u.is_club_60;
+    if (activeTab === "senior")     return u.is_club_60;
+    return true;
+  });
 
- /* ♦ תגובות – משתמש + כמות */
-const rowsReplies = allUsers
-  .filter(u => Array.isArray(u.replies) && u.replies.length > 0)
-  .filter(matchesTab)
-  .map(u => ({
-    user:  u,
-    count: u.replies.length,
-  }));
+  /* ♦ תגובות – משתמש + כמות */
+  const rowsReplies = allUsers
+    .filter(u => Array.isArray(u.replies) && u.replies.length > 0)
+    .filter(matchesTab)
+    .map(u => ({
+      user:  u,
+      count: u.replies.length,
+    }));
 
- // 2) מאחד לכל entry את ה־shape { user }
- const rowsAllWithShape = rowsAll.map(u => ({ user: u }));
+  // 2) מאחד לכל entry את ה־shape { user }
+  const rowsAllWithShape = rowsAll.map(u => ({ user: u }));
 
 
   // const isRepliesTab = filter === "replies";
@@ -533,77 +538,77 @@ const rowsReplies = allUsers
     });
   }
 
- /* ------------------------------------------------------------------
-   ✂️  מחיקת משתמש אחד – מסירים אותו מכל האוספים הרלוונטיים
--------------------------------------------------------------------*/
+  /* ------------------------------------------------------------------
+    ✂️  מחיקת משתמש אחד – מסירים אותו מכל האוספים הרלוונטיים
+  -------------------------------------------------------------------*/
 
-/* ✦✦ 1.  מחיקה "שקטה" של משתמש יחיד  ✦✦
-   - בלי window.confirm ו-alert, אבל עם כל לוגיקת המחיקה וה-state  */
-async function deleteUserSilent(user) {
-  const phone   = user.phone || "";
-  const user_id = ensureUserId(user);
+  /* ✦✦ 1.  מחיקה "שקטה" של משתמש יחיד  ✦✦
+  - בלי window.confirm ו-alert, אבל עם כל לוגיקת המחיקה וה-state  */
+  async function deleteUserSilent(user) {
+    const phone   = user.phone || "";
+    const user_id = ensureUserId(user);
 
-  /* users (המסמך הראשי) */
-  try {
-    await deleteDoc(doc(db, "users", user_id));
-  } catch (err) {
-    console.error("⚠️  users delete failed:", err);
-  }
-
-  /* activityRegistrations / surveyResponses */
-  const COLL = [
-    { path: "activityRegistrations", field: ["phone", phone] },
-    { path: "surveyResponses",       field: ["phone", phone] }
-  ];
-  for (const { path, field } of COLL) {
-    const [f, val] = field;
-    const snap = await getDocs(query(collection(db, path), where(f, "==", val)));
-    for (const d of snap.docs) await deleteDoc(d.ref).catch(e => console.error(`⚠️  ${path}`, e));
-  }
-
-  /* replies */
-  const msgs = await getDocs(collection(db, "messages"));
-  for (const m of msgs.docs) {
-    const q = query(collection(db, "messages", m.id, "replies"), where("phone", "==", phone));
-    const reps = await getDocs(q);
-    for (const r of reps.docs) await deleteDoc(r.ref).catch(e => console.error("⚠️  reply", e));
-  }
-
-  /* עדכון סטייטים מקומיים */
-  setManualUsers(prev => prev.filter(u => u.phone !== phone));
-  markDeleted(phone);
-}
-
-/* ✦✦ 2.  מחיקת-קבוצה חדשה  ✦✦ */
-async function deleteSelected() {
-  if (selected.size === 0) return;
-
-  const confirmed = window.confirm("האם אתה בטוח שאתה רוצה למחוק את כל המשתמשים?");
-  if (!confirmed) return;
-
-  const promises = [];
-  const phones   = [];
-
-  for (const id of selected) {
-    const u = allUsers.find(x => ensureUserId(x) === id);
-    if (u) {
-      phones.push(u.phone);
-      promises.push(deleteUserSilent(u));   // ← בלי חלונות דיאלוג
+    /* users (המסמך הראשי) */
+    try {
+      await deleteDoc(doc(db, "users", user_id));
+    } catch (err) {
+      console.error("⚠️  users delete failed:", err);
     }
+
+    /* activityRegistrations / surveyResponses */
+    const COLL = [
+      { path: "activityRegistrations", field: ["phone", phone] },
+      { path: "surveyResponses",       field: ["phone", phone] }
+    ];
+    for (const { path, field } of COLL) {
+      const [f, val] = field;
+      const snap = await getDocs(query(collection(db, path), where(f, "==", val)));
+      for (const d of snap.docs) await deleteDoc(d.ref).catch(e => console.error(`⚠️  ${path}`, e));
+    }
+
+    /* replies */
+    const msgs = await getDocs(collection(db, "messages"));
+    for (const m of msgs.docs) {
+      const q = query(collection(db, "messages", m.id, "replies"), where("phone", "==", phone));
+      const reps = await getDocs(q);
+      for (const r of reps.docs) await deleteDoc(r.ref).catch(e => console.error("⚠️  reply", e));
+    }
+
+    /* עדכון סטייטים מקומיים */
+    setManualUsers(prev => prev.filter(u => u.phone !== phone));
+    markDeleted(phone);
   }
 
-  await Promise.all(promises);              // מחכים שכל המחיקות יסתיימו
-  setSelected(new Set());                   // איפוס הבחירה
+  /* ✦✦ 2.  מחיקת-קבוצה חדשה  ✦✦ */
+  async function deleteSelected() {
+    if (selected.size === 0) return;
 
-  // ריענון הרשימה פעם אחת בלבד
-  const fresh = await getDocs(collection(db, "users"));
-  setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
+    const confirmed = window.confirm("האם אתה בטוח שאתה רוצה למחוק את כל המשתמשים?");
+    if (!confirmed) return;
 
-  alert("המשתמשים נמחקו בהצלחה");
-}
+    const promises = [];
+    const phones   = [];
+
+    for (const id of selected) {
+      const u = allUsers.find(x => ensureUserId(x) === id);
+      if (u) {
+        phones.push(u.phone);
+        promises.push(deleteUserSilent(u));   // ← בלי חלונות דיאלוג
+      }
+    }
+
+    await Promise.all(promises);              // מחכים שכל המחיקות יסתיימו
+    setSelected(new Set());                   // איפוס הבחירה
+
+    // ריענון הרשימה פעם אחת בלבד
+    const fresh = await getDocs(collection(db, "users"));
+    setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
+
+    alert("המשתמשים נמחקו בהצלחה");
+  }
 
 
-    async function deleteUserCore(user) {
+  async function deleteUserCore(user) {
 
       const phone   = user.phone || "";
       const user_id = ensureUserId(user);
@@ -652,195 +657,195 @@ async function deleteSelected() {
       setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
 
       alert("המשתמש נמחק בהצלחה");
-    }
+  }
 
-    async function deleteUser(user) {
+  async function deleteUser(user) {
       const confirmed = window.confirm("האם אתה בטוח שברצונך למחוק משתמש זה?");
       if (!confirmed) return;
 
       await deleteUserCore(user);
+  }
+
+
+
+
+
+  /** מעדכן שם משתמש בכל האוספים הרלוונטיים */
+  async function saveEditedUser(u) {
+    const firstName = u.first_name?.trim() || "";
+    const lastName  = u.last_name?.trim()  || "";
+    const phone     = u.phone?.trim()      || "";
+    const fullName  = `${firstName} ${lastName}`.trim();
+
+    // ✅ בדיקת שדות חובה
+    if (!firstName || !lastName || !phone) {
+      alert("שם פרטי, שם משפחה ומספר טלפון הם שדות חובה. נא למלא את כולם.");
+      return;
     }
 
+    const oldUserId = u.id || u.user_id;
+    const docId = phone.trim(); 
 
+    const updatedUser = {
+      first_name: firstName,
+      last_name : lastName,
+      fullname  : fullName,
+      phone,
+      address   : u.address?.trim()    || null,
+      id_number : u.id_number?.trim()  || null,
+      notes     : u.notes?.trim()      || null,
+      user_id   : newUserId,
+      is_registered: u.is_registered || false,
+      is_club_60   : u.is_club_60    || false
+    };
 
-
-
-/** מעדכן שם משתמש בכל האוספים הרלוונטיים */
-async function saveEditedUser(u) {
-  const firstName = u.first_name?.trim() || "";
-  const lastName  = u.last_name?.trim()  || "";
-  const phone     = u.phone?.trim()      || "";
-  const fullName  = `${firstName} ${lastName}`.trim();
-
-  // ✅ בדיקת שדות חובה
-  if (!firstName || !lastName || !phone) {
-    alert("שם פרטי, שם משפחה ומספר טלפון הם שדות חובה. נא למלא את כולם.");
-    return;
-  }
-
-  const oldUserId = u.id || u.user_id;
-  const docId = phone.trim(); 
-
-  const updatedUser = {
-    first_name: firstName,
-    last_name : lastName,
-    fullname  : fullName,
-    phone,
-    address   : u.address?.trim()    || null,
-    id_number : u.id_number?.trim()  || null,
-    notes     : u.notes?.trim()      || null,
-    user_id   : newUserId,
-    is_registered: u.is_registered || false,
-    is_club_60   : u.is_club_60    || false
-  };
-
-  // 🟡 אם Document ID השתנה → העתק ומחק
-  if (oldUserId !== newUserId) {
-    const oldRef = doc(db, "users", oldUserId);
-    const newRef = doc(db, "users", newUserId);
-    await setDoc(newRef, updatedUser);
-    await deleteDoc(oldRef);
-  } else {
-    const ref = doc(db, "users", oldUserId);
-    await updateDoc(ref, updatedUser);
-  }
-
-  // 🟢 עדכון activityRegistrations + surveyResponses לפי טלפון
-  const coll = ["activityRegistrations", "surveyResponses"];
-  for (const name of coll) {
-    const q = query(collection(db, name), where("phone", "==", phone));
-    const snap = await getDocs(q);
-    for (const d of snap.docs) {
-      await updateDoc(d.ref, {
-        first_name: firstName,
-        last_name: lastName,
-        fullname: fullName,
-      });
+    // 🟡 אם Document ID השתנה → העתק ומחק
+    if (oldUserId !== newUserId) {
+      const oldRef = doc(db, "users", oldUserId);
+      const newRef = doc(db, "users", newUserId);
+      await setDoc(newRef, updatedUser);
+      await deleteDoc(oldRef);
+    } else {
+      const ref = doc(db, "users", oldUserId);
+      await updateDoc(ref, updatedUser);
     }
-  }
 
-  // 🔵 עדכון בתשובות להודעות
-  const msgs = await getDocs(collection(db, "messages"));
-  for (const m of msgs.docs) {
-    const q = query(
-      collection(db, "messages", m.id, "replies"),
-      where("phone", "==", phone)
-    );
-    const reps = await getDocs(q);
-    for (const r of reps.docs) {
-      await updateDoc(r.ref, { fullName });
+    // 🟢 עדכון activityRegistrations + surveyResponses לפי טלפון
+    const coll = ["activityRegistrations", "surveyResponses"];
+    for (const name of coll) {
+      const q = query(collection(db, name), where("phone", "==", phone));
+      const snap = await getDocs(q);
+      for (const d of snap.docs) {
+        await updateDoc(d.ref, {
+          first_name: firstName,
+          last_name: lastName,
+          fullname: fullName,
+        });
+      }
     }
-  }
 
-  // 🔄 עדכון ה־state
-  setAllUsers(prev =>
-    prev.map(p =>
-      (p.id === oldUserId || p.user_id === oldUserId)
-        ? { ...updatedUser, id: newUserId }
-        : p
-    )
-  );
+    // 🔵 עדכון בתשובות להודעות
+    const msgs = await getDocs(collection(db, "messages"));
+    for (const m of msgs.docs) {
+      const q = query(
+        collection(db, "messages", m.id, "replies"),
+        where("phone", "==", phone)
+      );
+      const reps = await getDocs(q);
+      for (const r of reps.docs) {
+        await updateDoc(r.ref, { fullName });
+      }
+    }
 
-  setEditUser(null);
-  alert("הפרטים עודכנו בהצלחה");
-}
-
-async function updateUserType(user, newType) {
-  const is_registered = newType === "registered";
-  const is_club_60    = newType === "senior";
-
-  const userId = user.id || user.user_id;
-  const docRef = doc(db, "users", userId);
-
-  try {
-    await updateDoc(docRef, {
-      is_registered,
-      is_club_60,
-    });
-
+    // 🔄 עדכון ה־state
     setAllUsers(prev =>
-      prev.map(u =>
-        (u.id === userId || u.user_id === userId)
-          ? { ...u, is_registered, is_club_60 }
-          : u
+      prev.map(p =>
+        (p.id === oldUserId || p.user_id === oldUserId)
+          ? { ...updatedUser, id: newUserId }
+          : p
       )
     );
-  } catch (error) {
-    console.error("שגיאה בעדכון סוג המשתמש:", error);
-    alert("אירעה שגיאה בעדכון סוג המשתמש");
+
+    setEditUser(null);
+    alert("הפרטים עודכנו בהצלחה");
   }
-}
 
+  async function updateUserType(user, newType) {
+    const is_registered = newType === "registered";
+    const is_club_60    = newType === "senior";
 
+    const userId = user.id || user.user_id;
+    const docRef = doc(db, "users", userId);
 
+    try {
+      await updateDoc(docRef, {
+        is_registered,
+        is_club_60,
+      });
 
-async function acknowledgeRow(row, type) {
-  const u        = row.user;
-  const userId   = ensureUserId(u);
-  const docRef   = doc(db, "users", userId);
-  // בואי נקרא קודם את המסמך
-  const snap     = await getDocs(query(collection(db, "users"), where("user_id", "==", userId)));
-  if (snap.empty) return;
-  const data     = snap.docs[0].data();
-
-  // בונים מערכים חדשים בלי הפריט הזה
-  let newActivities     = data.activities     || [];
-  let newActivitiesDate = data.activities_date|| [];
-  let newSurvey         = data.survey         || [];
-  let newSurveyDate     = data.survey_date    || [];
-  let newReplies        = data.replies        || [];
-  let newRepliesDate    = data.replies_date   || [];
-
-  if (type === "activity") {
-    const idx = newActivities.findIndex((a,i) => a === row.activityName && newActivitiesDate[i] === row.activityDate);
-    if (idx >= 0) {
-      newActivities.splice(idx, 1);
-      newActivitiesDate.splice(idx, 1);
-    }
-  }
-  else if (type === "survey") {
-    const idx = newSurvey.findIndex((s,i) => s === row.surveyName && newSurveyDate[i] === row.surveyDate);
-    if (idx >= 0) {
-      newSurvey.splice(idx,1);
-      newSurveyDate.splice(idx,1);
-    }
-  }
-  else if (type === "replies") {
-    const idx = newReplies.findIndex((t,i) => t === row.title && newRepliesDate[i] === row.date);
-    if (idx >= 0) {
-      newReplies.splice(idx,1);
-      newRepliesDate.splice(idx,1);
+      setAllUsers(prev =>
+        prev.map(u =>
+          (u.id === userId || u.user_id === userId)
+            ? { ...u, is_registered, is_club_60 }
+            : u
+        )
+      );
+    } catch (error) {
+      console.error("שגיאה בעדכון סוג המשתמש:", error);
+      alert("אירעה שגיאה בעדכון סוג המשתמש");
     }
   }
 
-  // תריץ עדכון ב־Firestore
-  await updateDoc(docRef, {
-    activities:      newActivities,
-    activities_date: newActivitiesDate,
-    survey:          newSurvey,
-    survey_date:     newSurveyDate,
-    replies:         newReplies,
-    replies_date:    newRepliesDate
-  });
-
-  // ועדכון state כדי להעלי המסך
-  setAllUsers(prev =>
-    prev.map(u0 =>
-      ensureUserId(u0) === userId
-        ? { ...u0,
-            activities:      newActivities,
-            activities_date: newActivitiesDate,
-            survey:          newSurvey,
-            survey_date:     newSurveyDate,
-            replies:         newReplies,
-            replies_date:    newRepliesDate }
-        : u0
-    )
-  );
-}
 
 
-    <button
+
+  async function acknowledgeRow(row, type) {
+    const u        = row.user;
+    const userId   = ensureUserId(u);
+    const docRef   = doc(db, "users", userId);
+    // בואי נקרא קודם את המסמך
+    const snap     = await getDocs(query(collection(db, "users"), where("user_id", "==", userId)));
+    if (snap.empty) return;
+    const data     = snap.docs[0].data();
+
+    // בונים מערכים חדשים בלי הפריט הזה
+    let newActivities     = data.activities     || [];
+    let newActivitiesDate = data.activities_date|| [];
+    let newSurvey         = data.survey         || [];
+    let newSurveyDate     = data.survey_date    || [];
+    let newReplies        = data.replies        || [];
+    let newRepliesDate    = data.replies_date   || [];
+
+    if (type === "activity") {
+      const idx = newActivities.findIndex((a,i) => a === row.activityName && newActivitiesDate[i] === row.activityDate);
+      if (idx >= 0) {
+        newActivities.splice(idx, 1);
+        newActivitiesDate.splice(idx, 1);
+      }
+    }
+    else if (type === "survey") {
+      const idx = newSurvey.findIndex((s,i) => s === row.surveyName && newSurveyDate[i] === row.surveyDate);
+      if (idx >= 0) {
+        newSurvey.splice(idx,1);
+        newSurveyDate.splice(idx,1);
+      }
+    }
+    else if (type === "replies") {
+      const idx = newReplies.findIndex((t,i) => t === row.title && newRepliesDate[i] === row.date);
+      if (idx >= 0) {
+        newReplies.splice(idx,1);
+        newRepliesDate.splice(idx,1);
+      }
+    }
+
+    // תריץ עדכון ב־Firestore
+    await updateDoc(docRef, {
+      activities:      newActivities,
+      activities_date: newActivitiesDate,
+      survey:          newSurvey,
+      survey_date:     newSurveyDate,
+      replies:         newReplies,
+      replies_date:    newRepliesDate
+    });
+
+    // ועדכון state כדי להעלי המסך
+    setAllUsers(prev =>
+      prev.map(u0 =>
+        ensureUserId(u0) === userId
+          ? { ...u0,
+              activities:      newActivities,
+              activities_date: newActivitiesDate,
+              survey:          newSurvey,
+              survey_date:     newSurveyDate,
+              replies:         newReplies,
+              replies_date:    newRepliesDate }
+          : u0
+      )
+    );
+  }
+
+
+  <button
       style={{ border:"none", background:"transparent", cursor:"pointer" }}
       onClick={() => toggleRow(u.user_id)}
     >

@@ -9,10 +9,11 @@ import {
   Alert,
   CircularProgress
 } from '@mui/material';
+import UserService from '../services/UserService';
 
 const auth = getAuth();
 
-const generateEmailPassword = (phoneNumber) => {
+export const generateEmailPassword = (phoneNumber) => {
   const digitsOnly = phoneNumber.replace(/\D/g, '');
   return {
     email: `vet${digitsOnly}@veterans.com`,
@@ -44,15 +45,33 @@ export default function IdentifyPage({ onSuccess }) {
       console.log('[IdentifyPage] attempting login with', email, password);
       await signInWithEmailAndPassword(auth, email, password);
 
+      // login succeeded but we need to check if the user exists
+      const user = await UserService.get(trimmed);
+      if (!user) {
+        console.error('[IdentifyPage] user not found in database');
+        setMessage(ADMIN_CONTACT);
+        // remove  the user from firebase authentication
+        await auth.currentUser.delete().catch((err) => {
+          console.error('[IdentifyPage] failed to delete user from auth', err);
+        });
+        throw new Error('User not found in database and removed from auth');
+      }
+      else {
+        console.log('[IdentifyPage] user found in database', user);
+      }
       console.log('[IdentifyPage] login succeeded');
       setLoading(false);
+      alert('ההתחברות בוצעה בהצלחה!');  // show success message
       // only call onSuccess here
       if (typeof onSuccess === 'function') {
         console.log('[IdentifyPage] calling onSuccess()');
         onSuccess();
       }
+      else {
+        console.log('[IdentifyPage] internal coding error !!! illegal function onSuccess()');
+      }
     } catch (e) {
-      console.error('[IdentifyPage] login failed', e);
+      console.error('[IdentifyPage] login failed', e);  // log the error 
       setLoading(false);
       setMessage(ADMIN_CONTACT);
     }
