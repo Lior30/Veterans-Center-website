@@ -10,12 +10,17 @@ export default function SurveyListContainer() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    async function load() {
-      const snap = await getDocs(collection(db, "surveys"));
-      setSurveys(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-    }
-    load();
-  }, []);
+  async function load() {
+    const snap = await getDocs(collection(db, "surveys"));
+    const surveysData = snap.docs.map((doc) => {
+      const data = doc.data();
+      console.log("📋 Loaded survey:", data.headline, "| expires_at:", data.expires_at);
+      return { id: doc.id, ...data };
+    });
+    setSurveys(surveysData);
+  }
+  load();
+}, []);
 
   const handleDeleteSurvey = async (surveyId) => {
     const respSnap = await getDocs(collection(db, "surveys", surveyId, "responses"));

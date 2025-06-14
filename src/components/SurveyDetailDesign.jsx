@@ -25,15 +25,26 @@ export default function SurveyDetailDesign({
   return (
     <Box sx={{ padding: 4, maxWidth: 600, margin: "0 auto", direction: "rtl" }}>
       <Typography variant="h5" gutterBottom>
-        {survey.headline}{" "}
-        <small style={{ color: "red" }}>* שאלות חובה</small>
-      </Typography>
+  {survey.headline}{" "}
+  <small style={{ color: "red" }}>* שאלות חובה</small>
+</Typography>
 
-      {activityTitle && activityTitle !== "כללי" && (
-        <Typography variant="subtitle1" sx={{ mb: 2, fontStyle: "italic" }}>
-          קשור לפעילות: {activityTitle}
-        </Typography>
-      )}
+{activityTitle && activityTitle !== "כללי" && (
+  <Typography variant="subtitle1" sx={{ fontStyle: "italic" }}>
+    קשור לפעילות: {activityTitle}
+  </Typography>
+)}
+
+{survey.expires_at && (
+  <Typography variant="subtitle2" sx={{ mb: 2, color: "gray" }}>
+     הסקר פתוח עד:{" "}
+    {new Date(survey.expires_at).toLocaleString("he-IL", {
+      dateStyle: "full",
+      timeStyle: "short",
+    })}
+  </Typography>
+)}
+
 
       <TextField
         placeholder="שם פרטי"

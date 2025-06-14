@@ -1,6 +1,6 @@
 // src/components/SurveyDetailContainer.jsx
 import React, { useState, useEffect } from "react";
-import { doc, getDoc, collection, addDoc, getDocs } from "firebase/firestore";
+import { doc, getDoc, collection, addDoc, getDocs,updateDoc,arrayUnion } from "firebase/firestore";
 import { useParams, useNavigate } from "react-router-dom";
 import { db } from "../firebase.js";
 import SurveyDetailDesign from "./SurveyDetailDesign.jsx";
@@ -37,7 +37,10 @@ export default function SurveyDetailContainer({ surveyId, onClose }) {
         setSubmitError("סקר לא נמצא.");
         return;
       }
-      setSurvey(s);
+      if (s.expires_at && new Date() > new Date(s.expires_at)) {
+  return;
+}
+setSurvey(s);
 
       // 2) If the survey is linked to a specific activity, load its title from Firestore
       if (s.of_activity && typeof s.of_activity === "string" && s.of_activity !== "כללי") {
@@ -134,6 +137,16 @@ const handleChange = (qid, value) => {
       survey: survey.headline, // name of the survey
       survey_date: new Date().toLocaleDateString("he-IL"), // readable date in Hebrew
     });
+    try {
+  const userRef = doc(db, "users", answers.phone.trim());
+  await updateDoc(userRef, {
+    survey: arrayUnion(survey.headline),
+    survey_date: arrayUnion(new Date().toLocaleDateString("he-IL")),
+  });
+  
+} catch (err) {
+  console.error("⚠️ Failed to update user survey history:", err);
+}
 
     setSubmitError(null);
     setSubmitted(true);
@@ -151,8 +164,6 @@ const handleChange = (qid, value) => {
   };
 
   if (!survey) return <p>טוען סקר…</p>;
-
-  console.log("survey.of_activity:", survey.of_activity);
 
   return (
   <>

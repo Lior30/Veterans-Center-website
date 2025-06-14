@@ -13,6 +13,22 @@ export default function CreateSurveyContainer() {
   
   const [headline, setHeadline] = useState("");
 
+  const [expiresAt, setExpiresAt] = useState(() => {
+  const now = new Date();
+  now.setSeconds(0, 0); // clear seconds and ms
+
+  const pad = (n) => n.toString().padStart(2, "0");
+
+  const year = now.getFullYear();
+  const month = pad(now.getMonth() + 1);
+  const day = pad(now.getDate());
+  const hour = pad(now.getHours());
+  const minute = pad(now.getMinutes());
+
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+});
+
+
   // track which activity this survey is linked to
   // "general" = no specific activity; otherwise, an activity ID
   const [activityId, setActivityId] = useState("general");
@@ -99,10 +115,15 @@ export default function CreateSurveyContainer() {
 
     // Build the payload – if “כללי”, set activityId=כללי
     const payload = {
-      headline: title,
-      questions,
-      of_activity: activityId === "general" ? "כללי" : activityId,
-    };
+  headline: title,
+  questions,
+  of_activity: activityId === "general" ? "כללי" : activityId,
+};
+
+if (expiresAt) {
+  payload.expires_at = new Date(expiresAt).toISOString();
+}
+
 
     await SurveyService.create(payload);
     navigate("/surveys/results");
@@ -135,6 +156,8 @@ export default function CreateSurveyContainer() {
       activities={activities}
       activityId={activityId}
       onActivityChange={handleActivityChange}
+      expiresAt={expiresAt}                   
+      onExpiresAtChange={(e) => setExpiresAt(e.target.value)}
     />
   );
 }

@@ -5,10 +5,13 @@ import { db } from "../firebase.js";
 const SurveyService = {
   // List all surveys
   list: async () => {
-    const colRef = collection(db, "surveys");
-    const snap = await getDocs(colRef);
-    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-  },
+  const colRef = collection(db, "surveys");
+  const snap = await getDocs(colRef);
+  const now = new Date();
+  return snap.docs
+    .map((doc) => ({ id: doc.id, ...doc.data() }))
+    .filter((s) => !s.expires_at || new Date(s.expires_at) > now);
+},
 
   // Fetch a single survey by ID
   getById: async (id) => {
