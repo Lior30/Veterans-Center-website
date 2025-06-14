@@ -86,8 +86,7 @@ export default function IdentifyPage({ onSuccess }) {
       </Typography>
 
       <TextField
-        label="טלפון"
-        placeholder="05XXXXXXXX"
+        placeholder="טלפון"
         value={phoneNumber}
         onChange={(e) => setPhoneNumber(e.target.value)}
         fullWidth
