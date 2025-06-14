@@ -99,10 +99,12 @@ const CtaButton = styled(Button)(({ theme, color }) => ({
 }));
 
 const Footer = styled(Box)(({ theme }) => ({
-  backgroundColor: "#005c9c",
+  backgroundColor: "#6a1b9a", // הסגול החדש
   color: "#fff",
-  padding: theme.spacing(6, 0),
+  padding: theme.spacing(2, 0), // הקטנת גובה
 }));
+
+
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -125,15 +127,33 @@ export default function LandingPage() {
   const [availableTags, setAvailableTags] = useState([]);
   const [dialog, setDialog] = useState({ type: "", data: null });
   const [snackbar, setSnackbar] = useState({ open: false, message: "" });
+  const [userProfile, setUserProfile] = useState(null);
 
-  // Registration form
-  const [regInfo, setRegInfo] = useState({ name: "", phone: "" });
-  const [regError, setRegError] = useState("");
+const [cancelDialog, setCancelDialog] = useState({ open: false, activityId: null });
 
+  
   const moodImages = ["/image1.png", "/image2.png", "/image3.png"];
 
   const auth = getAuth();
   const [user, setUser] = useState(null);
+
+  const [openMyActivities, setOpenMyActivities] = useState(false);
+const [myActivities, setMyActivities] = useState([]);
+
+
+useEffect(() => {
+  if (openMyActivities && userProfile?.id) {
+    ActivityService.getUserActivities(userProfile.id)
+      .then(setMyActivities)
+      .catch((err) => console.error("❌ Failed to load user activities:", err));
+  }
+}, [openMyActivities, userProfile]);
+
+useEffect(() => {
+  console.log("📦 sessionStorage.justIdentified =", sessionStorage.getItem("justIdentified"));
+  console.log("📦 sessionStorage.userPhone =", sessionStorage.getItem("userPhone"));
+  console.log("👤 userProfile =", userProfile);
+}, [userProfile]);
 
   useEffect(() => {
     // Subscribe to auth state changes
@@ -144,20 +164,51 @@ export default function LandingPage() {
     return unsubscribe;
   }, [auth]);
 
+useEffect(() => {
+  const phone = sessionStorage.getItem("userPhone");
+  if (phone && !userProfile) {
+    UserService.get(phone)
+      .then((user) => {
+        if (user) {
+          setUserProfile(user);
+        }
+      })
+      .catch((err) => {
+        console.error("❌ Failed to fetch user profile:", err);
+      });
+  }
+}, []);
 
 
   const [justIdentified, setJustIdentified] = useState(
     sessionStorage.getItem('justIdentified') === 'true'
   );
   const [openIdentify, setOpenIdentify] = useState(false);
+const handleCancelRegistration = (activityId) => {
+  setCancelDialog({ open: true, activityId });
+};
 
-  const handleIdentifySuccess = () => {
-    console.log('[LandingPage] handleIdentifySuccess called');
-    sessionStorage.setItem('justIdentified', 'true');
-    setJustIdentified(true);
-    setOpenIdentify(false);
-    navigate('/');  // or '/', whatever route shows this page
-  };
+
+ const handleIdentifySuccess = async () => {
+  console.log('[LandingPage] handleIdentifySuccess called');
+  sessionStorage.setItem('justIdentified', 'true');
+  setJustIdentified(true);
+  setOpenIdentify(false);
+  navigate('/');
+
+  try {
+    const phone = sessionStorage.getItem("userPhone"); // אם שמרת את הטלפון כאן
+    if (phone) {
+      const profile = await UserService.get(phone);
+      if (profile) {
+        setUserProfile(profile);
+      }
+    }
+  } catch (err) {
+    console.error("Failed to load user profile:", err);
+  }
+};
+
 
 
   // Fetch data once
@@ -184,8 +235,7 @@ export default function LandingPage() {
   }, []);
 
   // Simple validation
-  const validName = /^[A-Za-z\u0590-\u05FF ]+$/.test(regInfo.name.trim());
-  const validPhone = UserService.isValidPhone(regInfo.phone.trim());
+const validName = userProfile?.name && /^[A-Za-z\u0590-\u05FF ]+$/.test(userProfile.name.trim());
 
   // Handlers
   const handleNextFlyer = () =>
@@ -217,27 +267,34 @@ export default function LandingPage() {
 
   const openDialog = (type, data) => setDialog({ type, data });
   const closeDialog = () => setDialog({ type: "", data: null });
+const confirmCancelRegistration = async () => {
+  if (!cancelDialog.activityId) return;
 
-  const handleRegister = async () => {
-    if (!validName || !validPhone)
-      return setRegError("נא למלא שם וטלפון תקינים");
-    try {
-      const user = await UserService.findOrCreate({
-        name: regInfo.name.trim(),
-        phone: regInfo.phone.trim(),
-      });
-      await ActivityService.registerUser(dialog.data, {
-        name: user.name,
-        phone: user.phone,
-      });
-      setSnackbar({ open: true, message: "ההרשמה בוצעה בהצלחה" });
-      closeDialog();
-      setRegInfo({ name: "", phone: "" });
-      setRegError("");
-    } catch {
-      setRegError("שגיאה, נסה שוב");
-    }
-  };
+  const activityId = cancelDialog.activityId;
+
+  if (!userProfile?.phone) {
+    console.error("אין מספר טלפון של המשתמש");
+    return;
+  }
+
+  try {
+    await ActivityService.removeUser(activityId, {
+      phone: userProfile.phone,
+      name: userProfile.name || "",
+    });
+
+    // הסרה מיידית מהרשימה בצד הקליינט
+    setMyActivities((prev) => prev.filter((a) => a.id !== activityId));
+
+    setSnackbar({ open: true, message: "ההרשמה בוטלה בהצלחה" });
+    setCancelDialog({ open: false, activityId: null });
+  } catch (err) {
+    console.error("❌ ביטול הרשמה נכשל", err);
+    setSnackbar({ open: true, message: "שגיאה בביטול ההרשמה" });
+  }
+};
+
+ 
 
   return (
     <Box>
@@ -315,25 +372,42 @@ height: isMobile ? 200 : 350,
         >
           מרכז ותיקים בית הכרם
         </Typography>
+     {userProfile?.first_name && (
+  <Typography
+    sx={{
+      color: "#fff",
+      fontWeight: "bold",
+      mb: 2,
+      fontSize: { xs: "1.6rem", sm: "2rem" }, // גודל טקסט מותאם למסכים
+      lineHeight: 1.4,
+    }}
+  >
+    שלום {userProfile.first_name}!
+  </Typography>
+)}
+
+
+
         <Typography sx={{ color: "#fff", mb: 3 }}>
           ברוכים הבאים למועדון שמביא לכם פעילויות, הרצאות ורווחה בכל יום!
         </Typography>
         <Box>
     <Box>
-  {!justIdentified && (
-    <CtaButton
-      color="default"
-      variant="contained"
-      onClick={() => setOpenIdentify(true)}
-      sx={{
-        backgroundColor: "#ffca28",
-        color: "#000",
-        "&:hover": { backgroundColor: "#fbc02d" },
-      }}
-    >
-      הזדהות
-    </CtaButton>
-  )}
+{!userProfile?.first_name && (
+  <CtaButton
+    color="default"
+    variant="contained"
+    onClick={() => setOpenIdentify(true)}
+    sx={{
+      backgroundColor: "#ffca28",
+      color: "#000",
+      "&:hover": { backgroundColor: "#fbc02d" },
+    }}
+  >
+    הזדהות
+  </CtaButton>
+)}
+
 
   <CtaButton
     color="secondary"
@@ -365,6 +439,20 @@ height: isMobile ? 200 : 350,
   >
     התקשר
   </CtaButton>
+  {userProfile?.id && (
+  <CtaButton
+    color="primary"
+    variant="contained"
+    onClick={() => setOpenMyActivities(true)}
+    sx={{
+      backgroundColor: "#6a1b9a",
+      "&:hover": { backgroundColor: "#4a148c" },
+    }}
+  >
+    הפעילויות שלי
+  </CtaButton>
+)}
+
 </Box>
 
 
@@ -377,10 +465,7 @@ height: isMobile ? 200 : 350,
 </HeroSection>
 
  <Container sx={{ py: 4, maxWidth: "100% !important" }}>
-  <SectionTitle>
-    <EventIcon />
-    <Typography variant="h5">פליירים, לוח פעילויות והודעות</Typography>
-  </SectionTitle>
+
 <Box
   sx={{
     display: "flex",
@@ -515,7 +600,7 @@ height: isMobile ? 200 : 350,
       height: "auto",
     }}
   >
-    <CalendarPreview />
+<CalendarPreview openDialog={openDialog} userProfile={userProfile} setOpenIdentify={setOpenIdentify} />
   </Box>
 </FeatureCard>
 
@@ -555,13 +640,6 @@ height: isMobile ? 200 : 350,
   </Grid>
 </Container>
 
-     
-      {/* 7. Admin Button */}
-      <Container sx={{ textAlign: "center", py: 4 }}>
-        <Button variant="contained" size="large" onClick={() => navigate("/home")}>
-          כניסה למערכת הניהול
-        </Button>
-      </Container>
 
       {/* 8. Dialogs */}
       <Dialog open={infoOpen} onClose={() => setInfoOpen(false)}>
@@ -580,31 +658,128 @@ height: isMobile ? 200 : 350,
     <Button onClick={() => setInfoOpen(false)}>סגור</Button>
   </DialogActions>
 </Dialog>
+<Dialog open={cancelDialog.open} onClose={() => setCancelDialog({ open: false, activityId: null })}>
+  <DialogTitle>אישור ביטול הרשמה</DialogTitle>
+  <DialogContent>
+    <Typography>האם את/ה בטוח/ה שברצונך לבטל את ההרשמה?</Typography>
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={() => setCancelDialog({ open: false, activityId: null })}>ביטול</Button>
+    <Button onClick={confirmCancelRegistration} color="error" variant="contained">
+      בטל הרשמה
+    </Button>
+  </DialogActions>
+</Dialog>
 
-      <Dialog open={dialog.type === "register"} onClose={closeDialog} fullWidth>
-        <DialogTitle>הרשמה לפעילות</DialogTitle>
-        <DialogContent>
-          {regError && <Alert severity="error">{regError}</Alert>}
-          <TextField
-            fullWidth
-            label="שם"
-            margin="normal"
-            value={regInfo.name}
-            onChange={(e) => setRegInfo((i) => ({ ...i, name: e.target.value }))}
-          />
-          <TextField
-            fullWidth
-            label="טלפון"
-            margin="normal"
-            value={regInfo.phone}
-            onChange={(e) => setRegInfo((i) => ({ ...i, phone: e.target.value }))}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDialog}>ביטול</Button>
-          <Button onClick={handleRegister}>שלח</Button>
-        </DialogActions>
-      </Dialog>
+<Dialog open={openMyActivities} onClose={() => setOpenMyActivities(false)} fullWidth maxWidth="sm">
+  <DialogTitle>הפעילויות שלי</DialogTitle>
+  <DialogContent>
+    {myActivities.length === 0 ? (
+      <Typography>לא נמצאו פעילויות שאליהן נרשמת.</Typography>
+    ) : (
+      myActivities.map((activity) => (
+        <Box key={activity.id} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
+<Typography variant="h6" fontWeight="bold">
+  {activity.name || "ללא שם"}
+</Typography>
+          <Typography variant="body2">תאריך: {new Date(activity.date).toLocaleDateString()}</Typography>
+          <Box sx={{ mt: 1 }}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => openDialog("activity-details", activity)}
+              sx={{ mr: 1 }}
+            >
+              לפרטים
+            </Button>
+            <Button
+              size="small"
+              variant="contained"
+              color="error"
+              onClick={() => handleCancelRegistration(activity.id)}
+            >
+              ביטול הרשמה
+            </Button>
+          </Box>
+        </Box>
+      ))
+    )}
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={() => setOpenMyActivities(false)}>סגור</Button>
+  </DialogActions>
+</Dialog>
+<Dialog
+  open={dialog.type === "activity-details"}
+  onClose={closeDialog}
+  fullWidth
+  maxWidth="sm"
+>
+  <DialogTitle>פרטי פעילות</DialogTitle>
+  <DialogContent>
+    {dialog.data ? (
+      <>
+        <Typography variant="h6" gutterBottom>
+          {dialog.data.title}
+        </Typography>
+        <Typography>
+          <strong>תאריך:</strong>{" "}
+          {new Date(dialog.data.date).toLocaleDateString()}
+        </Typography>
+        <Typography>
+          <strong>שעה:</strong> {dialog.data.time || "לא צוינה"}
+        </Typography>
+        {dialog.data.location && (
+          <Typography>
+            <strong>מיקום:</strong> {dialog.data.location}
+          </Typography>
+        )}
+        {dialog.data.description && (
+          <Typography sx={{ mt: 2 }}>{dialog.data.description}</Typography>
+        )}
+      </>
+    ) : (
+      <Typography>לא נמצאו פרטים</Typography>
+    )}
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={closeDialog}>סגור</Button>
+  </DialogActions>
+</Dialog>
+
+
+   <Dialog open={dialog.type === "register"} onClose={closeDialog} fullWidth maxWidth="xs">
+  <DialogTitle>הרשמה לפעילות</DialogTitle>
+  <DialogContent>
+    <Typography>
+      {userProfile?.first_name}, האם את/ה בטוח/ה שברצונך להירשם לפעילות{" "}
+      <strong>{activities.find((a) => a.id === dialog.data)?.name || ""}</strong>?
+    </Typography>
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={closeDialog}>לא</Button>
+    <Button
+      onClick={async () => {
+        try {
+          await ActivityService.registerUser(dialog.data, {
+            name: userProfile.name || userProfile.first_name,
+            phone: userProfile.phone,
+          });
+          setSnackbar({ open: true, message: "נרשמת בהצלחה 🎉" });
+          closeDialog();
+        } catch (err) {
+          console.error("❌ שגיאה בהרשמה", err);
+          setSnackbar({ open: true, message: "שגיאה בהרשמה, נסה שוב" });
+        }
+      }}
+      variant="contained"
+    >
+      כן, הירשם/י
+    </Button>
+  </DialogActions>
+</Dialog>
+
+
 
       <Dialog open={dialog.type === "message"} onClose={closeDialog} fullWidth>
         <DialogTitle>השב להודעה</DialogTitle>
@@ -633,45 +808,75 @@ height: isMobile ? 200 : 350,
         message={snackbar.message}
       />
 
-      {/* 9. Footer */}
-      <Footer>
-        <Container>
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={3}>
-              <Box display="flex" alignItems="center" mb={1}>
-                <HomeIcon sx={{ mr: 1 }} /> מרכז ותיקים בית הכרם
-              </Box>
-              <Button sx={{ color: "#fff", textTransform: "none" }}>לחץ לכנס לאתר</Button>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <Typography variant="subtitle1">צרו קשר</Typography>
-              <Box display="flex" alignItems="center" mt={1}>
-                <PhoneIcon sx={{ mr: 1 }} /> 03-5250717
-              </Box>
-              <Box display="flex" alignItems="center" mt={1}>
-                <LocationOnIcon sx={{ mr: 1 }} /> בית הכרם
-              </Box>
-              <Box display="flex" alignItems="center" mt={1}>
-                <MailIcon sx={{ mr: 1 }} /> המייל של אסנת
-              </Box>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <Typography variant="subtitle1">מדיניות</Typography>
-              <Box mt={1}>מדיניות פרטיות</Box>
-              <Box>תנאי שימוש</Box>
-              <Box>ביטול השתתפות</Box>
-              <Box>הצהרת נגישות</Box>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <Typography variant="subtitle1">קישורים</Typography>
-              <Box mt={1}>הרצאות</Box>
-              <Box>אודותינו</Box>
-              <Box>התחברות</Box>
-              <Box>צרו קשר</Box>
-            </Grid>
-          </Grid>
-        </Container>
-      </Footer>
+ <Footer>
+  <Container dir="rtl">
+    <Grid container spacing={4} justifyContent="flex-start" textAlign="right">
+      {/* טור 1 – מרכז ותיקים */}
+      <Grid item xs={12} md={3}>
+        <Box display="flex" alignItems="center" mb={1}>
+          <HomeIcon sx={{ ml: 1 }} />
+          <Typography variant="h6" fontWeight="bold">
+            מרכז ותיקים בית הכרם
+          </Typography>
+        </Box>
+        <Button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          sx={{ color: "#fff", textTransform: "none", p: 0 }}
+        >
+          לראש האתר
+        </Button>
+      </Grid>
+
+      {/* טור 2 – צור קשר */}
+      <Grid item xs={12} md={3}>
+        <Typography variant="h6" fontWeight="bold" gutterBottom>
+          צור קשר
+        </Typography>
+        <Box display="flex" alignItems="center" mb={1}>
+          <PhoneIcon sx={{ ml: 1 }} />
+          <Typography>052-3705021</Typography>
+        </Box>
+        <Box display="flex" alignItems="center" mb={1}>
+          <MailIcon sx={{ ml: 1 }} />
+          <Typography>המייל של אסנת</Typography>
+        </Box>
+        <Box display="flex" alignItems="center" mb={1}>
+          <LocationOnIcon sx={{ ml: 1 }} />
+          <Typography>בית הועד החלוץ 33</Typography>
+        </Box>
+        <Button
+          onClick={() => setInfoOpen(true)}
+          sx={{ color: "#fff", textTransform: "none", p: 0 }}
+        >
+          צור קשר
+        </Button>
+      </Grid>
+
+      {/* טור 3 – כניסות */}
+      <Grid item xs={12} md={3}>
+        <Typography variant="h6" fontWeight="bold" gutterBottom>
+          כניסות
+        </Typography>
+        <Box mb={1}>
+          <Button
+            onClick={() => setOpenIdentify(true)}
+            sx={{ color: "#fff", textTransform: "none", p: 0 }}
+          >
+            התחברות
+          </Button>
+        </Box>
+        <Box>
+          <Button
+            onClick={() => navigate("/home")}
+            sx={{ color: "#fff", textTransform: "none", p: 0 }}
+          >
+            התחברות מנהל
+          </Button>
+        </Box>
+      </Grid>
+    </Grid>
+  </Container>
+</Footer>
 
        <Dialog
         open={openIdentify}
@@ -689,4 +894,6 @@ height: isMobile ? 200 : 350,
       </Dialog>
     </Box>
   );
+
+  
 }

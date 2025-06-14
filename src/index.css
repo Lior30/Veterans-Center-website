@@ -17,9 +17,13 @@ body,
 
 /* Default font and text color */
 body {
-  font-family: "Segoe UI", Tahoma, "Helvetica Neue", Arial, sans-serif;
-  color: #333333;
+ /* שימוש בפונט Secular One לכותרות */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Secular One', sans-serif;
 }
+
+}
+
 
 /* Remove scrollbars in the flyer carousel */
 .flyer-carousel::-webkit-scrollbar {

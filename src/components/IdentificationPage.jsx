@@ -56,12 +56,14 @@ export default function IdentifyPage({ onSuccess }) {
         });
         throw new Error('User not found in database and removed from auth');
       }
-      else {
-        console.log('[IdentifyPage] user found in database', user);
-      }
+     else {
+  console.log('[IdentifyPage] user found in database', user);
+  sessionStorage.setItem("userPhone", trimmed);       // ✅ שמירת טלפון
+  sessionStorage.setItem("justIdentified", "true");   // ✅ הוספנו את זה!
+}
+
       console.log('[IdentifyPage] login succeeded');
       setLoading(false);
-      alert('ההתחברות בוצעה בהצלחה!');  // show success message
       // only call onSuccess here
       if (typeof onSuccess === 'function') {
         console.log('[IdentifyPage] calling onSuccess()');
