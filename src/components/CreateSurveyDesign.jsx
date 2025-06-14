@@ -1,6 +1,8 @@
 // src/components/CreateSurveyDesign.jsx
 import React from "react";
 
+import { TextField } from "@mui/material";
+
 export default function CreateSurveyDesign({
   headline,
   onHeadlineChange,
@@ -17,6 +19,8 @@ export default function CreateSurveyDesign({
   activities,
   activityId,
   onActivityChange,
+  expiresAt,                
+  onExpiresAtChange
 }) {
   return (
     <div style={{ padding: 40, maxWidth: 600, margin: "0 auto", direction: "rtl" }}>
@@ -52,6 +56,17 @@ export default function CreateSurveyDesign({
           </select>
         </label>
       </div>
+
+      <div style={{ margin: "20px 0" }}>
+  <TextField
+    label="תאריך תפוגה (אופציונלי)"
+    type="datetime-local"
+    InputLabelProps={{ shrink: true }}
+    value={expiresAt}
+    onChange={onExpiresAtChange}
+    fullWidth
+  />
+</div>
 
       {/* Questions */}
       {questions.map((q, idx) => (
