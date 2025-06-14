@@ -52,6 +52,7 @@ import IdentifyPage from "./IdentificationPage.jsx";
 import CalendarPreview from "./CalendarPreview.jsx";
 import ReplyContainer from "./ReplyContainer.jsx";
 import SurveyDetailContainer from "./SurveyDetailContainer.jsx";
+import AdminSignIn from "./AdminSignIn.jsx";
 
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 // import FeatureCard from './FeatureCard';     // wherever you keep it
@@ -140,6 +141,7 @@ export default function LandingPage() {
   const [dialog, setDialog] = useState({ type: "", data: null });
   const [snackbar, setSnackbar] = useState({ open: false, message: "" });
   const [userProfile, setUserProfile] = useState(null);
+  const [openAdminSignIn, setOpenAdminSignIn] = useState(false);
 
 const [cancelDialog, setCancelDialog] = useState({ open: false, activityId: null });
 
@@ -1108,7 +1110,7 @@ p: { xs: 2, sm: 3 },
         </Box>
         <Box>
           <Button
-            onClick={() => navigate("/home")}
+            onClick={() => setOpenAdminSignIn(true)}
             sx={{ color: "#fff", textTransform: "none", p: 0 }}
           >
             התחברות מנהל
@@ -1133,6 +1135,22 @@ p: { xs: 2, sm: 3 },
           <Button onClick={() => setOpenIdentify(false)}>ביטול</Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog
+        open={openAdminSignIn}
+        onClose={() => setOpenAdminSignIn(false)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>התחברות מנהל</DialogTitle>
+        <DialogContent>
+          <AdminSignIn />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenAdminSignIn(false)}>ביטול</Button>
+        </DialogActions>
+      </Dialog>
+
     </Box>
   );
 
