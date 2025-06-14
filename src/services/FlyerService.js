@@ -1,76 +1,109 @@
 // =========  src/services/FlyerService.js  =========
 import { db, storage } from "../firebase";
 import {
-  collection, addDoc, getDocs, doc, deleteDoc,
-  serverTimestamp, orderBy, writeBatch, query,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  orderBy,
+  doc,
+  deleteDoc,
+  writeBatch,
+  serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
 import {
-  ref, uploadBytes, getDownloadURL, deleteObject,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
 } from "firebase/storage";
 
 const FLYERS_COL = "flyers";
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
+/* ─── עזר ─── */
 function toTimestamp(dateStr, fallback) {
-  return dateStr
-    ? Timestamp.fromDate(new Date(dateStr))
-    : fallback;
+  if (!dateStr) return fallback;
+  const d = new Date(dateStr);
+  return Timestamp.fromDate(d);
 }
 
 const FlyerService = {
-  /* ─── העלאה ─── */
-  async uploadFlyer(name, file, startDate, endDate) {
-    if (!name || !file) throw new Error("Name / file missing");
-
-    const fileName   = `${Date.now()}_${file.name}`;
-    const storageRef = ref(storage, `flyers/${fileName}`);
+  /* ─── העלאת פלייר ─── */
+  async uploadFlyer({ file, name, startDate, endDate }) {
+    // 1. העלאה ל-Storage
+    const storageRef = ref(storage, `flyers/${Date.now()}_${file.name}`);
     await uploadBytes(storageRef, file);
-    const fileUrl    = await getDownloadURL(storageRef);
+    const fileUrl = await getDownloadURL(storageRef);
+    const storagePath = storageRef.fullPath; // <-- הנתיב המדויק
 
-    // קביעת סדר תצוגה הבא
-    const nextOrder  = (await getDocs(collection(db, FLYERS_COL))).size;
-    const nowTS      = Timestamp.now();
-    const startTS    = toTimestamp(startDate, nowTS);
-    const endTS      = toTimestamp(
+    // 2. חישוב order הבא
+    const snap = await getDocs(collection(db, FLYERS_COL));
+    const nextOrder = snap.size;
+
+    // 3. תאריכים
+    const nowTS = serverTimestamp();
+    const startTS = toTimestamp(startDate, nowTS);
+    const endTS = toTimestamp(
       endDate,
       Timestamp.fromDate(new Date(Date.now() + ONE_YEAR_MS))
     );
 
+    // 4. כתיבת מסמך
     await addDoc(collection(db, FLYERS_COL), {
       name,
       fileUrl,
-      url      : fileUrl,   // תאימות לאחור
-      order    : nextOrder,
-      createdAt: serverTimestamp(),
+      storagePath, // ← נשמר במסמך
+      order: nextOrder,
+      createdAt: nowTS,
       startDate: startTS,
-      endDate  : endTS,
+      endDate: endTS,
     });
   },
 
-  /* ─── שליפה (לניהול) ─── */
+  /* ─── שליפת כל הפליירים (לניהול) ─── */
   async getFlyers() {
-    const snap = await getDocs(query(collection(db, FLYERS_COL), orderBy("order", "asc")));
+    const snap = await getDocs(
+      query(collection(db, FLYERS_COL), orderBy("order", "asc"))
+    );
     return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   },
 
-  /* ─── לשליפת Landing / Guest ─── */
+  /* ─── שליפת פליירים פעילים (לאתר) ─── */
   async getActiveFlyers() {
     const now = new Date();
     const all = await this.getFlyers();
     return all.filter((f) => {
       const start = f.startDate?.toDate?.() ?? new Date(0);
-      const end   = f.endDate?.toDate?.()   ?? new Date("9999-12-31");
+      const end = f.endDate?.toDate?.() ?? new Date("9999-12-31");
       return start <= now && now <= end;
     });
   },
 
+  /* ─── מחיקה מוחלטת ─── */
   async deleteFlyer(flyer) {
-    const path = flyer.fileUrl.split("/o/")[1].split("?")[0];
-    await deleteObject(ref(storage, path));
+    /* ① מחיקת הקובץ מ-Storage */
+    try {
+      if (flyer.storagePath) {
+        // חדש – יש storagePath מדויק
+        await deleteObject(ref(storage, flyer.storagePath));
+      } else {
+        // ישנים – מפענח מה-URL
+        const encoded = flyer.fileUrl.split("/o/")[1].split("?")[0];
+        const decoded = decodeURIComponent(encoded);
+        await deleteObject(ref(storage, decoded));
+      }
+    } catch (err) {
+      // אם הקובץ כבר לא קיים ב-Bucket → ממשיכים למחיקת המסמך
+      if (err.code !== "storage/object-not-found") throw err;
+    }
+
+    /* ② מחיקת המסמך מ-Firestore */
     await deleteDoc(doc(db, FLYERS_COL, flyer.id));
   },
 
+  /* ─── החלפת סדר (Drag & Drop) ─── */
   async swapOrder(a, b) {
     const batch = writeBatch(db);
     batch.update(doc(db, FLYERS_COL, a.id), { order: a.order });
