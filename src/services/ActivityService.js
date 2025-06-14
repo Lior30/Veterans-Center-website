@@ -12,6 +12,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { getDocs } from "firebase/firestore"; // אם לא קיים למעלה
 
 export default class ActivityService {
   /* collection constants */
@@ -153,5 +154,24 @@ export default class ActivityService {
       tx.update(ref, { participants: updatedParticipants });
     });
   }
+
+/** מחזיר את כל הפעילויות שהמשתמש רשום אליהן לפי מספר טלפון */
+static async getUserActivities(phone) {
+  const digits = phone.replace(/\D/g, "");
+  const snap = await getDocs(ActivityService.colRef);
+  const results = [];
+
+  snap.forEach((docSnap) => {
+    const data = docSnap.data();
+    const participants = data.participants || [];
+
+    const isUserInActivity = participants.some((p) => p.phone === digits);
+    if (isUserInActivity) {
+      results.push({ id: docSnap.id, ...data });
+    }
+  });
+
+  return results;
+}
 
 }
