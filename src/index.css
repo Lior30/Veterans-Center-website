@@ -7,7 +7,7 @@ body,
   margin: 0;
   padding: 0;
   direction: rtl;
-  background-color: #f5f5f5;
+  background-color: #ffffff;
 }
 
 /* Box-sizing reset */
@@ -35,7 +35,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .fc .fc-daygrid-day.fc-day-today {
-  background-color: #d1b6d3 !important;
+  background-color: #ffffff !important;
 }
 /* עיצוב מותאם לפעילויות בלוח השנה */
 .custom-event {
@@ -61,6 +61,7 @@ h1, h2, h3, h4, h5, h6 {
 .fc-timegrid-slot {
   height:2em !important;
 }
+
 /* נסיון להכריח שבלוח שבועי אירועים יוצגו אחד מתחת לשני */
 .fc-v-event {
   width: 100% !important;          /* שיתפסו את כל השורה */

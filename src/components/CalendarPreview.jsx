@@ -12,23 +12,26 @@ import {
   Stack,
   ToggleButton,
   ToggleButtonGroup,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 
 import ActivityService from "../services/ActivityService";
 import usePublicHolidays from "../hooks/usePublicHolidays";
 
 export default function CalendarPreview({ openDialog, userProfile, setOpenIdentify }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [activities, setActivities] = useState([]);
-
-  useEffect(() => ActivityService.subscribe(setActivities), []);
-
   const [calendarView, setCalendarView] = useState("timeGridWeek");
   const calendarRef = useRef(null);
+  const [tagFilter, setTagFilter] = useState("ALL");
 
   const holidays = usePublicHolidays();
 
-  const [tagFilter, setTagFilter] = useState("ALL");
+  useEffect(() => ActivityService.subscribe(setActivities), []);
+
   const allTags = useMemo(() => {
     const s = new Set();
     activities.forEach((a) => (a.tags || []).forEach((t) => s.add(t)));
@@ -40,28 +43,26 @@ export default function CalendarPreview({ openDialog, userProfile, setOpenIdenti
       .filter((a) => tagFilter === "ALL" || (a.tags || []).includes(tagFilter))
       .flatMap((a) =>
         a.recurring && (a.weekdays || []).length
-          ? [
-              {
-                id: `${a.id}-rec`,
-                title: a.name,
-                daysOfWeek: a.weekdays,
-                startTime: a.startTime,
-                endTime: a.endTime,
-                startRecur: a.date,
-                backgroundColor: "#A5D6A7",
-                activityId: a.id,
-              },
-            ]
-          : [
-              {
-                id: a.id,
-                title: a.name,
-                start: `${a.date}T${a.startTime}`,
-                end: `${a.date}T${a.endTime}`,
-                backgroundColor: "#90CAF9",
-                activityId: a.id,
-              },
-            ]
+          ? [{
+              id: `${a.id}-rec`,
+              title: a.name,
+              daysOfWeek: a.weekdays,
+              startTime: a.startTime,
+              endTime: a.endTime,
+              startRecur: a.date,
+              backgroundColor: "#9575CD",
+              textColor: "#ffffff",
+              activityId: a.id,
+            }]
+          : [{
+              id: a.id,
+              title: a.name,
+              start: `${a.date}T${a.startTime}`,
+              end: `${a.date}T${a.endTime}`,
+              backgroundColor: "#B39DDB",
+              textColor: "#000000",
+              activityId: a.id,
+            }]
       );
 
     const holidayEvents = holidays.map((h) => ({
@@ -69,7 +70,8 @@ export default function CalendarPreview({ openDialog, userProfile, setOpenIdenti
       title: h.title || h.name,
       start: h.date,
       allDay: true,
-      backgroundColor: "#FFE082",
+      backgroundColor: "#B3E5FC",
+      textColor: "#000000",
       holiday: true,
     }));
 
@@ -89,52 +91,152 @@ export default function CalendarPreview({ openDialog, userProfile, setOpenIdenti
       return;
     }
 
-   if (!userProfile || !userProfile.phone) {
-  setOpenIdentify(true);
-  return;
-}
-
+    if (!userProfile || !userProfile.phone) {
+      setOpenIdentify(true);
+      return;
+    }
 
     openDialog("register", actId);
   };
-
   return (
     <>
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+      {/* מבט שבועי / חודשי */}
+      <Stack direction="row" spacing={2} sx={{ mb: 2 }} justifyContent="center" flexWrap="wrap">
         <Button
           variant={calendarView === "timeGridWeek" ? "contained" : "outlined"}
           onClick={() => {
             setCalendarView("timeGridWeek");
             calendarRef.current?.getApi().changeView("timeGridWeek");
           }}
+          sx={{
+            borderColor: "#9c27b0",
+            color: calendarView === "timeGridWeek" ? "#fff" : "#9c27b0",
+            backgroundColor: calendarView === "timeGridWeek" ? "#9c27b0" : "transparent",
+            fontWeight: "bold",
+            borderWidth: 1.5,
+            minWidth: isMobile ? "100px" : "auto",
+            fontSize: isMobile ? "0.75rem" : "1rem",
+          }}
         >
           לוח שבועי
         </Button>
+
         <Button
           variant={calendarView === "dayGridMonth" ? "contained" : "outlined"}
           onClick={() => {
             setCalendarView("dayGridMonth");
             calendarRef.current?.getApi().changeView("dayGridMonth");
           }}
+          sx={{
+            borderColor: "#9c27b0",
+            color: calendarView === "dayGridMonth" ? "#fff" : "#9c27b0",
+            backgroundColor: calendarView === "dayGridMonth" ? "#9c27b0" : "transparent",
+            fontWeight: "bold",
+            borderWidth: 1.5,
+            minWidth: isMobile ? "100px" : "auto",
+            fontSize: isMobile ? "0.75rem" : "1rem",
+          }}
         >
           כל פעילויות החודש
         </Button>
       </Stack>
 
+      {/* ניווט שבועי */}
+      {calendarView === "timeGridWeek" && (
+        <Stack direction="row" spacing={1} sx={{ mb: 2 }} justifyContent="center">
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => calendarRef.current?.getApi().prev()}
+            sx={{
+              borderColor: "#9c27b0",
+              color: "#9c27b0",
+              fontWeight: "bold",
+              px: 2,
+              py: 0.5,
+              fontSize: "0.75rem",
+              minWidth: "80px",
+            }}
+          >
+            הקודם
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => {
+              const api = calendarRef.current?.getApi();
+              const next = new Date(api.getDate());
+              next.setDate(next.getDate() + 7);
+              const today = new Date();
+              if (next.getMonth() === today.getMonth()) {
+                api.next();
+              }
+            }}
+            sx={{
+              borderColor: "#9c27b0",
+              color: "#9c27b0",
+              fontWeight: "bold",
+              px: 2,
+              py: 0.5,
+              fontSize: "0.75rem",
+              minWidth: "80px",
+            }}
+          >
+            הבא
+          </Button>
+        </Stack>
+      )}
+
+      {/* סינון לפי תגית */}
       <ToggleButtonGroup
         exclusive
         value={tagFilter}
         onChange={(_, v) => setTagFilter(v || "ALL")}
-        sx={{ mb: 2 }}
+        sx={{ mb: 2, flexWrap: "wrap", justifyContent: "center" }}
       >
-        <ToggleButton value="ALL">הכל</ToggleButton>
+        <ToggleButton
+          value="ALL"
+          sx={{
+            fontSize: "0.85rem",
+            px: 2,
+            py: 0.5,
+            borderRadius: "8px",
+            height: 36,
+            color: "#6a1b9a",
+            borderColor: "#9c27b0",
+            '&.Mui-selected': {
+              backgroundColor: "#9c27b0",
+              color: "#fff",
+            },
+          }}
+        >
+          הכל
+        </ToggleButton>
+
         {allTags.map((t) => (
-          <ToggleButton key={t} value={t}>
+          <ToggleButton
+            key={t}
+            value={t}
+            sx={{
+              fontSize: "0.85rem",
+              px: 2,
+              py: 0.5,
+              borderRadius: "8px",
+              height: 36,
+              color: "#6a1b9a",
+              borderColor: "#9c27b0",
+              '&.Mui-selected': {
+                backgroundColor: "#9c27b0",
+                color: "#fff",
+              },
+            }}
+          >
             {t}
           </ToggleButton>
         ))}
       </ToggleButtonGroup>
 
+      {/* לוח שנה עצמו */}
       <FullCalendar
         ref={calendarRef}
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}

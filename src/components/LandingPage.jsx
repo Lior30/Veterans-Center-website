@@ -62,14 +62,19 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 const HeroSection = styled(Box)(({ theme }) => ({
   backgroundColor: "#cce6f9",
   padding: theme.spacing(6, 0),
+  [theme.breakpoints.down("sm")]: {
+    padding: theme.spacing(4, 0),
+  },
 }));
 
 const FeatureCard = styled(Card)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 2,
-  boxShadow: theme.shadows[4],
+  boxShadow: theme.shadows[1],  // צל קטן ועדין
+  border: "1px solid #eee",     // גבול דק מאוד
   transition: "transform 0.3s",
-  "&:hover": { transform: "translateY(-4px)" },
+  "&:hover": { transform: "translateY(-2px)" },
 }));
+
 
 const SectionTitle = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -96,7 +101,14 @@ const CtaButton = styled(Button)(({ theme, color }) => ({
         ? "#d06533"
         : "#004a80",
   },
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "0.875rem",
+    padding: theme.spacing(1, 2),
+    marginRight: theme.spacing(1),
+    marginTop: theme.spacing(1),
+  },
 }));
+
 
 const Footer = styled(Box)(({ theme }) => ({
   backgroundColor: "#6a1b9a", // הסגול החדש
@@ -297,8 +309,7 @@ const confirmCancelRegistration = async () => {
  
 
   return (
-    <Box>
-<AppBar position="static" color="transparent" elevation={0}>
+<Box sx={{ overflowX: 'hidden' }}><AppBar position="static" color="transparent" elevation={0}>
   <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
     {/* לוגו בצד שמאל */}
    <Box
@@ -336,17 +347,19 @@ const confirmCancelRegistration = async () => {
   </Toolbar>
 </AppBar>
 
-      <HeroSection
+ <HeroSection
   sx={{
     backgroundImage: `url('/image1.png')`,
     backgroundSize: "cover",
     backgroundPosition: "center",
-height: isMobile ? 200 : 350,
+    minHeight: isMobile ? 200 : 350,
+    height: "auto",
     position: "relative",
     display: "flex",
     alignItems: "center",
   }}
 >
+
   {/* רקע כהה חצי-שקוף מעל התמונה */}
   <Box
     sx={{
@@ -388,57 +401,61 @@ height: isMobile ? 200 : 350,
 
 
 
-        <Typography sx={{ color: "#fff", mb: 3 }}>
+<Typography sx={{ color: "#fff", mb: 3, fontSize: isMobile ? "0.9rem" : "1rem" }}>
           ברוכים הבאים למועדון שמביא לכם פעילויות, הרצאות ורווחה בכל יום!
         </Typography>
         <Box>
     <Box>
 {!userProfile?.first_name && (
   <CtaButton
-    color="default"
-    variant="contained"
-    onClick={() => setOpenIdentify(true)}
-    sx={{
-      backgroundColor: "#ffca28",
-      color: "#000",
-      "&:hover": { backgroundColor: "#fbc02d" },
-    }}
-  >
-    הזדהות
-  </CtaButton>
+  color="default"
+  variant="contained"
+  onClick={() => setOpenIdentify(true)}
+  sx={{
+    backgroundColor: "#c19be0",
+    color: "#fff",
+    "&:hover": { backgroundColor: "#b287d1" },
+  }}
+>
+  הזדהות
+</CtaButton>
+
 )}
 
 
-  <CtaButton
-    color="secondary"
-    variant="contained"
-    component="a"
-    href="https://wa.me/0523705021"
-        target="_blank"
-    rel="noopener noreferrer"
-    startIcon={<WhatsAppIcon />}
-    sx={{
-      backgroundColor: "#25D366",
-      color: "#fff",
-      "&:hover": { backgroundColor: "#1ebe5d" },
-    }}
-  >
-    צור קשר בוואטסאפ
-  </CtaButton>
+<CtaButton
+  color="secondary"
+  variant="contained"
+  component="a"
+  href="https://wa.me/0523705021"
+  target="_blank"
+  rel="noopener noreferrer"
+  startIcon={<WhatsAppIcon />}
+  sx={{
+    backgroundColor: "#b88bd6",
+    color: "#fff",
+    "&:hover": { backgroundColor: "#a874c5" },
+  }}
+>
+  צור קשר בוואטסאפ
+</CtaButton>
 
-  <CtaButton
-    color="primary"
-    variant="contained"
-    component="a"
-    href="tel:0523705021"
-    startIcon={<PhoneIcon />}
-    sx={{
-      backgroundColor: "#2196f3",
-      "&:hover": { backgroundColor: "#1976d2" },
-    }}
-  >
-    התקשר
-  </CtaButton>
+
+<CtaButton
+  color="primary"
+  variant="contained"
+  component="a"
+  href="tel:0523705021"
+  startIcon={<PhoneIcon />}
+  sx={{
+    backgroundColor: "#8b52b3",
+    color: "#fff",
+    "&:hover": { backgroundColor: "#965fc0" },
+  }}
+>
+  התקשר
+</CtaButton>
+
   {userProfile?.id && (
   <CtaButton
     color="primary"
@@ -464,8 +481,7 @@ height: isMobile ? 200 : 350,
   </Container>
 </HeroSection>
 
- <Container sx={{ py: 4, maxWidth: "100% !important" }}>
-
+<Container sx={{ py: 4, width: "100%", px: { xs: 1, sm: 2 } }}>
 <Box
   sx={{
     display: "flex",
@@ -490,6 +506,9 @@ height: isMobile ? 200 : 350,
     {/* פליירים */}
 <FeatureCard
   sx={{
+     boxShadow: "none",
+    border: "none",
+    backgroundColor: "transparent",
     flex: "0 0 auto",
     display: "flex",
     flexDirection: "column",
@@ -499,63 +518,86 @@ height: isMobile ? 200 : 350,
     minHeight: 500,
   }}
 >
-  <CardActionArea
-    onClick={() => openDialog("flyer", flyers[currentFlyer]?.activityId)}
-    sx={{ display: "flex", justifyContent: "center", width: "100%" }}
-  >
-    <Box
-      component="img"
-      src={flyers[currentFlyer]?.fileUrl}
-      alt="פלייר"
-      sx={{
-        maxHeight: 400,
-        width: "100%",
-        objectFit: "contain",
-        borderRadius: 2,
-      }}
-    />
-  </CardActionArea>
+<CardActionArea
+  onClick={() => openDialog("flyer", flyers[currentFlyer]?.activityId)}
+  sx={{
+    display: "flex",
+    justifyContent: "center",
+    width: "100%",
+  }}
+>
+
+  <Box
+    component="img"
+    src={flyers[currentFlyer]?.fileUrl}
+    alt="פלייר"
+    sx={{
+      maxHeight: 400,
+      width: "100%",
+      objectFit: "contain",
+      borderRadius: 2,
+      transition: "transform 0.1s ease-in-out",
+      "&:hover": {
+        transform: "scale(1.05)",
+      },
+    }}
+  />
+</CardActionArea>
 
   <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mt: 2 }}>
-    <IconButton onClick={handlePrevFlyer} disabled={currentFlyer === 0}>
-      <ArrowBackIosNewIcon />
-    </IconButton>
+  {/* חץ ימינה - עובר לשמאל */}
+  <IconButton onClick={handleNextFlyer} disabled={currentFlyer === flyers.length - 1}>
+    <ArrowForwardIosIcon />
+  </IconButton>
 
-    <Button
-      variant="contained"
-      color="success"
-      onClick={() => openDialog("register", flyers[currentFlyer]?.activityId)}
-      startIcon={<EventIcon />}
-      sx={{
-        mx: 2,
-        px: 4,
-        py: 1,
-        fontWeight: "bold",
-        fontSize: "1rem",
-        transition: "transform 0.2s ease-in-out",
-        "&:hover": {
-          transform: "scale(1.05)",
-        },
-      }}
-    >
-      הרשמה מהירה
-    </Button>
+  <Button
+    variant="contained"
+    color="success"
+    onClick={() => openDialog("register", flyers[currentFlyer]?.activityId)}
+    startIcon={<EventIcon />}
+    sx={{
+      mx: 2,
+      px: 4,
+      py: 1,
+      fontWeight: "bold",
+      fontSize: "1rem",
+      transition: "transform 0.2s ease-in-out",
+      "&:hover": {
+        transform: "scale(1.05)",
+      },
+    }}
+  >
+    הרשמה מהירה
+  </Button>
 
-    <IconButton onClick={handleNextFlyer} disabled={currentFlyer === flyers.length - 1}>
-      <ArrowForwardIosIcon />
-    </IconButton>
-  </Box>
+  {/* חץ שמאלה - עובר לימין */}
+  <IconButton onClick={handlePrevFlyer} disabled={currentFlyer === 0}>
+    <ArrowBackIosNewIcon />
+  </IconButton>
+</Box>
+
 </FeatureCard>
 
     {/* הודעות */}
-<FeatureCard sx={{ flex: "0 0 35%", overflowY: "auto", p: 2 }}>
+<FeatureCard
+  sx={{
+    boxShadow: "none",
+    border: "none",
+    backgroundColor: "transparent",
+    flex: "0 0 100%",
+minHeight: { xs: 'auto', sm: 350 },
+    maxWidth: 500,
+p: { xs: 2, sm: 3 },
+  }}
+>
+
   ...      <SectionTitle>
         <ArticleIcon />
         <Typography variant="h6">הודעות אחרונות</Typography>
       </SectionTitle>
 
       <Grid container spacing={2}>
-        {messages.map((m) => (
+{messages.slice(0, 3).map((m) => (
           <Grid item xs={12} key={m.id}>
             <FeatureCard>
               <CardContent>
@@ -577,11 +619,18 @@ height: isMobile ? 200 : 350,
           </Grid>
         ))}
       </Grid>
+      <Box textAlign="center" mt={2}>
+  <Button variant="outlined" onClick={() => openDialog("all-messages")}>
+    לכל ההודעות
+  </Button>
+</Box>
+
     </FeatureCard>
   </Box>
 
 <FeatureCard
   sx={{
+    
     flex: 1,
     p: 1, // padding פנימי גדול יותר
     minWidth: 400,
@@ -589,7 +638,7 @@ height: isMobile ? 200 : 350,
     mx: "auto", // מרווח אוטומטי משני הצדדים כדי למרכז
     my: 2,      // מרווח מלמעלה ולמטה
     backgroundColor: "#f9f9f9",
-    border: "1px solid #ddd",
+    border: "none",
     borderRadius: 2,
   }}
 >
@@ -621,8 +670,8 @@ height: isMobile ? 200 : 350,
         <Typography variant="h5">סקרים פתוחים</Typography>
       </SectionTitle>
       <Grid container spacing={2}>
-        {surveys.map((s) => (
-          <Grid item xs={12} sm={6} key={s.id}>
+  {(isMobile ? surveys.slice(0, 3) : surveys).map((s) => (
+              <Grid item xs={12} sm={6} key={s.id}>
             <FeatureCard>
               <CardContent>
                 <Typography noWrap>{s.headline}</Typography>
@@ -634,10 +683,22 @@ height: isMobile ? 200 : 350,
               </CardContent>
             </FeatureCard>
           </Grid>
+          
         ))}
       </Grid>
     </Grid>
   </Grid>
+  {isMobile && surveys.length > 3 && (
+  <Box textAlign="center" mt={2}>
+    <Button
+      variant="outlined"
+      onClick={() => openDialog("all-surveys")}
+    >
+      לכל הסקרים
+    </Button>
+  </Box>
+)}
+
 </Container>
 
 
@@ -658,6 +719,36 @@ height: isMobile ? 200 : 350,
     <Button onClick={() => setInfoOpen(false)}>סגור</Button>
   </DialogActions>
 </Dialog>
+<Dialog
+  open={dialog.type === "all-surveys"}
+  onClose={closeDialog}
+  fullWidth
+  maxWidth="sm"
+>
+  <DialogTitle>כל הסקרים</DialogTitle>
+  <DialogContent dividers>
+    <Grid container spacing={2}>
+      {surveys.map((s) => (
+        <Grid item xs={12} key={s.id}>
+          <Card variant="outlined">
+            <CardContent>
+              <Typography fontWeight="bold">{s.headline}</Typography>
+              {justIdentified && (
+                <Button size="small" onClick={() => openDialog("survey", s.id)}>
+                  למילוי
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={closeDialog}>סגור</Button>
+  </DialogActions>
+</Dialog>
+
 <Dialog open={cancelDialog.open} onClose={() => setCancelDialog({ open: false, activityId: null })}>
   <DialogTitle>אישור ביטול הרשמה</DialogTitle>
   <DialogContent>
@@ -678,30 +769,57 @@ height: isMobile ? 200 : 350,
       <Typography>לא נמצאו פעילויות שאליהן נרשמת.</Typography>
     ) : (
       myActivities.map((activity) => (
-        <Box key={activity.id} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
-<Typography variant="h6" fontWeight="bold">
-  {activity.name || "ללא שם"}
-</Typography>
-          <Typography variant="body2">תאריך: {new Date(activity.date).toLocaleDateString()}</Typography>
-          <Box sx={{ mt: 1 }}>
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={() => openDialog("activity-details", activity)}
-              sx={{ mr: 1 }}
-            >
-              לפרטים
-            </Button>
-            <Button
-              size="small"
-              variant="contained"
-              color="error"
-              onClick={() => handleCancelRegistration(activity.id)}
-            >
-              ביטול הרשמה
-            </Button>
-          </Box>
-        </Box>
+<Box
+  key={activity.id}
+  sx={{
+    mb: 2,
+    px: 2,
+    py: 1.5,
+    borderRadius: 2,
+    boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+    backgroundColor: "#fff",
+    display: "flex",
+    flexDirection: "column",
+    gap: 1,
+  }}
+>
+  <Box display="flex" justifyContent="space-between" alignItems="center">
+    <Typography variant="subtitle1" fontWeight="bold">
+      {activity.name || "ללא שם"}
+    </Typography>
+    <Typography variant="body2" color="text.secondary">
+      {new Date(activity.date).toLocaleDateString()}
+    </Typography>
+  </Box>
+
+  {/* פרטים מלאים */}
+  <Typography variant="body2" color="text.secondary">
+    <strong>שעה:</strong> {activity.time || "לא צוינה"}<br />
+    {activity.location && (
+      <>
+        <strong>מיקום:</strong> {activity.location}<br />
+      </>
+    )}
+    {activity.description && (
+      <>
+        <strong>תיאור:</strong> {activity.description}
+      </>
+    )}
+  </Typography>
+
+  <Box display="flex" justifyContent="flex-end" gap={1} mt={1}>
+    <Button
+      size="small"
+      variant="contained"
+      color="error"
+      onClick={() => handleCancelRegistration(activity.id)}
+      sx={{ fontSize: "0.75rem", px: 1.5, py: 0.5 }}
+    >
+      ביטול הרשמה
+    </Button>
+  </Box>
+</Box>
+
       ))
     )}
   </DialogContent>
@@ -709,6 +827,38 @@ height: isMobile ? 200 : 350,
     <Button onClick={() => setOpenMyActivities(false)}>סגור</Button>
   </DialogActions>
 </Dialog>
+<Dialog open={dialog.type === "all-messages"} onClose={closeDialog} fullWidth maxWidth="sm">
+  <DialogTitle>כל ההודעות</DialogTitle>
+  <DialogContent dividers>
+    <Grid container spacing={2}>
+      {messages.map((m) => (
+        <Grid item xs={12} key={m.id}>
+          <Card variant="outlined">
+            <CardContent>
+              <Typography fontWeight="bold">{m.title}</Typography>
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                {m.body}
+              </Typography>
+              {justIdentified && (
+                <Button
+                  size="small"
+                  onClick={() => openDialog("message", m.id)}
+                  sx={{ mt: 1 }}
+                >
+                  השב
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={closeDialog}>סגור</Button>
+  </DialogActions>
+</Dialog>
+
 <Dialog
   open={dialog.type === "activity-details"}
   onClose={closeDialog}
@@ -759,25 +909,116 @@ height: isMobile ? 200 : 350,
   <DialogActions>
     <Button onClick={closeDialog}>לא</Button>
     <Button
-      onClick={async () => {
-        try {
-          await ActivityService.registerUser(dialog.data, {
-            name: userProfile.name || userProfile.first_name,
-            phone: userProfile.phone,
-          });
-          setSnackbar({ open: true, message: "נרשמת בהצלחה 🎉" });
-          closeDialog();
-        } catch (err) {
-          console.error("❌ שגיאה בהרשמה", err);
-          setSnackbar({ open: true, message: "שגיאה בהרשמה, נסה שוב" });
-        }
-      }}
-      variant="contained"
-    >
-      כן, הירשם/י
-    </Button>
+  onClick={async () => {
+    const activityId = dialog.data;
+
+    try {
+      const userActivities = await ActivityService.getUserActivities(userProfile.id);
+      const alreadyRegistered = userActivities.some((a) => a.id === activityId);
+
+      if (alreadyRegistered) {
+        setSnackbar({ open: true, message: "את/ה כבר רשום/ה לפעילות הזו" });
+        closeDialog();
+        return;
+      }
+
+      await ActivityService.registerUser(activityId, {
+        name: userProfile.name || userProfile.first_name,
+        phone: userProfile.phone,
+      });
+
+      setSnackbar({ open: true, message: "נרשמת בהצלחה 🎉" });
+      closeDialog();
+      setMyActivities(userActivities); // או לרענן מחדש אם צריך
+    } catch (err) {
+      console.error("❌ שגיאה בהרשמה", err);
+      setSnackbar({ open: true, message: "שגיאה בהרשמה, נסה שוב" });
+    }
+  }}
+  variant="contained"
+>
+  כן, הירשם/י
+</Button>
+
   </DialogActions>
 </Dialog>
+
+<Dialog
+  open={dialog.type === "flyer"}
+  onClose={closeDialog}
+  maxWidth="sm"
+  fullWidth
+  TransitionComponent={Grow} // או Grow
+>
+  <DialogTitle>מידע על הפעילות</DialogTitle>
+
+  <DialogContent>
+    {/* כפתורים למעלה */}
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        flexWrap: "wrap",
+        gap: 2,
+        mb: 2,
+      }}
+    >
+      <Button
+        variant="contained"
+        color="success"
+        startIcon={<EventIcon />}
+        onClick={() => {
+          closeDialog();
+          openDialog("register", dialog.data);
+        }}
+        sx={{
+          fontWeight: "bold",
+          px: 3,
+          py: 1,
+          fontSize: "0.9rem",
+          transition: "transform 0.2s ease-in-out",
+          "&:hover": { transform: "scale(1.05)" },
+        }}
+      >
+        הרשמה מהירה
+      </Button>
+
+      <Button
+        variant="outlined"
+        onClick={() => {
+          closeDialog();
+          openDialog("activity-details", activities.find((a) => a.id === dialog.data));
+        }}
+        sx={{
+          fontWeight: "bold",
+          px: 3,
+          py: 1,
+          fontSize: "0.9rem",
+        }}
+      >
+        לפרטים מלאים
+      </Button>
+    </Box>
+
+    {/* תמונה */}
+    <Box
+      component="img"
+      src={flyers.find((f) => f.activityId === dialog.data)?.fileUrl}
+      alt="פלייר"
+      sx={{
+        width: "100%",
+        height: "auto",
+        objectFit: "contain",
+        borderRadius: 2,
+      }}
+    />
+  </DialogContent>
+
+  <DialogActions> 
+    <Button onClick={closeDialog}>סגור</Button>
+  </DialogActions>
+</Dialog>
+
 
 
 
