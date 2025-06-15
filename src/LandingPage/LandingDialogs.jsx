@@ -16,10 +16,10 @@ import {
   styled,
 } from "@mui/material";
 import SectionTitle from "./SectionTitle";
-import ReplyContainer from "./ReplyContainer";
-import SurveyDetailContainer from "./SurveyDetailContainer";
-import AdminSignIn from "./AdminSignIn";
-import IdentifyPage from "./IdentificationPage";
+import ReplyContainer from "../components/ReplyContainer";
+import SurveyDetailContainer from "../components/SurveyDetailContainer";
+import AdminSignIn from "../components/AdminSignIn";
+import IdentifyPage from "../components/IdentificationPage";
 import CtaButton from "./CtaButton";
 import ActivityService from "../services/ActivityService";
 import EventIcon from "@mui/icons-material/Event";
