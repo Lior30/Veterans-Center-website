@@ -15,7 +15,7 @@ import {
   Grow,
   styled,
 } from "@mui/material";
-import SectionTitle from "./SectionTitle";
+import SectionTitle from "../LandingPage/SectionTitle";
 import ReplyContainer from "../components/ReplyContainer";
 import SurveyDetailContainer from "../components/SurveyDetailContainer";
 import AdminSignIn from "../components/AdminSignIn";
@@ -44,6 +44,7 @@ export default function LandingDialogs(props) {
     myActivities,
     dialog,
     openDialog,
+    flyers,
     closeDialog,
     messages,
     activities,
@@ -138,49 +139,90 @@ export default function LandingDialogs(props) {
             <Typography>לא נמצאו פעילויות שאליהן נרשמת.</Typography>
           ) : (
             myActivities.map((a) => (
-              <Box
-                key={a.id}
-                sx={{
-                  mb: 2,
-                  p: 2,
-                  borderRadius: 2,
-                  boxShadow: 1,
-                  backgroundColor: theme.palette.background.paper,
-                }}
-              >
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Typography variant="subtitle1" fontWeight="600">
-                    {a.name || "ללא שם"}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {new Date(a.date).toLocaleDateString("he-IL")}
-                  </Typography>
-                </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  <strong>שעה:</strong> {a.time || "לא צוינה"}
-                  {a.location && (
-                    <>
-                      <br />
-                      <strong>מיקום:</strong> {a.location}
-                    </>
-                  )}
-                </Typography>
-                <Box display="flex" justifyContent="flex-end" mt={1}>
-                  <CtaButton
-                    color="error"
-                    size="small"
-                    onClick={() =>
-                      setCancelDialog({ open: true, activityId: a.id })
-                    }
-                  >
-                    ביטול הרשמה
-                  </CtaButton>
-                </Box>
-              </Box>
+           <Box
+  key={a.id}
+  sx={{
+    mb: 2,
+    p: 2,
+    borderRadius: 2,
+    boxShadow: 1,
+    backgroundColor: theme.palette.background.paper,
+    display: "flex", // שינוי חשוב
+    flexDirection: "row", // אופקית
+    gap: 2,
+  }}
+>
+  {/* הפלייר מימין */}
+  {flyers?.some((f) => f.activityId === a.id) && (
+    <Box
+      onClick={() =>
+        openDialog("flyer", {
+          ...flyers.find((f) => f.activityId === a.id),
+          fromMyActivities: true,
+        })
+      }
+      sx={{
+        cursor: "pointer",
+        width: 140,
+        height: 180,
+        flexShrink: 0,
+        borderRadius: 2,
+        overflow: "hidden",
+        boxShadow: 1,
+        "&:hover": { boxShadow: 3 },
+      }}
+    >
+      <Box
+        component="img"
+        src={flyers.find((f) => f.activityId === a.id)?.fileUrl}
+        alt="פלייר"
+        sx={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+        }}
+      />
+    </Box>
+  )}
+
+  {/* תוכן הפעילות משמאל */}
+  <Box flex="1">
+    <Box
+      display="flex"
+      justifyContent="space-between"
+      alignItems="center"
+      flexWrap="wrap"
+    >
+      <Typography variant="subtitle1" fontWeight="600">
+        {a.name || "ללא שם"}
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        {new Date(a.date).toLocaleDateString("he-IL")}
+      </Typography>
+    </Box>
+
+    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+      <strong>שעה:</strong> {a.time || "לא צוינה"}
+      {a.location && (
+        <>
+          <br />
+          <strong>מיקום:</strong> {a.location}
+        </>
+      )}
+    </Typography>
+
+    <Box display="flex" justifyContent="flex-end" mt={1}>
+      <CtaButton
+        color="error"
+        size="small"
+        onClick={() => setCancelDialog({ open: true, activityId: a.id })}
+      >
+        ביטול הרשמה
+      </CtaButton>
+    </Box>
+  </Box>
+</Box>
+
             ))
           )}
         </DialogContent>
@@ -269,11 +311,34 @@ export default function LandingDialogs(props) {
             <Typography>לא נמצאו פרטים</Typography>
           )}
         </DialogContent>
-        <DialogActions>
-          <CtaButton color="secondary" onClick={closeDialog}>
-            סגור
-          </CtaButton>
-        </DialogActions>
+       <DialogActions>
+  {userProfile?.phone ? (
+    <CtaButton
+      color="primary"
+      startIcon={<EventIcon />}
+      onClick={() => openDialog("register", dialog.data.id)}
+    >
+      הרשמה מהירה
+    </CtaButton>
+  ) : (
+    <CtaButton
+      color="primary"
+      startIcon={<EventIcon />}
+      onClick={() => {
+        closeDialog();
+        setOpenIdentify(true);
+      }}
+    >
+      התחברות להרשמה
+    </CtaButton>
+  )}
+
+  <CtaButton color="secondary" onClick={closeDialog}>
+    סגור
+  </CtaButton>
+</DialogActions>
+
+
       </StyledDialog>
 
       {/* 6. Register confirmation */}
@@ -339,47 +404,69 @@ export default function LandingDialogs(props) {
         TransitionComponent={Grow}
       >
         <DialogTitle sx={{ color: theme.palette.primary.main }}>
-          מידע על הפלייר
+         
         </DialogTitle>
         <DialogContent>
-          <Box
-            display="flex"
-            justifyContent="center"
-            mb={2}
-            sx={{ flexWrap: "wrap", gap: 2 }}
-          >
-            <CtaButton
-              color="primary"
-              startIcon={<EventIcon />}
-              onClick={() => {
-                closeDialog();
-                openDialog("register", dialog.data.id);
-              }}
-            >
-              הרשמה מהירה
-            </CtaButton>
-            <CtaButton
-              color="default"
-              onClick={() => {
-                closeDialog();
-                openDialog("activity-details", activities.find((a) => a.id === dialog.data.activityId));
-              }}
-            >
-              לפרטים מלאים
-            </CtaButton>
-          </Box>
-          <Box
-            component="img"
-            src={dialog.data?.fileUrl}
-            alt={dialog.data?.name || "פלייר"}
-            sx={{
-              width: "100%",
-              height: "auto",
-              objectFit: "contain",
-              borderRadius: 2,
-            }}
-          />
-        </DialogContent>
+  {!dialog.data?.fromMyActivities && (
+    <Box
+      display="flex"
+      justifyContent="center"
+      mb={2}
+      sx={{ flexWrap: "wrap", gap: 2 }}
+    >
+      <CtaButton
+        color="primary"
+        startIcon={<EventIcon />}
+        onClick={() => {
+          const activityId = dialog.data.activityId;
+          if (!activityId) {
+            alert("הפלייר הזה אינו מקושר לפעילות");
+            return;
+          }
+
+          closeDialog();
+
+          if (!userProfile?.phone) {
+            setOpenIdentify(true);
+            return;
+          }
+
+          openDialog("register", activityId);
+        }}
+      >
+        הרשמה מהירה
+      </CtaButton>
+
+      <CtaButton
+        color="default"
+        onClick={() => {
+          const act = activities.find((a) => a.id === dialog.data.activityId);
+          if (act) {
+            closeDialog();
+            openDialog("activity-details", act);
+          } else {
+            alert("לא נמצאה פעילות מתאימה לפלייר זה");
+          }
+        }}
+      >
+        לפרטים מלאים
+      </CtaButton>
+    </Box>
+  )}
+
+  <Box
+    component="img"
+    src={dialog.data?.fileUrl}
+    alt={dialog.data?.name || "פלייר"}
+    sx={{
+      width: "100%",
+      height: "auto",
+      objectFit: "contain",
+      borderRadius: 2,
+    }}
+  />
+</DialogContent>
+
         <DialogActions>
           <CtaButton color="secondary" onClick={closeDialog}>
             סגור

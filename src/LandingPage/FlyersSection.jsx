@@ -14,6 +14,8 @@ import {
   IconButton
 } from '@mui/material';
 import SectionTitle from './SectionTitle';
+import CtaButton from "./CtaButton";
+
 import EventIcon from '@mui/icons-material/Event';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -70,7 +72,7 @@ const FlyerCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-export default function FlyersSection({ flyers, openDialog }) {
+export default function FlyersSection({ flyers, activities, openDialog }) {
   const theme = useTheme();
 
   const settings = {
@@ -113,18 +115,27 @@ export default function FlyersSection({ flyers, openDialog }) {
                         objectFit: 'cover',
                       }}
                     />
-                    <CardContent sx={{ p: 2 }}>
-                      <Typography variant="h6" noWrap>
-                        {f.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {new Date(f.date).toLocaleDateString('he-IL', {
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric',
-                        })}
-                      </Typography>
-                    </CardContent>
+                 <CardContent sx={{ p: 2 }}>
+  <Typography variant="h6" noWrap>
+  {
+    activities.find((a) => a.id === f.activityId)?.name
+    || f.name  // fallback לשם הפלייר אם לא נמצאה פעילות
+  }
+</Typography>
+
+  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+    {f.activityDate
+      ? new Date(f.activityDate).toLocaleDateString("he-IL", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : "ללא תאריך"}
+  </Typography>
+
+</CardContent>
+
+
                   </CardActionArea>
                 </FlyerCard>
               </Box>
