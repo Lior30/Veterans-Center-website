@@ -1,6 +1,21 @@
+// src/components/Home.jsx
 import { useState, useEffect } from "react";
-import { Box, Typography, Button, Container, Stack } from "@mui/material";
+import {
+  Typography,
+  Button,
+  Container,
+  Grid,
+  Card,
+  CardActionArea,
+  CardContent,
+  Box,
+} from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
+import EventIcon from "@mui/icons-material/Event";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import PollIcon from "@mui/icons-material/Poll";
+import MessageIcon from "@mui/icons-material/Message";
+import GroupIcon from "@mui/icons-material/Group";
 import MessageService from "../services/MessageService";
 
 export default function Home() {
@@ -13,59 +28,76 @@ export default function Home() {
     );
   }, []);
 
-  // Duplicate for seamless scroll
+  // Duplicate for seamless scroll (still available if needed)
   const tickerMessages = [...messages, ...messages];
+
+  const adminItems = [
+    {
+      label: "ניהול פעילויות",
+      icon: <EventIcon fontSize="large" />,
+      to: "/activities",
+    },
+    {
+      label: "ניהול פלאיירים",
+      icon: <LocalOfferIcon fontSize="large" />,
+      to: "/flyers",
+    },
+    {
+      label: "ניהול סקרים",
+      icon: <PollIcon fontSize="large" />,
+      to: "/surveys",
+    },
+    {
+      label: "ניהול הודעות",
+      icon: <MessageIcon fontSize="large" />,
+      to: "/messages",
+    },
+    {
+      label: "ניהול משתמשים",
+      icon: <GroupIcon fontSize="large" />,
+      to: "/manage-users",
+    },
+  ];
 
   return (
     <>
-
-      {/* Admin button grid */}
       <Container sx={{ pt: 4 }}>
-        <Typography variant="h4" align="center" gutterBottom>
+        <Typography
+          variant="h4"
+          align="center"
+          gutterBottom
+          sx={{ mt: -2 }}  // זז כלפי מעלה ב־theme.spacing(2)=16px
+        >
           דף ניהול מרכז ותיקים
         </Typography>
-        <Stack spacing={2} sx={{ maxWidth: 400, mx: "auto" }}>
-          <Button
-            component={RouterLink}
-            to="/activities"
-            variant="outlined"
-            fullWidth
-          >
-            ניהול פעילויות
-          </Button>
-          <Button
-            component={RouterLink}
-            to="/flyers"
-            variant="outlined"
-            fullWidth
-          >
-            ניהול פלאיירים
-          </Button>
-          <Button
-            component={RouterLink}
-            to="/surveys"
-            variant="outlined"
-            fullWidth
-          >
-            ניהול סקרים
-          </Button>
-          <Button
-            component={RouterLink}
-            to="/messages"
-            variant="outlined"
-            fullWidth
-          >
-            ניהול הודעות
-          </Button>
-          <Button
-            component={RouterLink}
-            to="/manage-users"
-            variant="outlined"
-            fullWidth
-          >
-            ניהול משתמשים
-          </Button>
-        </Stack>
+
+        <Grid container spacing={4} justifyContent="center" sx={{ mt: 7 }}>
+          {adminItems.map((it) => (
+            <Grid item key={it.label} xs={12} sm={6} md={4} lg={3}>
+              <Card
+                sx={{
+                  borderRadius: 2,
+                  boxShadow: 3,
+                  width: 200,      // רוחב קבוע של 200px
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: 6,
+                  },
+                }}
+              >
+                <CardActionArea component={RouterLink} to={it.to}>
+                  <CardContent sx={{ textAlign: "center", py: 7 }}>
+                    {it.icon}
+                    <Typography variant="h6" sx={{ mt: 1 }}>
+                      {it.label}
+                    </Typography>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       </Container>
     </>
   );
