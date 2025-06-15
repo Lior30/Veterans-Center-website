@@ -9,33 +9,22 @@ import {
   Box,
   Container,
   Stack,
-  ToggleButton,
-  ToggleButtonGroup,
   useMediaQuery,
   useTheme,
   styled,
+  IconButton,
 } from "@mui/material";
+import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import EventIcon from "@mui/icons-material/Event";
 import SectionTitle from "./SectionTitle";
 import ActivityService from "../services/ActivityService";
 import usePublicHolidays from "../hooks/usePublicHolidays";
+import CtaButton from "./CtaButton";
 
-const NavToggle = styled(ToggleButton)(({ theme }) => ({
-  textTransform: "none",
-  borderRadius: theme.shape.borderRadius * 2,
-  borderColor: theme.palette.primary.main,
-  color: theme.palette.primary.main,
-  "&.Mui-selected": {
-    backgroundColor: theme.palette.primary.main,
-    color: "#fff",
-  },
-  fontWeight: 500,
-  minWidth: 100,
-  [theme.breakpoints.down("sm")]: {
-    minWidth: 80,
-    fontSize: "0.75rem",
-    padding: theme.spacing(0.5, 1),
-  },
+const NavWrapper = styled(Box)(({ theme }) => ({
+  position: "relative",
+  marginBottom: theme.spacing(2),
 }));
 
 export default function CalendarPreview({
@@ -55,22 +44,18 @@ export default function CalendarPreview({
 
   const tags = useMemo(() => {
     const s = new Set();
-    activities.forEach(a => (a.tags || []).forEach(t => s.add(t)));
+    activities.forEach((a) => (a.tags || []).forEach((t) => s.add(t)));
     return ["ALL", ...Array.from(s)];
   }, [activities]);
 
   const events = useMemo(() => {
     const actEv = activities
-      .filter(a => tag === "ALL" || (a.tags || []).includes(tag))
-      .map(a => ({
+      .filter((a) => tag === "ALL" || (a.tags || []).includes(tag))
+      .map((a) => ({
         id: a.id,
         title: a.name,
-        start: a.recurring
-          ? undefined
-          : `${a.date}T${a.startTime}`,
-        end: a.recurring
-          ? undefined
-          : `${a.date}T${a.endTime}`,
+        start: a.recurring ? undefined : `${a.date}T${a.startTime}`,
+        end: a.recurring ? undefined : `${a.date}T${a.endTime}`,
         daysOfWeek: a.recurring ? a.weekdays : undefined,
         startTime: a.recurring ? a.startTime : undefined,
         endTime: a.recurring ? a.endTime : undefined,
@@ -79,7 +64,7 @@ export default function CalendarPreview({
         textColor: "#000",
         extendedProps: { activityId: a.id },
       }));
-    const holEv = holidays.map(h => ({
+    const holEv = holidays.map((h) => ({
       id: `hol-${h.date}`,
       title: h.title || h.name,
       start: h.date,
@@ -91,7 +76,7 @@ export default function CalendarPreview({
     return [...actEv, ...holEv];
   }, [activities, holidays, tag, theme.palette]);
 
-  const handleEventClick = info => {
+  const handleEventClick = (info) => {
     const props = info.event.extendedProps;
     if (props.holiday) return;
     if (!userProfile?.phone) {
@@ -101,53 +86,100 @@ export default function CalendarPreview({
     openDialog("register", props.activityId);
   };
 
+  const goPrev = () => calendarRef.current.getApi().prev();
+  const goNext = () => calendarRef.current.getApi().next();
+
   return (
     <Box component="section" sx={{ py: { xs: 4, sm: 6 }, backgroundColor: "#fff" }}>
       <Container maxWidth="lg">
         <SectionTitle icon={<EventIcon />} title="לוח פעילויות" />
 
-        {/* View Switch */}
+        {/* שבועי / חודשי */}
+        <Stack
+          direction="row"
+          spacing={2}
+          justifyContent="center"
+          sx={{ mb: 2, flexWrap: "wrap" }}
+        >
+          <CtaButton
+            color={view === "timeGridWeek" ? "primary" : "default"}
+            onClick={() => {
+              setView("timeGridWeek");
+              calendarRef.current.getApi().changeView("timeGridWeek");
+            }}
+          >
+            שבועי
+          </CtaButton>
+          <CtaButton
+            color={view === "dayGridMonth" ? "primary" : "default"}
+            onClick={() => {
+              setView("dayGridMonth");
+              calendarRef.current.getApi().changeView("dayGridMonth");
+            }}
+          >
+            חודשי
+          </CtaButton>
+        </Stack>
+
+        {/* חיצים קודמים/הבא */}
+        
+         <NavWrapper>
+  <IconButton
+    onClick={goPrev}
+    sx={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      transform: "translate(-50%, -50%)",
+      backgroundColor: theme.palette.primary.main,
+      color: "#fff",
+      "&:hover": { backgroundColor: theme.palette.primary.dark },
+    }}
+  >
+    <ArrowBackIosIcon />
+  </IconButton>
+  <IconButton
+    onClick={goNext}
+    sx={{
+      position: "absolute",
+      top: 0,
+      right: 0,
+      transform: "translate(50%, -50%)",
+      backgroundColor: theme.palette.primary.main,
+      color: "#fff",
+      "&:hover": { backgroundColor: theme.palette.primary.dark },
+    }}
+  >
+    <ArrowForwardIosIcon />
+  </IconButton>
+</NavWrapper>
+
+      
+
+        {/* סינון תגיות */}
         <Stack
           direction="row"
           spacing={1}
           justifyContent="center"
           sx={{ mb: 3, flexWrap: "wrap" }}
         >
-          <ToggleButtonGroup
-            value={view}
-            exclusive
-            onChange={(_, v) => {
-              if (v) {
-                setView(v);
-                calendarRef.current.getApi().changeView(v);
-              }
-            }}
-          >
-            <NavToggle value="timeGridWeek">שבועי</NavToggle>
-            <NavToggle value="dayGridMonth">חודשי</NavToggle>
-          </ToggleButtonGroup>
+          {tags.map((t, i) => {
+            const colors = ["primary", "secondary", "success", "warning", "error"];
+            const clr = colors[i % colors.length];
+            return (
+              <CtaButton
+                key={t}
+                color={tag === t ? clr : "default"}
+                size="small"
+                onClick={() => setTag(t)}
+              >
+                {t === "ALL" ? "הכל" : t}
+              </CtaButton>
+            );
+          })}
         </Stack>
 
-        {/* Tag Filter */}
-        <Stack
-          direction="row"
-          spacing={1}
-          justifyContent="center"
-          sx={{ mb: 4, flexWrap: "wrap" }}
-        >
-          {tags.map(t => (
-            <NavToggle
-              key={t}
-              value={t}
-              selected={tag === t}
-              onClick={() => setTag(t)}
-            >
-              {t === "ALL" ? "הכל" : t}
-            </NavToggle>
-          ))}
-        </Stack>
-
-        {/* Calendar */}
+        {/* הפידג'ט של לוח */}
         <Box
           sx={{
             borderRadius: 2,
@@ -170,8 +202,16 @@ export default function CalendarPreview({
             slotMaxTime="22:00:00"
             slotDuration="01:00:00"
             slotLabelInterval="01:00"
-            eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
-            slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
+            eventTimeFormat={{
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            }}
+            slotLabelFormat={{
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            }}
           />
         </Box>
       </Container>
