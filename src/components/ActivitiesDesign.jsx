@@ -1,6 +1,7 @@
 // src/components/ActivitiesDesign.jsx
 import { Autocomplete } from "@mui/material";
 import React, { useState, useEffect, useMemo } from "react";
+
 import {
   Container,
   Typography,
@@ -33,6 +34,9 @@ import heLocale from "@fullcalendar/core/locales/he";
 
 import ActivityService from "../services/ActivityService";
 import UserService from "../services/UserService";
+import { db } from "../firebase";
+import { doc, updateDoc, arrayRemove, arrayUnion } from "firebase/firestore";
+
 
 const WEEKDAYS = [
   { label: "א׳", value: 1 },
@@ -111,6 +115,14 @@ export default function ActivitiesDesign({
 
   const [selAct, setSelAct] = useState(null);
   const [users, setUsers] = useState({});
+  const [registrantsFilter, setRegistrantsFilter] = useState("");
+  // סינון המשתתפים לפי שדה החיפוש
+const filteredParticipants = (selAct?.participants || []).filter((p) => {
+  const label = (users[p.phone] || p.phone).toLowerCase();
+  return label.includes(registrantsFilter.trim().toLowerCase());
+});
+
+
 
   useEffect(() => {
     if (!selAct) return;
@@ -125,21 +137,50 @@ export default function ActivitiesDesign({
     setUsers(map);
   }, [selAct]);
 
-  const kickParticipant = async (phone) => {
-    // find the full object in selAct.participants
-    const participant = selAct.participants.find((p) => p.phone === phone);
-    if (!participant) return;
+const kickParticipant = async (phone) => {
+  // מוצא את האובייקט המלא לפי טלפון
+  const participant = selAct.participants.find((p) => p.phone === phone);
+  if (!participant) return;
 
-    await ActivityService.removeUser(selAct.id, participant);
-    setSelAct((prev) =>
-      prev
-        ? {
-            ...prev,
-            participants: prev.participants.filter((p) => p.phone !== phone),
-          }
-        : null
-    );
-  };
+  // עדכון ב־Firestore: הסרת המשתמש ממערך participants
+  const actRef = doc(db, "activities", selAct.id);
+  await updateDoc(actRef, {
+    participants: arrayRemove(participant)
+  });
+
+  // עדכון מצב מקומי כדי לרענן את התצוגה
+  setSelAct((prev) =>
+    prev
+      ? {
+          ...prev,
+          participants: prev.participants.filter((p) => p.phone !== phone)
+        }
+      : null
+  );
+};
+
+const togglePaid = async (phone) => {
+  const participant = selAct.participants.find((p) => p.phone === phone);
+  if (!participant) return;
+  const updated = { ...participant, paid: !participant.paid };
+  const actRef = doc(db, "activities", selAct.id);
+  // הסרה של האובייקט הישן
+  await updateDoc(actRef, { participants: arrayRemove(participant) });
+  // הוספה של האובייקט המעודכן עם paid משודרג
+  await updateDoc(actRef, { participants: arrayUnion(updated) });
+  // עדכון מצב מקומי
+  setSelAct((prev) =>
+    prev
+      ? {
+          ...prev,
+          participants: prev.participants.map((p) =>
+            p.phone === phone ? updated : p
+          ),
+        }
+      : null
+  );
+};
+
 
   // מסנכרן פעילויות לפי תגית, ולפי מחרוזת החיפוש בשדה שם
   const filteredList = useMemo(() => {
@@ -188,7 +229,7 @@ export default function ActivitiesDesign({
     {
       field: "date",
       headerName: "תאריך",
-      width: 100,
+      width: 120,
       headerAlign: "center",
       align: "right",
     },
@@ -307,9 +348,7 @@ export default function ActivitiesDesign({
         <Typography variant="h4" sx={{ textAlign: "right", width: "100%" }}>
           פעילויות
         </Typography>
-        <Button variant="outlined" onClick={() => (window.location.href = "/")}>
-          בית
-        </Button>
+
       </Box>
 
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
@@ -799,37 +838,93 @@ export default function ActivitiesDesign({
       </Dialog>
 
       {/* דיאלוג נרשמים */}
-      <Dialog
-        open={Boolean(selAct)}
-        onClose={() => setSelAct(null)}
+    + <Dialog
+   open={Boolean(selAct)}
+   onClose={() => {
+     setSelAct(null);
+     setRegistrantsFilter("");
+   }}
         fullWidth
         maxWidth="sm"
       >
         <DialogTitle sx={{ textAlign: "right" }}>
           נרשמים – {selAct?.name}
         </DialogTitle>
-        <DialogContent dividers sx={{ textAlign: "right" }}>
-          {(selAct?.registrants || []).length === 0 && "אין נרשמים כרגע."}
-          {(selAct?.registrants || []).map((uid) => (
-            <Stack
-              key={uid}
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
-              sx={{ mb: 1 }}
-            >
-              <span style={{ textAlign: "right", flex: 1 }}>
-                {users[uid] || uid}
-              </span>
-              <IconButton onClick={() => kickParticipant(uid)}>
-                <DeleteIcon />
-              </IconButton>
-            </Stack>
-          ))}
-        </DialogContent>
-        <DialogActions sx={{ justifyContent: "flex-end" }}>
-          <Button onClick={() => setSelAct(null)}>סגור</Button>
-        </DialogActions>
+<DialogContent dividers sx={{ textAlign: "right" }}>
+  {/* 1. שדה חיפוש נרשמים */}
+  {selAct?.participants?.length > 0 && (
+    <TextField
+      placeholder="חפש נרשם"
+      value={registrantsFilter}
+      onChange={(e) => setRegistrantsFilter(e.target.value)}
+      fullWidth
+      sx={{ mb: 2 }}
+      inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
+    />
+  )}
+
+  {/* 2. תצוגה של תוצאות החיפוש */}
+  {filteredParticipants.length > 0 ? (
+    <>
+      {/* 2a. כותרת עמודת ה־Checkbox “שולם?” רק בפעילויות בתשלום */}
+      {selAct?.price > 0 && (
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ mb: 1 }}
+        >
+          <span style={{ flex: 1 }} />
+          <Typography sx={{ fontWeight: "bold", fontSize: 15 }}>
+            שולם?
+          </Typography>
+          <span style={{ width: 60 }} />
+        </Stack>
+      )}
+
+      {/* 2b. רשימת המשתתפים המסוננים */}
+      {filteredParticipants.map((p) => (
+        <Stack
+          key={p.phone}
+          direction="row"
+          alignItems="center"
+          justifyContent="flex-end"
+          spacing={1}
+          sx={{ mb: 1 }}
+        >
+          <span style={{ textAlign: "right", flex: 1 }}>
+            {users[p.phone] || p.phone}
+          </span>
+          {selAct.price > 0 && (
+            <Checkbox
+              checked={p.paid || false}
+              onChange={() => togglePaid(p.phone)}
+              inputProps={{ "aria-label": "שולם?" }}
+            />
+          )}
+          <IconButton onClick={() => kickParticipant(p.phone)}>
+            <DeleteIcon />
+          </IconButton>
+        </Stack>
+      ))}
+    </>
+  ) : (
+    /* 3. אין תוצאות */
+    "אין תוצאות"
+  )}
+</DialogContent>
+
+    <DialogActions sx={{ justifyContent: "flex-end" }}>
+  <Button
+    onClick={() => {
+      setSelAct(null);
+      setRegistrantsFilter("");
+    }}
+  >
+    סגור
+  </Button>
+</DialogActions>
+
       </Dialog>
     </Container>
   );
