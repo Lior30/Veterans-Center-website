@@ -249,14 +249,14 @@ const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "s
       <FlyersSection flyers={flyers} openDialog={openDialog} />
     </Box>
 
-    {/* Messages */}
-    <Box ref={messagesRef}>
-      <MessagesSection
-        messages={messages}
-        justIdentified={justIdentified}
-        onReadMore={openDialog}
-      />
-    </Box>
+   {/* Messages */}
+<Box ref={messagesRef}>
+  <MessagesSection
+    messages={messages}
+    justIdentified={justIdentified}
+    openDialog={openDialog}
+  />
+</Box>
 
     {/* Calendar (Activities) */}
     <Box ref={calendarRef}>

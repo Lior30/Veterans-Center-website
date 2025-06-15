@@ -5,9 +5,12 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import theme from "./theme";             // וודאי שהנתיב נכון
 
 import NavBar from "./components/NavBar.jsx";
-import LandingPage from "./components/LandingPage.jsx";
+import LandingPage from "./LandingPage/LandingPage.jsx";
 import IdentifyPage from "./components/IdentificationPage.jsx";
 import Home from "./components/Home.jsx";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+
 
 import ActivitiesContainer from "./components/ActivitiesContainer.jsx";
 import FlyerManager from "./components/FlyerManager.jsx";
