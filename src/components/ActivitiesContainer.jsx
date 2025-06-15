@@ -11,7 +11,7 @@ const initialForm = {
   date: "",
   startTime: "",
   endTime: "",
-  capacity: 0,
+  capacity: "",
   flyerId: "",
   recurring: false,
   weekdays: [],     // 0=Sun … 6=Sat
@@ -81,8 +81,8 @@ export default function ActivitiesContainer() {
       return;
     }
 
-     if (Number(form.capacity) < 0) {
-      alert("הקיבולת חייבת להיות 0 או יותר");
+     if (Number(form.capacity) < 1) {
+      alert("הקיבולת חייבת להיות 1 או יותר");
       return;
     }
     if (Number(form.price) < 0) {

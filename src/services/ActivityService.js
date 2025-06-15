@@ -39,6 +39,9 @@ export default class ActivityService {
             weekdays:     data.weekdays     || [],
             participants: data.participants || [],
             tags:         data.tags         || [],
+            registrants:  Array.isArray(data.participants)
+                     ? data.participants.map(p => p.phone)
+                          : [],
           };
         })
       ),
