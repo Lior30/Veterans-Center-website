@@ -29,11 +29,10 @@ const HeroWrapper = styled("section")(({ theme }) => ({
   direction: "rtl",
   backgroundSize: "cover",
   backgroundPosition: "center",
-  [theme.breakpoints.up("sm")]: {
-    height: "600px",
-  },
+  minHeight: "100vh",            // תופס 100% מגובה החלון
   [theme.breakpoints.down("sm")]: {
-    height: "400px",
+    minHeight: "80vh",           // בנייד 80% מגובה החלון
+    paddingTop: "64px"
   },
 }));
 
@@ -51,6 +50,8 @@ const HeroContent = styled(Container)(({ theme }) => ({
   flexDirection: "column",
   justifyContent: "center",
   alignItems: "flex-start",
+  paddingTop: theme.spacing(8),
+  paddingBottom: theme.spacing(8),
 }));
 
 export default function HeroSection({
@@ -72,12 +73,11 @@ export default function HeroSection({
             component="img"
             src={Logo}
             alt="לוגו המרכז"
-            sx={{ height: { xs: 32, sm: 48 }, cursor: "pointer" }}
+            sx={{ height: { xs: 36, sm: 56 }, cursor: "pointer" }}
             onClick={() => navigate("/")}
           />
-
           <Box>
-            <IconButton color="inherit" onClick={() => window.open("https://www.facebook.com/share/19XnwdCFnz/?mibextid=wwXIfr", "_blank")}>
+            <IconButton color="inherit" onClick={() => window.open("https://www.facebook.com", "_blank")}>
               <FacebookIcon />
             </IconButton>
             <IconButton color="inherit" onClick={onOpenInfo}>
@@ -90,10 +90,10 @@ export default function HeroSection({
         </Toolbar>
       </AppBar>
 
-      <HeroWrapper sx={{ backgroundImage: `url('/image1.png')` }}>
+      <HeroWrapper sx={{ backgroundImage: `url('/image1.png')`, width: "100vw", ml: "calc(-50vw + 50%)" }}>
         <Overlay />
 
-        <HeroContent maxWidth="lg">
+        <HeroContent maxWidth={false} disableGutters>
           <Typography
             variant={isMobile ? "h4" : "h2"}
             component="h1"
@@ -117,7 +117,7 @@ export default function HeroSection({
             variant="body1"
             paragraph
             sx={{
-              maxWidth: 500,
+              maxWidth: 600,
               fontSize: isMobile ? "0.9rem" : "1rem",
               lineHeight: 1.6,
             }}
@@ -139,6 +139,7 @@ export default function HeroSection({
               target="_blank"
               rel="noopener noreferrer"
               startIcon={<WhatsAppIcon />}
+
             >
               צור קשר בוואטסאפ
             </CtaButton>

@@ -2,41 +2,81 @@
 import { createTheme } from "@mui/material/styles";
 
 const theme = createTheme({
+  direction: "rtl",
   palette: {
     primary: {
-      light: "#C29DD1",
-      main:  "#7B1FA2",  // סגול כהה
-      dark:  "#4A148C",
-      contrastText: "#fff",
+      light: "#B39DDB",
+      main:  "#7E57C2",
+      dark:  "#5E35B1",
+      contrastText: "#FFFFFF",
     },
     secondary: {
-      light: "#FFE082",
-      main:  "#FFD54F",  // צהוב־כתום
-      dark:  "#FFA000",
-      contrastText: "#000",
+      light: "#FFCC80",
+      main:  "#FFB74D",
+      dark:  "#F57C00",
+      contrastText: "#000000",
     },
     tertiary: {
-      light: "#D1C4E9",
-      main:  "#9575CD",  // סגול בהיר
-      dark:  "#7E57C2",
-      contrastText: "#fff",
+      light: "#E1BEE7",
+      main:  "#CE93D8",
+      dark:  "#AB47BC",
+      contrastText: "#FFFFFF",
+    },
+    info: {
+      main: "#4FC3F7",
+      contrastText: "#000000",
     },
     success: {
-      main: "#81C784",   // ירוק
-      contrastText: "#fff",
+      main: "#81C784",
+      contrastText: "#FFFFFF",
     },
     warning: {
-      main: "#FFB74D",   // כתום
-      contrastText: "#000",
+      main: "#FFD54F",
+      contrastText: "#000000",
     },
     error: {
-      main: "#E57373",   // אדום
-      contrastText: "#fff",
+      main: "#E57373",
+      contrastText: "#FFFFFF",
     },
-    background: { default: "#F3E5F5", paper: "#fff" },
-    text:       { primary: "#2E1A47", secondary: "#5E3B76" },
+    background: {
+      default: "#F9F4FF",
+      paper:   "#FFFFFF",
+    },
+    text: {
+      primary:   "#2E1A47",
+      secondary: "#5E3B76",
+    },
   },
-  // ... typography, components וכו׳
+  typography: {
+    fontFamily: `'Secular One', sans-serif`,
+    // כל הטקסט לא בולד
+    h1: { fontWeight: 400, fontSize: "3rem", lineHeight: 1.3 },
+    h2: { fontWeight: 400, fontSize: "2.5rem", lineHeight: 1.3 },
+    h3: { fontWeight: 400, fontSize: "2.2rem", lineHeight: 1.3 },
+    h4: { fontWeight: 400, fontSize: "1.8rem" },
+    h5: { fontWeight: 400, fontSize: "1.5rem" },
+    h6: { fontWeight: 400, fontSize: "1.3rem" },
+    body1: { fontSize: "1.2rem", lineHeight: 1.7, fontWeight: 400 },
+    body2: { fontSize: "1.1rem", lineHeight: 1.6, fontWeight: 400 },
+    button: { fontSize: "1.1rem", textTransform: "none", fontWeight: 400 },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          padding: "8px 24px",
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
+  },
 });
 
 export default theme;
