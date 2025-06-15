@@ -2,7 +2,6 @@
 import { styled, Button } from "@mui/material";
 
 const CtaButton = styled(Button)(({ theme, color = "primary" }) => {
-  // determine palette entry; fallback to primary if undefined
   const palette = theme.palette[color] || theme.palette.primary;
   return {
     textTransform: "none",
@@ -15,6 +14,11 @@ const CtaButton = styled(Button)(({ theme, color = "primary" }) => {
       backgroundColor: palette.dark || palette.main,
       boxShadow: "0px 6px 14px rgba(0,0,0,0.15)",
     },
+    // רווח בין startIcon לטקסט
+    "& .MuiButton-startIcon": {
+      marginLeft: theme.spacing(1),
+    },
+    // רווח בין endIcon לטקסט (במידה ויש)
     "& .MuiButton-endIcon": {
       marginLeft: theme.spacing(1),
     },

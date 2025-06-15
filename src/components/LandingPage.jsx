@@ -35,6 +35,8 @@ import CalendarPreview from "./CalendarPreview";
 import SurveySection from "./SurveySection";
 import LandingDialogs from "./LandingDialogs";
 import FooterSection from "./FooterSection";
+import LandingNavBar from "./LandingNavBar";
+
 
 const HeroSection = ({ children }) => {
   const theme = useTheme();
@@ -89,6 +91,10 @@ export default function LandingPage() {
 
   const auth = getAuth();
   const calendarRef = useRef();
+  const flyersRef     = useRef();
+const messagesRef   = useRef();
+const surveysRef    = useRef();
+
 
   // fetch data once
   useEffect(() => {
@@ -127,7 +133,9 @@ export default function LandingPage() {
   const scrollToCalendar = () => {
     calendarRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-
+const scrollToFlyers   = () => flyersRef.current?.scrollIntoView({ behavior: "smooth" });
+const scrollToMessages = () => messagesRef.current?.scrollIntoView({ behavior: "smooth" });
+const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "smooth" });
   const openDialog = (type, data) => setDialog({ type, data });
   const closeDialog = () => setDialog({ type: "", data: null });
 
@@ -158,164 +166,148 @@ export default function LandingPage() {
     }
   };
 
-  return (
-    <Box sx={{ overflowX: "hidden", backgroundColor: theme.palette.background.default }}>
-      <AppBar
-        position="static"
-        elevation={0}
-        sx={{ backgroundColor: theme.palette.background.paper }}
-      >
-        <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Box
-            component="img"
-            src="/logo.jpeg"
-            alt="לוגו"
-            sx={{ height: { xs: 20, sm: 50 }, cursor: "pointer" }}
-            onClick={() => navigate("/")}
-          />
-          <Box>
-            <IconButton
-              color="inherit"
-              component="a"
-              href="https://www.facebook.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{ color: theme.palette.text.primary }}
-            >
-              <FacebookIcon />
-            </IconButton>
-            <IconButton
-              color="inherit"
-              onClick={() => setInfoOpen(true)}
-              sx={{ color: theme.palette.text.primary }}
-            >
-              <InfoIcon />
-            </IconButton>
-            <IconButton
-              color="inherit"
-              onClick={scrollToCalendar}
-              sx={{ color: theme.palette.text.primary }}
-            >
-              <EventIcon />
-            </IconButton>
-          </Box>
-        </Toolbar>
-      </AppBar>
+ return (
+  <Box sx={{ overflowX: "hidden", backgroundColor: theme.palette.background.default }}>
+    {/* Navigation Bar */}
+    <LandingNavBar
+      onScrollToActivities={scrollToCalendar}
+      onScrollToFlyers={scrollToFlyers}
+      onScrollToSurveys={scrollToSurveys}
+      onScrollToMessages={scrollToMessages}
+    />
 
-      {/* Hero */}
-      <HeroSection>
-        <Grid container spacing={4} alignItems="center">
-          <Grid item xs={12} md={6}>
+    {/* Hero */}
+    <HeroSection>
+      <Grid container spacing={4} alignItems="center">
+        <Grid item xs={12} md={6}>
+          <Typography
+            variant={isMobile ? "h4" : "h3"}
+            sx={{
+              color: theme.palette.primary.contrastText,
+              fontWeight: 700,
+              mb: 2,
+            }}
+          >
+            מרכז ותיקים בית הכרם
+          </Typography>
+          {userProfile?.first_name && (
             <Typography
-              variant={isMobile ? "h4" : "h3"}
+              variant={isMobile ? "h5" : "h4"}
               sx={{
                 color: theme.palette.primary.contrastText,
                 fontWeight: 700,
                 mb: 2,
               }}
             >
-              מרכז ותיקים בית הכרם
+              שלום {userProfile.first_name}!
             </Typography>
-            {userProfile?.first_name && (
-              <Typography
-                sx={{
-                  color: theme.palette.primary.contrastText,
-                  fontWeight: 700,
-                  mb: 2,
-                  fontSize: { xs: "1.6rem", sm: "2rem" },
-                }}
-              >
-                שלום {userProfile.first_name}!
-              </Typography>
+          )}
+          <Typography
+            sx={{
+              color: theme.palette.primary.contrastText,
+              mb: 3,
+              fontSize: isMobile ? "0.9rem" : "1rem",
+              lineHeight: 1.6,
+            }}
+          >
+            ברוכים הבאים למועדון שמביא לכם פעילויות, הרצאות ורווחה בכל יום!
+          </Typography>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+            {!userProfile?.first_name && (
+              <CtaButton color="primary" onClick={() => setOpenIdentify(true)}>
+                הזדהות
+              </CtaButton>
             )}
-            <Typography
-              sx={{
-                color: theme.palette.primary.contrastText,
-                mb: 3,
-                fontSize: isMobile ? "0.9rem" : "1rem",
-              }}
+            <CtaButton
+              color="secondary"
+              component="a"
+              href="https://wa.me/0523705021"
+              startIcon={<WhatsAppIcon />}
             >
-              ברוכים הבאים למועדון שמביא לכם פעילויות, הרצאות ורווחה בכל יום!
-            </Typography>
-            <Box>
-              {!userProfile?.first_name && (
-                <CtaButton color="default" onClick={() => setOpenIdentify(true)}>
-                  הזדהות
-                </CtaButton>
-              )}
-              <CtaButton
-                color="secondary"
-                component="a"
-                href="https://wa.me/0523705021"
-              >
-                צור קשר בוואטסאפ
+              וואטסאפ
+            </CtaButton>
+            <CtaButton
+              color="info"
+              component="a"
+              href="tel:0523705021"
+              startIcon={<PhoneIcon />}
+            >
+              התקשר
+            </CtaButton>
+            {userProfile?.id && (
+              <CtaButton color="success" onClick={() => setOpenMyActivities(true)}>
+                הפעילויות שלי
               </CtaButton>
-              <CtaButton color="primary" component="a" href="tel:0523705021">
-                התקשר
-              </CtaButton>
-              {userProfile?.id && (
-                <CtaButton onClick={() => setOpenMyActivities(true)}>
-                  הפעילויות שלי
-                </CtaButton>
-              )}
-            </Box>
-          </Grid>
+            )}
+          </Box>
         </Grid>
-      </HeroSection>
+      </Grid>
+    </HeroSection>
 
-      {/* Sections */}
+    {/* Flyers */}
+    <Box ref={flyersRef}>
       <FlyersSection flyers={flyers} openDialog={openDialog} />
+    </Box>
+
+    {/* Messages */}
+    <Box ref={messagesRef}>
       <MessagesSection
         messages={messages}
         justIdentified={justIdentified}
         onReadMore={openDialog}
       />
-      <Box ref={calendarRef}>
-        <CalendarPreview
-          openDialog={openDialog}
-          userProfile={userProfile}
-          setOpenIdentify={setOpenIdentify}
-        />
-      </Box>
+    </Box>
+
+    {/* Calendar (Activities) */}
+    <Box ref={calendarRef}>
+      <CalendarPreview
+        openDialog={openDialog}
+        userProfile={userProfile}
+        setOpenIdentify={setOpenIdentify}
+      />
+    </Box>
+
+    {/* Surveys */}
+    <Box ref={surveysRef}>
       <SurveySection
         surveys={surveys}
         justIdentified={justIdentified}
         onFillSurvey={(id) => openDialog("survey", id)}
         onViewAllSurveys={() => openDialog("all-surveys")}
       />
-
-      {/* Dialogs & Footer */}
-      <LandingDialogs
-        infoOpen={infoOpen}
-        setInfoOpen={setInfoOpen}
-        cancelDialog={cancelDialog}
-        setCancelDialog={setCancelDialog}
-        confirmCancelRegistration={confirmCancelRegistration}
-        openMyActivities={openMyActivities}
-        setOpenMyActivities={setOpenMyActivities}
-        myActivities={myActivities}
-        dialog={dialog}
-        openDialog={openDialog}
-        closeDialog={closeDialog}
-        messages={messages}
-        activities={activities}
-        surveys={surveys}
-        userProfile={userProfile}
-        justIdentified={justIdentified}
-        openIdentify={openIdentify}
-        setOpenIdentify={setOpenIdentify}
-        openAdminSignIn={openAdminSignIn}
-        setOpenAdminSignIn={setOpenAdminSignIn}
-        handleIdentifySuccess={handleIdentifySuccess}
-      />
-      <FooterSection
-        onScrollTop={() =>
-          window.scrollTo({ top: 0, behavior: "smooth" })
-        }
-        onOpenInfo={() => setInfoOpen(true)}
-        onOpenIdentify={() => setOpenIdentify(true)}
-        onOpenAdmin={() => setOpenAdminSignIn(true)}
-      />
     </Box>
-  );
+
+    {/* Dialogs & Footer */}
+    <LandingDialogs
+      infoOpen={infoOpen}
+      setInfoOpen={setInfoOpen}
+      cancelDialog={cancelDialog}
+      setCancelDialog={setCancelDialog}
+      confirmCancelRegistration={confirmCancelRegistration}
+      openMyActivities={openMyActivities}
+      setOpenMyActivities={setOpenMyActivities}
+      myActivities={myActivities}
+      dialog={dialog}
+      openDialog={openDialog}
+      closeDialog={closeDialog}
+      messages={messages}
+      activities={activities}
+      surveys={surveys}
+      userProfile={userProfile}
+      justIdentified={justIdentified}
+      openIdentify={openIdentify}
+      setOpenIdentify={setOpenIdentify}
+      openAdminSignIn={openAdminSignIn}
+      setOpenAdminSignIn={setOpenAdminSignIn}
+      handleIdentifySuccess={handleIdentifySuccess}
+    />
+    <FooterSection
+      onScrollTop={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      onOpenInfo={() => setInfoOpen(true)}
+      onOpenIdentify={() => setOpenIdentify(true)}
+      onOpenAdmin={() => setOpenAdminSignIn(true)}
+    />
+  </Box>
+);
+
 }
