@@ -1,28 +1,29 @@
 import React, { useState, useRef } from "react";
-import BannerService from "../services/BannerService.js";   // ← שנה נתיב אם צריך
+import BannerService from "../services/BannerService.js"; // העלאה
 
-/* ───────────────── בקובץ אחד: טופס העלאה + רשימת תמונות ───────────────── */
-
-/* טופס העלאה */
+/* ───────────────── טופס העלאה ───────────────── */
 function BannerUploader({ onUpload }) {
   const [title, setTitle] = useState("");
   const [file,  setFile]  = useState(null);
   const [start, setStart] = useState("");
   const [end,   setEnd]   = useState("");
+  const [duration, setDuration] = useState(5);
   const dropRef = useRef();
 
-  /* Drag & Drop */
   const onFileChange = (e) => setFile(e.target.files[0]);
-  const onDrop   = (e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) setFile(f); };
-  const onDragOver = (e) => e.preventDefault();
+  const onDrop       = (e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) setFile(f); };
+  const onDragOver   = (e) => e.preventDefault();
 
   async function handleSubmit() {
     if (!title.trim() || !file) { alert("שם וקובץ חובה"); return; }
     if (end && start && end < start) { alert("תאריך סיום לפני תאריך התחלה"); return; }
 
     try {
-      await BannerService.uploadBanner({ title, file, link: "", start, end });
-      setTitle(""); setFile(null); setStart(""); setEnd("");
+      await BannerService.uploadBanner({
+        title, file, link: "", start, end, durationSec: Number(duration) || 5,
+      });
+      /* ניקוי */
+      setTitle(""); setFile(null); setStart(""); setEnd(""); setDuration(5);
       onUpload?.();
     } catch (err) { alert("העלאה נכשלה: " + err.code); }
   }
@@ -38,15 +39,23 @@ function BannerUploader({ onUpload }) {
                style={{ marginInlineStart: 10 }} />
       </label>
 
-      {/* תאריכים (לא חובה) */}
+      {/* תאריכים */}
       <div style={{ marginTop: 10 }}>
         <label>
           הצג החל מ-
           <input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
         </label>
-        <label style={{ marginInlineStart: 15 }}>
-          ועד (כולל)
-          <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+        &nbsp;ועד&nbsp;
+        <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+      </div>
+
+      {/* משך הצגה */}
+      <div style={{ marginTop: 10 }}>
+        <label>
+          משך הצגה (שניות):
+          <input type="number" min="1" value={duration}
+                 onChange={(e) => setDuration(e.target.value)}
+                 style={{ width: 70, marginInlineStart: 8 }} />
         </label>
       </div>
 
@@ -69,14 +78,16 @@ function BannerUploader({ onUpload }) {
   );
 }
 
-/* תצוגת הטבלה + הטופס */
-export default function HomepageImagesDesign({ banners, onUpload, onDelete }) {
+/* ───────────────── רשימת תמונות ───────────────── */
+export default function HomepageImagesDesign({
+  banners, onUpload, onDelete,
+  onDragStart, onDragEnter,
+  onDurationChange, onDurationBlur
+}) {
   return (
     <div style={{ maxWidth: 960, margin: "0 auto" }}>
-      {/* הטופס */}
       <BannerUploader onUpload={onUpload} />
 
-      {/* כותרת + רשימה */}
       <h3 style={{ textAlign: "center", marginTop: 40 }}>תמונות קיימות</h3>
       {banners.length === 0 && (
         <p style={{ textAlign: "center" }}>אין עדיין תמונות.</p>
@@ -84,31 +95,63 @@ export default function HomepageImagesDesign({ banners, onUpload, onDelete }) {
 
       <div
         style={{
-          display: "flex", flexWrap: "wrap", gap: 20,
-          justifyContent: "center"
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 24,
+          justifyContent: "center",
         }}
       >
-        {banners.map((b) => (
+        {banners.map((banner, idx) => (
           <div
-            key={b.id}
+            key={banner.id}
+            draggable
+            onDragStart={(e) => onDragStart(e, idx)}
+            onDragEnter={(e) => onDragEnter(e, idx)}
             style={{
-              border: "1px solid #ccc", borderRadius: 8,
-              padding: 12, width: 240, textAlign: "center"
+              width: 220,
+              border: "1px solid #e0e0e0",
+              borderRadius: 8,
+              padding: 8,
+              textAlign: "center",
+              background: "#fff",
+              cursor: "grab",
+              userSelect: "none",
             }}
           >
             <img
-              src={b.url}
-              alt={b.title}
-              style={{ width: "100%", height: 130, objectFit: "cover", borderRadius: 4 }}
+              src={banner.url}
+              alt={banner.title}
+              style={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 4 }}
             />
-            <p style={{ fontWeight: 600, margin: "8px 0 4px" }}>{b.title}</p>
+
+            <h4 style={{ margin: "8px 0 0" }}>{banner.title}</h4>
+            <small>סדר: {banner.order}</small>
+
+            {/* עריכת משך הצגה */}
+            <div style={{ marginTop: 6 }}>
+              <label style={{ fontSize: 12 }}>
+                משך (שניות):
+                <input
+                  type="number"
+                  min="1"
+                  value={banner.durationSec}
+                  onChange={(e) => onDurationChange(banner.id, Number(e.target.value))}
+                  onBlur={(e)   => onDurationBlur(banner.id, Number(e.target.value))}
+                  style={{ width: 60, marginInlineStart: 6 }}
+                />
+              </label>
+            </div>
 
             <button
-              onClick={() => onDelete(b.id)}
+              onClick={() => onDelete(banner)}
               style={{
-                marginTop: 10, padding: "4px 10px",
-                background: "#e53935", color: "white",
-                border: "none", borderRadius: 4, cursor: "pointer"
+                marginTop: 10,
+                padding: "4px 10px",
+                background: "#e53935",
+                color: "white",
+                border: "none",
+                borderRadius: 4,
+                cursor: "pointer",
               }}
             >
               🗑️ מחק
