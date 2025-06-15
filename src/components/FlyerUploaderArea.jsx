@@ -1,57 +1,58 @@
-// =========  FlyerUploaderArea.jsx  =========
+// =========  src/components/FlyerUploaderArea.jsx  =========
 import React, { useState, useRef } from "react";
 import FlyerService from "../services/FlyerService.js";
 
-export default function FlyerUploader({ onUpload }) {
-  const [name, setName]         = useState("");
-  const [file, setFile]         = useState(null);
-  const [startDate, setStart]   = useState(""); // yyyy-mm-dd
-  const [endDate, setEnd]       = useState("");
-  const dropRef = useRef();
+export default function FlyerUploaderArea({ onUpload }) {
+  const [name, setName]       = useState("");
+  const [file, setFile]       = useState(null);
+  const [startDate, setStart] = useState("");   // yyyy-mm-dd
+  const [endDate,   setEnd]   = useState("");
+  const dropRef               = useRef();
 
-  /* דרג-אנד-דרופ */
+  /* -------- Drag & Drop -------- */
   const handleFileChange = (e) => setFile(e.target.files[0]);
-  const handleDrop  = (e) => {
+
+  const handleDrop = (e) => {
     e.preventDefault();
     const f = e.dataTransfer.files[0];
     if (f) setFile(f);
+    dropRef.current.style.border = "2px dashed #bbb";
   };
-  const handleDragOver  = (e) => e.preventDefault();
-  const handleDragLeave = () => {};
 
-  /* ─── שליחה ─── */
+  const handleDrag = (e) => {
+    e.preventDefault();
+    dropRef.current.style.border = "2px dashed #673ab7";
+  };
+
+  /* -------- Submit -------- */
   const handleSubmit = async () => {
-    if (!name.trim() || !file) return alert("שם וקובץ חובה");
+    if (!name.trim() || !file)      return alert("שם וקובץ חובה");
     if (endDate && startDate && endDate < startDate)
       return alert("תאריך סיום חייב להיות אחרי תאריך התחלה");
 
     try {
-      await FlyerService.uploadFlyer(name, file, startDate, endDate);
-      setName("");
-      setFile(null);
-      setStart("");
-      setEnd("");
-      onUpload?.();           // רענון הרשימה שמגיעה מהורה
+      await FlyerService.uploadFlyer({ name, file, startDate, endDate });
+      // ניקוי טופס
+      setName(""); setFile(null); setStart(""); setEnd("");
+      onUpload?.();  // ריענון רשימה מה-parent
     } catch (err) {
-      alert("העלאה נכשלה: " + err.code);
+      console.error(err);
+      alert("העלאה נכשלה: " + (err.code || err.message));
     }
   };
 
   return (
-    <div style={{ margin: "2rem auto", textAlign: "center", maxWidth: 400 }}>
-      <h3>העלאת פלייאר חדש</h3>
-
+    <div style={{ direction: "rtl", maxWidth: 400 }}>
       <label>
         שם:
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          style={{ marginLeft: 10 }}
+          style={{ width: "100%", marginBottom: 10 }}
         />
       </label>
 
-      {/* תאריכים */}
       <div style={{ marginTop: 10 }}>
         <label>
           הצג החל מ-
@@ -71,22 +72,25 @@ export default function FlyerUploader({ onUpload }) {
         </label>
       </div>
 
-      {/* אזור קובץ */}
       <div
         ref={dropRef}
         onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
+        onDragOver={handleDrag}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          dropRef.current.style.border = "2px dashed #bbb";
+        }}
         style={{
-          marginTop: 20,
+          marginTop: 15,
           padding: 20,
-          border: "2px dashed #ccc",
+          textAlign: "center",
+          border: "2px dashed #bbb",
           borderRadius: 6,
           background: "#fafafa",
         }}
       >
         {file ? <p>קובץ: {file.name}</p> : <p>גרור קובץ לכאן או בחר ידנית</p>}
-        <input type="file" onChange={handleFileChange} />
+        <input type="file" accept="image/*,application/pdf" onChange={handleFileChange} />
       </div>
 
       <button onClick={handleSubmit} style={{ marginTop: 20 }}>
