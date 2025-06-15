@@ -1,69 +1,42 @@
+// src/theme.js
 import { createTheme } from "@mui/material/styles";
 
 const theme = createTheme({
-  direction: "rtl",
   palette: {
     primary: {
-      main: "#91278F",
-      light: "#d36dd5",
-      dark: "#6c1f6d",
+      light: "#C29DD1",
+      main:  "#7B1FA2",  // סגול כהה
+      dark:  "#4A148C",
+      contrastText: "#fff",
     },
     secondary: {
-      main: "#F57C00",
-      light: "#FFB74D",
-      dark: "#EF6C00",
+      light: "#FFE082",
+      main:  "#FFD54F",  // צהוב־כתום
+      dark:  "#FFA000",
+      contrastText: "#000",
     },
-    info: {
-      main: "#673AB7",
+    tertiary: {
+      light: "#D1C4E9",
+      main:  "#9575CD",  // סגול בהיר
+      dark:  "#7E57C2",
+      contrastText: "#fff",
     },
     success: {
-      main: "#4CAF50",
+      main: "#81C784",   // ירוק
+      contrastText: "#fff",
     },
     warning: {
-      main: "#FF9800",
+      main: "#FFB74D",   // כתום
+      contrastText: "#000",
     },
     error: {
-      main: "#E53935",
+      main: "#E57373",   // אדום
+      contrastText: "#fff",
     },
-    background: {
-      default: "#fdf5fc",
-      paper: "#ffffff",
-    },
-    text: {
-      primary: "#2c2c2c",
-      secondary: "#6d6d6d",
-    },
+    background: { default: "#F3E5F5", paper: "#fff" },
+    text:       { primary: "#2E1A47", secondary: "#5E3B76" },
   },
- typography: {
-  fontFamily: `'Secular One', sans-serif`,
-  h1: { fontWeight: 700, fontSize: "3rem", lineHeight: 1.3 },
-  h2: { fontWeight: 700, fontSize: "2.5rem", lineHeight: 1.3 },
-  h3: { fontWeight: 700, fontSize: "2.2rem", lineHeight: 1.3 },
-  h4: { fontWeight: 600, fontSize: "1.8rem" },
-  h5: { fontWeight: 600, fontSize: "1.5rem" },
-  h6: { fontWeight: 600, fontSize: "1.3rem" },
-  body1: { fontSize: "1.2rem", lineHeight: 1.7, fontWeight: 400 }, // טקסט רגיל, לא בולד
-  body2: { fontSize: "1.1rem", lineHeight: 1.6, fontWeight: 400 },
-  button: { fontSize: "1.1rem", textTransform: "none", fontWeight: 400 }, // כפתור כן בולט
-},
-
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-          padding: "8px 24px",
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 12,
-        },
-      },
-    },
-  },
+  // ... typography, components וכו׳
 });
 
 export default theme;
