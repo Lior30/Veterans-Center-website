@@ -117,11 +117,10 @@ export default function ActivitiesDesign({
 
     const map = {};
     // selAct.participants is now [{ name, phone }, …]
-    (selAct.participants || []).forEach((participant) => {
-      const { fullname, phone } = participant;
-      // key by phone so you can lookup easily
-      map[phone] = `${fullname} — ${phone}`;
-    });
+   // פשוט תשתמשי בפרופרטי name ולא fullname
+   (selAct.participants || []).forEach(({ name, phone }) => {
+     map[phone] = `${name} — ${phone}`;
+   });
 
     setUsers(map);
   }, [selAct]);
@@ -589,7 +588,7 @@ export default function ActivitiesDesign({
                 fontSize: "0.75rem",
               },
             }}
-            inputProps={{ dir: "rtl", style: { textAlign: "right" }, min:0 }}
+            inputProps={{ dir: "rtl", style: { textAlign: "right" }, min:1 }}
           />
 
           {/* שדה מחיר */}
