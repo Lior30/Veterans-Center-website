@@ -7,6 +7,7 @@ import {
   doc,
   deleteDoc,
   updateDoc,
+  Timestamp,
 } from "firebase/firestore";
 import {
   Container,
@@ -22,12 +23,36 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowUpwardIcon   from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon        from "@mui/icons-material/Delete";
+import EditIcon          from "@mui/icons-material/Edit";
 import { db } from "../firebase";
 import { Link } from "react-router-dom";
+
+/* ────────────────  Helpers  ──────────────── */
+// תאריך קריא בעברית
+const formatTimestamp = (ts) => {
+  if (!ts) return "";
+  if (typeof ts === "string") return new Date(ts).toLocaleDateString("he-IL");
+  if (typeof ts === "object" && ts.seconds !== undefined)
+    return new Date(ts.seconds * 1_000).toLocaleDateString("he-IL");
+  if (ts.toDate) return ts.toDate().toLocaleDateString("he-IL");
+  return new Date(ts).toLocaleDateString("he-IL");
+};
+
+// תאריך במבנה YYYY-MM-DD לשדות input[type=date]
+const toInputDate = (ts) => {
+  if (!ts) return "";
+  let d;
+  if (typeof ts === "string") d = new Date(ts);
+  else if (typeof ts === "object" && ts.seconds !== undefined)
+    d = new Date(ts.seconds * 1_000);
+  else if (ts.toDate) d = ts.toDate();
+  else d = new Date(ts);
+  return d.toISOString().slice(0, 10);
+};
+/* ──────────────────────────────────────────── */
 
 export default function MessageListContainer() {
   const [messages, setMessages]           = useState([]);
@@ -40,12 +65,8 @@ export default function MessageListContainer() {
   const [editEndDate, setEditEndDate]     = useState(""); // YYYY-MM-DD
   const dragIndexRef = useRef(null);
 
-  // replace with your real options or load from Firestore
-  const activityOptions = [
-    "פעילות א'",
-    "פעילות ב'",
-    "פעילות ג'",
-  ];
+  // אפשרויות לדוגמה
+  const activityOptions = ["פעילות א'", "פעילות ב'", "פעילות ג'"];
 
   /* ─── Load messages & normalize order ─── */
   useEffect(() => {
@@ -56,12 +77,19 @@ export default function MessageListContainer() {
 
       const msgs = snap.docs.map((d) => {
         const data = d.data();
-        if (typeof data.order === "number" && data.order > maxOrder) {
+        if (typeof data.order === "number" && data.order > maxOrder)
           maxOrder = data.order;
-        }
-        return { id: d.id, ...data };
+
+        return {
+          id: d.id,
+          ...data,
+          // המרות תאריך כבר עכשיו
+          startDate: data.startDate,
+          endDate  : data.endDate,
+        };
       });
 
+      // השלמת order חסרים
       msgs.forEach((m) => {
         if (typeof m.order !== "number") {
           maxOrder += 1;
@@ -69,8 +97,8 @@ export default function MessageListContainer() {
           batch.update(doc(db, "messages", m.id), { order: maxOrder });
         }
       });
-
       if (batch._mutations?.length) await batch.commit();
+
       msgs.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
       setMessages(msgs);
       setLoading(false);
@@ -78,14 +106,13 @@ export default function MessageListContainer() {
     load();
   }, []);
 
-  /* ─── Swap by index ─── */
+  /* ─── Swap helpers ─── */
   async function swapByIndex(i1, i2) {
-    if (
-      i1 < 0 || i2 < 0 ||
-      i1 >= messages.length || i2 >= messages.length
-    ) return;
+    if (i1 < 0 || i2 < 0 || i1 >= messages.length || i2 >= messages.length)
+      return;
 
-    const a = messages[i1], b = messages[i2];
+    const a = messages[i1],
+      b = messages[i2];
     try {
       const batch = writeBatch(db);
       batch.update(doc(db, "messages", a.id), { order: b.order });
@@ -105,9 +132,9 @@ export default function MessageListContainer() {
   const move = (idx, dir) => swapByIndex(idx, idx + dir);
 
   /* ─── Drag handlers ─── */
-  const handleDragStart = (idx) => () => { dragIndexRef.current = idx; };
-  const handleDragOver  = (e) => e.preventDefault();
-  const handleDrop      = (targetIdx) => async (e) => {
+  const handleDragStart = (idx) => () => (dragIndexRef.current = idx);
+  const handleDragOver = (e) => e.preventDefault();
+  const handleDrop = (targetIdx) => async (e) => {
     e.preventDefault();
     const src = dragIndexRef.current;
     dragIndexRef.current = null;
@@ -128,8 +155,8 @@ export default function MessageListContainer() {
     setEditTitle(m.title || "");
     setEditBody(m.body || "");
     setEditActivity(m.activity || "");
-    setEditStartDate(m.startDate || "");
-    setEditEndDate(m.endDate || "");
+    setEditStartDate(toInputDate(m.startDate));
+    setEditEndDate(toInputDate(m.endDate));
   };
   const cancelEditing = () => setEditingId(null);
 
@@ -140,9 +167,12 @@ export default function MessageListContainer() {
       title: editTitle,
       body: editBody,
       activity: editActivity,
-      startDate: editStartDate,
-      endDate: editEndDate,
+      startDate: editStartDate
+        ? Timestamp.fromDate(new Date(editStartDate))
+        : null,
+      endDate: editEndDate ? Timestamp.fromDate(new Date(editEndDate)) : null,
     });
+
     setMessages((prev) =>
       prev.map((m) =>
         m.id === editingId
@@ -151,8 +181,12 @@ export default function MessageListContainer() {
               title: editTitle,
               body: editBody,
               activity: editActivity,
-              startDate: editStartDate,
-              endDate: editEndDate,
+              startDate: editStartDate
+                ? Timestamp.fromDate(new Date(editStartDate))
+                : null,
+              endDate: editEndDate
+                ? Timestamp.fromDate(new Date(editEndDate))
+                : null,
             }
           : m
       )
@@ -161,8 +195,7 @@ export default function MessageListContainer() {
   };
 
   /* ─── Render ─── */
-  if (loading)
-    return <Typography align="center">טוען...</Typography>;
+  if (loading) return <Typography align="center">טוען...</Typography>;
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
@@ -180,7 +213,7 @@ export default function MessageListContainer() {
           onDrop={editingId === null ? handleDrop(idx) : undefined}
         >
           {editingId === m.id ? (
-            // ─── EDIT FORM ───
+            /* ─── EDIT FORM ─── */
             <Stack spacing={2}>
               <Typography variant="h6" align="center">
                 עריכת הודעה
@@ -248,27 +281,28 @@ export default function MessageListContainer() {
               </Stack>
             </Stack>
           ) : (
-            // ─── DISPLAY MODE ───
+            /* ─── DISPLAY MODE ─── */
             <Stack direction="row" justifyContent="space-between" spacing={2}>
               <Stack>
                 <Typography variant="h6">{m.title}</Typography>
                 <Typography variant="body2" color="text.secondary">
                   {m.body}
                 </Typography>
+
                 {m.activity && (
-                  <Typography variant="caption">
+                  <Typography variant="caption" display="block">
                     פעילות: {m.activity}
                   </Typography>
                 )}
+
                 {m.startDate && (
                   <Typography variant="caption" display="block">
-                    מ־ {m.startDate}  
-                    {m.endDate && ` — עד ${m.endDate}`}
+                    מ־ {formatTimestamp(m.startDate)}
+                    {m.endDate && ` — עד ${formatTimestamp(m.endDate)}`}
                   </Typography>
                 )}
-                <Link to={`/messages/replies/${m.id}`}>
-                  הצג תגובות
-                </Link>
+
+                <Link to={`/messages/replies/${m.id}`}>הצג תגובות</Link>
               </Stack>
 
               <Stack>
