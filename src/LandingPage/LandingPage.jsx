@@ -96,16 +96,46 @@ const messagesRef   = useRef();
 const surveysRef    = useRef();
 
 
-  // fetch data once
-  useEffect(() => {
-    FlyerService.getActiveFlyers().then(setFlyers).catch(console.error);
-    MessageService.listActive()
-      .then((ms) => setMessages(ms.filter((m) => !m.activityId)))
-      .catch(console.error);
-    SurveyService.list().then(setSurveys).catch(console.error);
-    const unsub = ActivityService.subscribe((list) => setActivities(list));
-    return () => unsub();
-  }, []);
+useEffect(() => {
+  let allActivities = [];
+
+  // קבלת פעילויות באופן מנוי רציף
+  const activitiesUnsub = ActivityService.subscribe((list) => {
+    allActivities = list;
+    setActivities(list);
+  });
+
+  // קבלת פליירים באופן מנוי רציף
+  const flyersUnsub = FlyerService.subscribe((flyersData) => {
+    const now = new Date();
+    const activitiesById = Object.fromEntries(allActivities.map((a) => [a.id, a]));
+
+    const activeFlyers = flyersData
+      .filter((f) => {
+        const start = f.startDate?.toDate?.() ?? new Date(0);
+        const end = f.endDate?.toDate?.() ?? new Date("9999-12-31");
+        return start <= now && now <= end;
+      })
+      .map((f) => ({
+        ...f,
+        activityDate: activitiesById[f.activityId]?.date || null,
+      }));
+
+    setFlyers(activeFlyers);
+  });
+
+  // הודעות וסקרים
+  MessageService.listActive()
+    .then((ms) => setMessages(ms.filter((m) => !m.activityId)))
+    .catch(console.error);
+
+  SurveyService.list().then(setSurveys).catch(console.error);
+
+  return () => {
+    flyersUnsub();
+    activitiesUnsub();
+  };
+}, []);
 
   // load user from session storage
   useEffect(() => {
@@ -246,7 +276,7 @@ const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "s
 
     {/* Flyers */}
     <Box ref={flyersRef}>
-      <FlyersSection flyers={flyers} openDialog={openDialog} />
+<FlyersSection flyers={flyers} activities={activities} openDialog={openDialog} />
     </Box>
 
    {/* Messages */}
@@ -260,11 +290,14 @@ const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "s
 
     {/* Calendar (Activities) */}
     <Box ref={calendarRef}>
-      <CalendarPreview
-        openDialog={openDialog}
-        userProfile={userProfile}
-        setOpenIdentify={setOpenIdentify}
-      />
+     <CalendarPreview
+  openDialog={openDialog}
+  userProfile={userProfile}
+  setOpenIdentify={setOpenIdentify}
+  activities={activities}
+  flyers={flyers}
+/>
+
     </Box>
 
     {/* Surveys */}
@@ -286,6 +319,7 @@ const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "s
       confirmCancelRegistration={confirmCancelRegistration}
       openMyActivities={openMyActivities}
       setOpenMyActivities={setOpenMyActivities}
+        flyers={flyers}
       myActivities={myActivities}
       dialog={dialog}
       openDialog={openDialog}

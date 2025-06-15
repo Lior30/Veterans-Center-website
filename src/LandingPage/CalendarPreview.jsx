@@ -31,16 +31,17 @@ export default function CalendarPreview({
   openDialog,
   userProfile,
   setOpenIdentify,
-}) {
+  activities,
+  flyers,
+})
+ {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const [activities, setActivities] = useState([]);
   const [view, setView] = useState("timeGridWeek");
   const calendarRef = useRef(null);
   const [tag, setTag] = useState("ALL");
   const holidays = usePublicHolidays();
 
-  useEffect(() => ActivityService.subscribe(setActivities), []);
 
   const tags = useMemo(() => {
     const s = new Set();
@@ -76,15 +77,31 @@ export default function CalendarPreview({
     return [...actEv, ...holEv];
   }, [activities, holidays, tag, theme.palette]);
 
-  const handleEventClick = (info) => {
-    const props = info.event.extendedProps;
-    if (props.holiday) return;
-    if (!userProfile?.phone) {
-      setOpenIdentify(true);
-      return;
-    }
-    openDialog("register", props.activityId);
-  };
+ const handleEventClick = (info) => {
+  const props = info.event.extendedProps;
+
+  // התעלמות מחגים
+  if (props.holiday) return;
+
+  // בדיקת זיהוי
+  if (!userProfile?.phone) {
+    setOpenIdentify(true);
+    return;
+  }
+
+  const activityId = props.activityId;
+  const flyer = flyers.find((f) => f.activityId === activityId);
+  const activity = activities.find((a) => a.id === activityId);
+
+  if (flyer) {
+    openDialog("flyer", flyer); // אם יש פלייר — הצג פלייר
+  } else if (activity) {
+    openDialog("activity-details", activity); // אחרת — הצג פרטי פעילות
+  } else {
+    alert("לא נמצאה פעילות תואמת");
+  }
+};
+
 
   const goPrev = () => calendarRef.current.getApi().prev();
   const goNext = () => calendarRef.current.getApi().next();

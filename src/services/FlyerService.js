@@ -7,6 +7,8 @@ import {
 import {
   ref, uploadBytes, getDownloadURL, deleteObject
 } from "firebase/storage";
+import { onSnapshot } from "firebase/firestore";
+
 
 const FLYERS_COL   = "flyers";
 const ONE_YEAR_MS  = 365 * 24 * 60 * 60 * 1000;
@@ -20,37 +22,35 @@ function toTimestamp(dateStr, fallback) {
 
 const FlyerService = {
   /* --- העלאה --- */
-  async uploadFlyer({ file, name, startDate, endDate }) {
-    // 1. העלאה ל-Storage
-    const storageRef = ref(storage, `flyers/${Date.now()}_${file.name}`);
-    await uploadBytes(storageRef, file, { contentType: file.type });
-    const fileUrl    = await getDownloadURL(storageRef);
-    const storagePath = storageRef.fullPath;          // לבחירת deleteObject
+async uploadFlyer({ file, name, startDate, endDate, activityId }) {
+  const storageRef = ref(storage, `flyers/${Date.now()}_${file.name}`);
+  await uploadBytes(storageRef, file, { contentType: file.type });
+  const fileUrl    = await getDownloadURL(storageRef);
+  const storagePath = storageRef.fullPath;
 
-    // 2. חישוב order הבא
-    const snap      = await getDocs(collection(db, FLYERS_COL));
-    const nextOrder = snap.size;                      // אפס-בייס
+  const snap      = await getDocs(collection(db, FLYERS_COL));
+  const nextOrder = snap.size;
 
-    // 3. תאריכים
-    const nowTS   = serverTimestamp();
-    const startTS = toTimestamp(startDate, nowTS);
-    const endTS   = toTimestamp(
-      endDate,
-      Timestamp.fromMillis(Date.now() + ONE_YEAR_MS)
-    );
+  const nowTS   = serverTimestamp();
+  const startTS = toTimestamp(startDate, nowTS);
+  const endTS   = toTimestamp(
+    endDate,
+    Timestamp.fromMillis(Date.now() + ONE_YEAR_MS)
+  );
 
-    // 4. הוספת מסמך
-    await addDoc(collection(db, FLYERS_COL), {
-      name,
-      fileUrl,
-      storagePath,
-      order: nextOrder,
-      createdAt: nowTS,
-      startDate: startTS,
-      endDate: endTS,
-      filename: file.name,
-    });
-  },
+  await addDoc(collection(db, FLYERS_COL), {
+    name,
+    fileUrl,
+    storagePath,
+    order: nextOrder,
+    createdAt: nowTS,
+    startDate: startTS,
+    endDate: endTS,
+    filename: file.name,
+    activityId,    // ← נוסף כאן
+  });
+},
+
 
   /* --- שליפה (לניהול) --- */
   async getFlyers() {
@@ -90,6 +90,17 @@ const FlyerService = {
     batch.update(doc(db, FLYERS_COL, b.id), { order: b.order });
     await batch.commit();
   },
+};
+
+FlyerService.subscribe = function (callback) {
+  const flyersCollection = query(collection(db, FLYERS_COL), orderBy("order", "asc"));
+  return onSnapshot(flyersCollection, (snapshot) => {
+    const flyers = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    callback(flyers);
+  });
 };
 
 export default FlyerService;
