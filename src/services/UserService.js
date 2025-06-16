@@ -16,8 +16,9 @@ export default class UserService {
     return snap.exists() ? { id: snap.id, ...snap.data() } : null;
   }
 
+   /* ✔︎ כל מספר שמתחיל ב-05 ולאחריו עוד 8 ספרות (סה״כ 10) */
   static isValidPhone(phone) {
-    return /^(?:050|052|053|054|051|055)\d{7}$/.test(phone);
+    return /^05\d{8}$/.test(phone.replace(/\D/g, ""));
   }
 
   /** וולידציה לשם: אותיות מרובות מילים, מינימום 2 תווים כל מילה */
@@ -44,31 +45,22 @@ export default class UserService {
   }
 
 
-      static getPhoneError(phone) {
-    const digits = phone.replace(/\D/g, "");
+    static getPhoneError(phoneRaw) {
+      const digits = phoneRaw.replace(/\D/g, "");      // משאיר ספרות בלבד
 
-    if (!digits.startsWith("0")) {
-    return "המספר שהוקלד אינו תקין";
-  }
+      // 1. חייב להיות בדיוק 10 ספרות
+      if (digits.length !== 10) {
+        return "מספר טלפון צריך להכיל בדיוק 10 ספרות";
+      }
 
-    if (!digits.startsWith("05")) {
-    return "המספר שהוקלד אינו תקין";
-  }
+      // 2. בדיקת קידומת מותרת
+      //    05 ואז אחת מהספרות: 0,1,2,3,4,5,7,8
+      if (!/^05[01234578]\d{7}$/.test(digits)) {
+        return "הקידומת שהוקלדה אינה נתמכת";
+      }
 
-    // בדוק תחילת מספר
-     if (!/^(05[0-5]|058)/.test(digits)) {
-    // לא התחיל ב־050–055
-    return "המספר שהוקלד אינו תקין";
-  }
-    // אורך
-    if (digits.length < 10) {
-      return "מספר טלפון צריך להכיל 10 ספרות";
+      return null;   // ✔︎ תקין
     }
-    if (digits.length > 10) {
-      return "המספר שהוקלד אינו תקין";
-    }
-    return null;
-  }
 
 
   /** האם מספר תקין? */
