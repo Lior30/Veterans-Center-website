@@ -1,6 +1,8 @@
+// src/components/NavBar.jsx
 import React from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
-import { Box } from "@mui/material";
+import { Box, IconButton } from "@mui/material";
+import { Brightness4, Brightness7 } from "@mui/icons-material";
 
 /* tiny helper for DRY inline styles */
 const pill = {
@@ -9,19 +11,19 @@ const pill = {
   textDecoration: "none",
   borderRadius: 6,
   fontWeight: 500,
-  fontSize: "0.95rem"
+  fontSize: "0.95rem",
 };
 
 const active = {
   background: "#8e2c88", // סגול כהה יותר
-  color: "black"
+  color: "black",
 };
 
 const inactive = {
-  color: "white" // טקסט לבן כשלא פעיל
+  color: "white", // טקסט לבן כשלא פעיל
 };
 
-export default function NavBar() {
+export default function NavBar({ toggleTheme, mode }) {
   const navigate = useNavigate();
   const location = useLocation();
   // קובע אם אנחנו בדף הניהול הראשי
@@ -42,16 +44,13 @@ export default function NavBar() {
         marginBottom: 20,
       }}
     >
-
-      {/*דף חזרה*/}
+      {/* דף חזרה */}
       <button
         onClick={() => navigate("/home")}
         style={{ marginRight: 24, padding: "6px 12px" }}
       >
-
-      ← חזרה
+        ← חזרה
       </button>
-
 
       {/* כפתור בית */}
       <button
@@ -66,8 +65,6 @@ export default function NavBar() {
       >
         🏠 בית
       </button>
-
-
 
       {/* קישורים בניהול */}
       <NavLink to="/activities" style={linkStyle}>
@@ -88,6 +85,14 @@ export default function NavBar() {
       <NavLink to="/manage-users" style={linkStyle}>
         משתמשים
       </NavLink>
+
+      {/* Spacer גמיש כדי לדחוף את הכפתור לימין */}
+      <Box sx={{ flexGrow: 1 }} />
+
+      {/* כפתור מצב לילה/יום */}
+      <IconButton color="inherit" onClick={toggleTheme} sx={{ ml: 1 }}>
+        {mode === "dark" ? <Brightness7 /> : <Brightness4 />}
+      </IconButton>
     </nav>
   );
 }

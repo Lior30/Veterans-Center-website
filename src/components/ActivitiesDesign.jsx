@@ -1,6 +1,6 @@
 // src/components/ActivitiesDesign.jsx
 import { Autocomplete } from "@mui/material";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 
 import {
   Container,
@@ -36,8 +36,21 @@ import ActivityService from "../services/ActivityService";
 import UserService from "../services/UserService";
 import { db } from "../firebase";
 import { doc, updateDoc, arrayRemove, arrayUnion } from "firebase/firestore";
+import { MapContainer, TileLayer, Marker, Popup, useMap  } from "react-leaflet";
+// Leaflet & GeoSearch
+import { OpenStreetMapProvider } from "leaflet-geosearch";
+import "leaflet/dist/leaflet.css";
+import "leaflet-geosearch/dist/geosearch.css";
 
-
+function Recenter({ center, zoom }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.flyTo(center, zoom, { animate: true });
+    }
+  }, [center, zoom, map]);
+  return null;
+}
 const WEEKDAYS = [
   { label: "א׳", value: 1 },
   { label: "ב׳", value: 2 },
@@ -116,6 +129,36 @@ export default function ActivitiesDesign({
   const [selAct, setSelAct] = useState(null);
   const [users, setUsers] = useState({});
   const [registrantsFilter, setRegistrantsFilter] = useState("");
+  const [addressQuery, setAddressQuery] = useState("");
+  // ==== ל-Recenter של המפה ====
+  const [mapCenter, setMapCenter] = useState([31.7683, 35.2137]);
+  const [mapZoom, setMapZoom]     = useState(13);
+
+  // מפה + GeoSearch בטופס הפעילות
+  const mapRef = useRef(null);
+  const geoProvider = new OpenStreetMapProvider();
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+    const control = new GeoSearchControl({
+      provider: geoProvider,
+      style: "bar",
+      searchLabel: "הקלידו כתובת…",
+      autoClose: true,
+      retainZoomLevel: false,
+    });
+    map.addControl(control);
+    map.on("geosearch/showlocation", ({ location }) => {
+      const { x: lng, y: lat, label: address } = location;
+      // עדכון שדה location בטופס
+      onFormChange((f) => ({ ...f, location: { address, lat, lng } }));
+    });
+    return () => {
+      map.removeControl(control);
+      map.off("geosearch/showlocation");
+    };
+  }, [geoProvider, onFormChange]);
+
   // סינון המשתתפים לפי שדה החיפוש
 const filteredParticipants = (selAct?.participants || []).filter((p) => {
   const label = (users[p.phone] || p.phone).toLowerCase();
@@ -475,8 +518,16 @@ const togglePaid = async (phone) => {
         </Box>
       )}
 
-      <Dialog open={dialogOpen} onClose={onClose}>
-        <DialogTitle sx={{ textAlign: "right" }}>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => {
+          // איפוס שדה חיפוש ומפה
+          setAddressQuery("");
+          setMapCenter([31.7683, 35.2137]);
+          setMapZoom(13);
+          onClose();
+        }}
+      >        <DialogTitle sx={{ textAlign: "right" }}>
           {form.id ? "עריכת פעילות" : "הוספת פעילות חדשה"}
         </DialogTitle>
         <DialogContent
@@ -607,6 +658,7 @@ const togglePaid = async (phone) => {
               },
             }}
           />
+
           <TextField
             label="קיבולת"
             type="number"
@@ -682,15 +734,30 @@ const togglePaid = async (phone) => {
 </TextField>
 
 
-          {/* שדה מיקום */}
+          {/* שדה חיפוש כתובת: מקלידים ולוחצים Enter */}
           <TextField
             label="מיקום"
-            type="text"
-            value={form.location || ""}
-            onChange={(e) =>
-              onFormChange((f) => ({ ...f, location: e.target.value }))
-            }
+            placeholder="הקלידי כתובת ולחצי Enter"
+            value={addressQuery}
+            onChange={(e) => setAddressQuery(e.target.value)}
+            onKeyDown={async (e) => {
+              if (e.key === "Enter" && addressQuery.trim()) {
+                const results = await geoProvider.search({ query: addressQuery });
+                if (results.length > 0) {
+                  const { x: lng, y: lat, label: address } = results[0];
+                  setAddressQuery(address);
+                  onFormChange((f) => ({
+                    ...f,
+                    location: { address, lat, lng },
+                  }));
+      // עדכון מצב המפה
+      setMapCenter([lat, lng]);
+      setMapZoom(15);
+                }
+              }
+            }}
             fullWidth
+            sx={{ mb: 2 }}
             InputLabelProps={{
               shrink: true,
               sx: {
@@ -704,7 +771,24 @@ const togglePaid = async (phone) => {
               },
             }}
             inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
-          />
+        />
+
+{/* ==== מפה + חיפוש כתובת ==== */}
+<MapContainer
+  center={[31.7683, 35.2137]}
+  zoom={13}
+  style={{ height: 300, width: "100%", marginBottom: 16 }}
+  whenCreated={(map) => (mapRef.current = map)}
+>
+  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+  <Recenter center={mapCenter} zoom={mapZoom} />
+  {form.location?.lat && (
+    <Marker position={[form.location.lat, form.location.lng]}>
+      <Popup>{form.location.address}</Popup>
+    </Marker>
+  )}
+</MapContainer>
+
 
           <FormControlLabel
             control={
@@ -763,7 +847,17 @@ const togglePaid = async (phone) => {
           )}
         </DialogContent>
         <DialogActions sx={{ justifyContent: "flex-end" }}>
-          <Button onClick={onClose}>בטל</Button>
+          <Button
+            onClick={() => {
+              // איפוס שדה חיפוש ומפה
+              setAddressQuery("");
+              setMapCenter([31.7683, 35.2137]);
+              setMapZoom(13);
+              onClose();
+            }}
+          >
+            בטל
+          </Button>
           {form.id && (
             <Button
               color="error"
@@ -838,7 +932,7 @@ const togglePaid = async (phone) => {
       </Dialog>
 
       {/* דיאלוג נרשמים */}
-    + <Dialog
+     <Dialog
    open={Boolean(selAct)}
    onClose={() => {
      setSelAct(null);

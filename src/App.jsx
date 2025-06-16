@@ -1,8 +1,6 @@
 // src/App.jsx
 import React from "react";
-import { ThemeProvider, CssBaseline } from "@mui/material";
 import { Routes, Route, useLocation } from "react-router-dom";
-import theme from "./theme";             // וודאי שהנתיב נכון
 
 import NavBar from "./components/NavBar.jsx";
 import LandingPage from "./LandingPage/LandingPage.jsx";
@@ -10,7 +8,6 @@ import IdentifyPage from "./components/IdentificationPage.jsx";
 import Home from "./components/Home.jsx";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-
 
 import ActivitiesContainer from "./components/ActivitiesContainer.jsx";
 import FlyerManager from "./components/FlyerManager.jsx";
@@ -32,15 +29,14 @@ import MessageRepliesContainer from "./components/MessageRepliesContainer.jsx";
 import PublicMessageBoardContainer from "./components/PublicMessageBoardContainer.jsx";
 import ManageUsersContainer from "./components/ManageUsersContainer.jsx";
 
-export default function App() {
+export default function App({ toggleTheme, mode }) {
   const { pathname } = useLocation();
   const hiddenRoutes = ["/", "/landingPage", "/identificationPage"];
   const showNav = !hiddenRoutes.includes(pathname);
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />  {/* מאפס סגנונות ומכניס את ה‐background.default */}
-      {showNav && <NavBar />}
+    <>
+      {showNav && <NavBar toggleTheme={toggleTheme} mode={mode} />}
 
       <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -62,17 +58,26 @@ export default function App() {
         <Route path="/surveys/list" element={<SurveyListContainer />} />
         <Route path="/surveys/take/:id" element={<SurveyDetailContainer />} />
 
-        <Route path="/HomepageImages" element={<HomepageImagesContainer />} />
+        <Route
+          path="/HomepageImages"
+          element={<HomepageImagesContainer />}
+        />
 
         {/* Messages – admin */}
         <Route path="/messages" element={<ManageMessages />} />
         <Route path="/messages/create" element={<CreateMessage />} />
         <Route path="/messages/list" element={<MessageListContainer />} />
-        <Route path="/messages/replies/:id" element={<MessageRepliesContainer />} />
+        <Route
+          path="/messages/replies/:id"
+          element={<MessageRepliesContainer />}
+        />
 
         {/* Messages – public */}
-        <Route path="/messages/board" element={<PublicMessageBoardContainer />} />
+        <Route
+          path="/messages/board"
+          element={<PublicMessageBoardContainer />}
+        />
       </Routes>
-    </ThemeProvider>
+    </>
   );
 }
