@@ -76,6 +76,7 @@ export default function FlyersSection({ flyers, activities, openDialog }) {
   const theme = useTheme();
 
   const settings = {
+    rtl: true,
     infinite: flyers.length > 4,
     slidesToShow: 4,
     slidesToScroll: 1,
