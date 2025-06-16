@@ -1,20 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import * as XLSX from "xlsx";           // ❶
 import { saveAs } from "file-saver";
-import { db, auth } from "../firebase"; // <-- add auth here
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import {
-  collection,
-  collectionGroup,
-  doc,
-  setDoc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  updateDoc,
-  deleteDoc
-} from "firebase/firestore";
+import { db, auth, firebaseConfig  } from "../firebase"; // <-- add auth here
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  deleteUser } from "firebase/auth";
+import { initializeApp, deleteApp, getApp } from "firebase/app";
+import { generateEmailPassword } from "./IdentificationPage";
+import { collection, collectionGroup, doc, setDoc, getDoc, getDocs, query, where, updateDoc, deleteDoc, writeBatch } from "firebase/firestore";
 import UserService from "../services/UserService";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import EditIcon   from "@mui/icons-material/Edit";
@@ -30,7 +22,7 @@ import {
   IconButton,
   // … שאר ה-imports הקיימים
 } from "@mui/material";
-import { generateEmailPassword } from "./IdentificationPage";
+
 async function fixMissingUserFields() {
   const snap = await getDocs(collection(db, "users"));
   const updates = [];
@@ -45,7 +37,6 @@ async function fixMissingUserFields() {
     if (!Array.isArray(data.survey_date)) missing.survey_date = [];
 
     if (Object.keys(missing).length > 0) {
-      console.log("🔧 updating user:", d.id);
       updates.push(updateDoc(doc(db, "users", d.id), missing));
     }
   }
@@ -167,9 +158,43 @@ return (
   </div>
 );
 
+};
+
+/* helper: מעדכן את שדה phone בכל האוספים התלויים */
+async function patchPhoneInRefs(oldDigits, newDigits) {
+  const changePhone = async (coll) => {
+    const q    = query(collection(db, coll), where("phone", "==", oldDigits));
+    const snap = await getDocs(q);
+    const bat  = writeBatch(db);
+    snap.forEach(d => bat.update(d.ref, { phone: newDigits }));
+    await bat.commit();
+  };
+
+  await changePhone("activityRegistrations");
+  await changePhone("surveyResponses");
+
+  /* replies תת-אוסף */
+  const msgs = await getDocs(collection(db, "messages"));
+  for (const m of msgs.docs) {
+    const q    = query(collection(db, "messages", m.id, "replies"),
+                       where("phone", "==", oldDigits));
+    const snap = await getDocs(q);
+    const bat  = writeBatch(db);
+    snap.forEach(d => bat.update(d.ref, { phone: newDigits }));
+    await bat.commit();
+  }
 }
 
 
+async function deleteUserByPhoneNumber(phoneNumber) {
+  try {
+    const userRef = doc(db, "users", phoneNumber);
+    await deleteDoc(userRef);
+  } catch (err) {
+    console.error(`Error deleting document ${phoneNumber}:`, err);
+    throw err;
+  }
+}
 
 
 
@@ -188,7 +213,6 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
   const showActions = ["all", "activity", "survey", "replies", "both"]
   .includes(filter); 
-  console.log("filter:", filter, "activeTab:", activeTab, "showActions:", showActions);
  
 
   const isActivity  = filter === "activity";
@@ -221,7 +245,8 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   async function handleAddUser() {
     if (!isFirstValid || !isLastValid || !isPhoneValid || !isTypeValid) return;
 
-    const full = `${newFirstName.trim()} ${newLastName.trim()}`.trim();
+    const newDigits = newPhone.replace(/\D/g, "");
+    const full = `${newFirstName.trim()} ${newLastName.trim()}`;
     const phone   = newPhone.replace(/\D/g, "");      // רק ספרות
     const userRef = doc(db, "users", phone); 
 
@@ -253,6 +278,34 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       };
       await setDoc(userRef, newUser);
 
+      // ➕ תוסיפי את הבלוק הזה
+let secondaryApp;
+try {
+  const appName = `secondary-add-${phone}`;
+  try {
+    secondaryApp = initializeApp(firebaseConfig, appName);
+  } catch {
+    secondaryApp = getApp(appName);
+  }
+
+  const secondaryAuth = getAuth(secondaryApp);
+  const { email, password } = generateEmailPassword(phone);
+
+  await createUserWithEmailAndPassword(secondaryAuth, email, password);
+} catch (authErr) {
+  if (authErr.code === "auth/email-already-in-use") {
+    console.warn("Auth account already exists — skipping creation.");
+  } else {
+    console.error("Auth error during creation:", authErr);
+    alert("אירעה שגיאה ביצירת חשבון האוטנטיקציה: " + authErr.message);
+  }
+} finally {
+  if (secondaryApp) {
+    await deleteApp(secondaryApp);
+  }
+}
+
+
       const snapAll = await getDocs(collection(db, "users"));
       setAllUsers(snapAll.docs.map(d => ({ id: d.id, ...d.data() })));
       // // const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -261,18 +314,14 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       setNewFirstName(""); setNewLastName(""); setNewPhone("");
       setUserType(""); setAddress(""); setIdNumber(""); setNotes("");
 
-      // add the user to the authentication list
-      const { email, password } = generateEmailPassword (newPhone.trim()); // Generating the email and password of the auth of the user.
 
-      await createUserWithEmailAndPassword(auth, email, password);  //Creating the auth user with the generated email and password.
-
-      alert("המשתמש נוסף בהצלחה!"); // הודעת הצלחה
-      console.log("משתמש נוסף:", newUser);
-    } catch (e) {
-        console.error("שגיאה בהוספה:", e);
-        alert("אירעה שגיאה בהוספת המשתמש");
+      alert("המשתמש נוסף בהצלחה!");
+    } catch (e) {                 // ← זה ה-catch החיצוני שחסר לך
+      console.error("שגיאה בהוספת המשתמש:", e);
+      alert("אירעה שגיאה בהוספת המשתמש");
     }
-  }
+
+}
 
 
 
@@ -614,8 +663,8 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       const user_id = ensureUserId(user);
 
       /* 1. users (המסמך הראשי) */
-      try {
-        await deleteDoc(doc(db, "users", user_id));
+       try {
+        await deleteUserByPhoneNumber(user_id);
       } catch (err) {
         console.error("⚠️  users delete failed:", err);
       }
@@ -666,89 +715,127 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       await deleteUserCore(user);
   }
 
+async function saveEditedUser(u) {
+  const first = u.first_name?.trim()  || "";
+  const last  = u.last_name?.trim()   || "";
+  const newPh = u.phone?.trim()       || "";
+  const full  = `${first} ${last}`.trim();
 
-
-
-
-  /** מעדכן שם משתמש בכל האוספים הרלוונטיים */
-  async function saveEditedUser(u) {
-    const firstName = u.first_name?.trim() || "";
-    const lastName  = u.last_name?.trim()  || "";
-    const phone     = u.phone?.trim()      || "";
-    const fullName  = `${firstName} ${lastName}`.trim();
-
-    // ✅ בדיקת שדות חובה
-    if (!firstName || !lastName || !phone) {
-      alert("שם פרטי, שם משפחה ומספר טלפון הם שדות חובה. נא למלא את כולם.");
-      return;
-    }
-
-    const oldUserId = u.id || u.user_id;
-    const docId = phone.trim(); 
-
-    const updatedUser = {
-      first_name: firstName,
-      last_name : lastName,
-      fullname  : fullName,
-      phone,
-      address   : u.address?.trim()    || null,
-      id_number : u.id_number?.trim()  || null,
-      notes     : u.notes?.trim()      || null,
-      user_id   : newUserId,
-      is_registered: u.is_registered || false,
-      is_club_60   : u.is_club_60    || false
-    };
-
-    // 🟡 אם Document ID השתנה → העתק ומחק
-    if (oldUserId !== newUserId) {
-      const oldRef = doc(db, "users", oldUserId);
-      const newRef = doc(db, "users", newUserId);
-      await setDoc(newRef, updatedUser);
-      await deleteDoc(oldRef);
-    } else {
-      const ref = doc(db, "users", oldUserId);
-      await updateDoc(ref, updatedUser);
-    }
-
-    // 🟢 עדכון activityRegistrations + surveyResponses לפי טלפון
-    const coll = ["activityRegistrations", "surveyResponses"];
-    for (const name of coll) {
-      const q = query(collection(db, name), where("phone", "==", phone));
-      const snap = await getDocs(q);
-      for (const d of snap.docs) {
-        await updateDoc(d.ref, {
-          first_name: firstName,
-          last_name: lastName,
-          fullname: fullName,
-        });
-      }
-    }
-
-    // 🔵 עדכון בתשובות להודעות
-    const msgs = await getDocs(collection(db, "messages"));
-    for (const m of msgs.docs) {
-      const q = query(
-        collection(db, "messages", m.id, "replies"),
-        where("phone", "==", phone)
-      );
-      const reps = await getDocs(q);
-      for (const r of reps.docs) {
-        await updateDoc(r.ref, { fullName });
-      }
-    }
-
-    // 🔄 עדכון ה־state
-    setAllUsers(prev =>
-      prev.map(p =>
-        (p.id === oldUserId || p.user_id === oldUserId)
-          ? { ...updatedUser, id: newUserId }
-          : p
-      )
-    );
-
-    setEditUser(null);
-    alert("הפרטים עודכנו בהצלחה");
+  if (!first || !last || !newPh) {
+    alert("שם פרטי, שם משפחה ומספר טלפון – שדות חובה");
+    return;
   }
+
+  const oldDigits   = (editUser.originalPhone || "").replace(/\D/g, "");
+  const newDigits   = newPh.replace(/\D/g, "");
+  const phoneChanged = oldDigits !== newDigits;
+
+  // בונים את האובייקט החדש
+  const newUserDoc = {
+    first_name: first,
+    last_name: last,
+    fullname: full,
+    phone: newPh,
+    user_id: newDigits,
+    address: u.address?.trim()   || null,
+    id_number: u.id_number?.trim() || null,
+    notes: u.notes?.trim()       || null,
+    is_registered: editUser.is_registered || false,
+    is_club_60:    editUser.is_club_60    || false,
+    activities:     Array.isArray(editUser.activities)      ? editUser.activities      : [],
+    activities_date:Array.isArray(editUser.activities_date) ? editUser.activities_date : [],
+    survey:         Array.isArray(editUser.survey)          ? editUser.survey          : [],
+    survey_date:    Array.isArray(editUser.survey_date)     ? editUser.survey_date     : [],
+    replies:        Array.isArray(editUser.replies)         ? editUser.replies         : [],
+    replies_date:   Array.isArray(editUser.replies_date)    ? editUser.replies_date    : [],
+  };
+
+
+  try {
+    if (phoneChanged) {
+      // 1) החלפה ב־Firestore: יצירת doc חדש + מחיקת ישן
+      const batch = writeBatch(db);
+
+      batch.set(doc(db, "users", newDigits), newUserDoc);
+
+      batch.delete(doc(db, "users", oldDigits));
+
+      await batch.commit();
+
+      await patchPhoneInRefs(oldDigits, newDigits);
+
+      let secondaryApp;
+
+     try {
+
+      const appName = `secondary-edit-${newDigits}`;
+      try {
+        secondaryApp = initializeApp(firebaseConfig, appName);
+      } catch {
+        secondaryApp = getApp(appName);
+      }
+
+      const secondaryAuth = getAuth(secondaryApp);
+
+      const { email, password } = generateEmailPassword(newDigits);
+
+      await createUserWithEmailAndPassword(secondaryAuth, email, password);
+
+    } catch (err) {
+      console.error("❌ Error during secondary auth creation flow:", err);
+    }
+
+
+
+      // 4) ניקוי האפליקציה המשנית
+      if (secondaryApp) {
+        await deleteApp(secondaryApp);
+      }
+
+      await deleteUserSilent(editUser);
+
+    } else {
+    // 2b) overwrite existing Firestore user
+    await setDoc(doc(db, "users", oldDigits), newUserDoc);
+
+    // ניסיון יצירת חשבון Auth — אם זה נכשל, לא נפסיק את מחיקת/ריענון Firestore
+    try {
+      const secondaryApp = initializeApp(firebaseConfig, `secondary-edit-${newDigits}`);
+      const secondaryAuth = getAuth(secondaryApp);
+      const { email, password } = generateEmailPassword(newDigits);
+      await createUserWithEmailAndPassword(secondaryAuth, email, password);
+      await deleteApp(secondaryApp);
+    } catch (authErr) {
+      console.warn("Auth failed, but Firestore already updated:", authErr);
+    }
+  }
+
+    // ריענון ה-state
+    const fresh = await getDocs(collection(db, "users"));
+    setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
+
+    alert("הפרטים עודכנו בהצלחה 🎉");
+  } catch (err) {
+   console.error("⚠️ שגיאה בעדכון משתמש:", err);
+   if (err && err.message) {
+     alert("אירעה שגיאה בעדכון המשתמש: " + err.message);
+   } else {
+     alert("אירעה שגיאה בעדכון המשתמש. ראה קונסול לפרטים");
+   }
+   } finally {
+     // ריענון הרשימה מ־Firestore תמיד, גם אם קרתה שגיאה ב־Auth
+    if (phoneChanged) {
+      const fresh = await getDocs(collection(db, "users"));
+      setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
+    }
+    setEditUser(null);
+  }
+}
+
+
+
+
+
 
   async function updateUserType(user, newType) {
     const is_registered = newType === "registered";
@@ -1326,7 +1413,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
               <IconButton
                 size="small"
                 title="עריכת שם"
-                onClick={() => setEditUser(u)}
+                onClick={() => setEditUser({ ...u, originalPhone: u.phone })}
               >
                 <EditIcon fontSize="small" />
               </IconButton>
@@ -1430,52 +1517,53 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 {editUser && (
   <Dialog open onClose={() => setEditUser(null)} maxWidth="xs" fullWidth>
     <DialogTitle>עריכת משתמש</DialogTitle>
-    <DialogContent sx={{ display:"flex", flexDirection:"column", gap:2, mt:1 }}>
+    <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
       <TextField
         label="שם פרטי"
-        defaultValue={editUser.first_name}
-        onChange={e => editUser.first_name = e.target.value}
+        value={editUser.first_name || ""}
+        onChange={e => setEditUser(prev => ({ ...prev, first_name: e.target.value }))}
         fullWidth
       />
       <TextField
         label="שם משפחה"
-        defaultValue={editUser.last_name}
-        onChange={e => editUser.last_name = e.target.value}
+        value={editUser.last_name || ""}
+        onChange={e => setEditUser(prev => ({ ...prev, last_name: e.target.value }))}
         fullWidth
       />
       <TextField
         label="מספר טלפון"
-        defaultValue={editUser.phone}
-        onChange={e => editUser.phone = e.target.value}
+        value={editUser.phone || ""}
+        onChange={e => setEditUser(prev => ({ ...prev, phone: e.target.value }))}
         fullWidth
       />
       <TextField
         label="תעודת זהות"
-        defaultValue={editUser.id_number}
-        onChange={e => editUser.id_number = e.target.value}
+        value={editUser.id_number || ""}
+        onChange={e => setEditUser(prev => ({ ...prev, id_number: e.target.value }))}
         fullWidth
       />
       <TextField
         label="כתובת"
-        defaultValue={editUser.address}
-        onChange={e => editUser.address = e.target.value}
+        value={editUser.address || ""}
+        onChange={e => setEditUser(prev => ({ ...prev, address: e.target.value }))}
         fullWidth
       />
-        <TextField
+      <TextField
         label="הערות"
-        defaultValue={editUser.notes}
-        onChange={e => editUser.notes = e.target.value}
+        value={editUser.notes || ""}
+        onChange={e => setEditUser(prev => ({ ...prev, notes: e.target.value }))}
+        multiline
+        rows={3}
         fullWidth
       />
-      <Button
-        variant="contained"
-        onClick={() => saveEditedUser(editUser)}
-      >
+
+      <Button variant="contained" onClick={() => saveEditedUser(editUser)}>
         שמירה
       </Button>
     </DialogContent>
   </Dialog>
 )}
+
 
      </Box>
         </>
