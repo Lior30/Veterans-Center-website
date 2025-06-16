@@ -1,30 +1,31 @@
 import React from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { Box } from "@mui/material";
-
 
 /* tiny helper for DRY inline styles */
 const pill = {
-    padding: "6px 10px",
-    margin: "0 4px",
-    textDecoration: "none",
-    borderRadius: 6,
-    fontWeight: 500,
-    fontSize: "0.95rem"
-  };
+  padding: "6px 10px",
+  margin: "0 4px",
+  textDecoration: "none",
+  borderRadius: 6,
+  fontWeight: 500,
+  fontSize: "0.95rem"
+};
 
-  const active = {
-    background: "#8e2c88", // סגול כהה יותר
-    color: "black"
-  };
+const active = {
+  background: "#8e2c88", // סגול כהה יותר
+  color: "black"
+};
 
-  const inactive = {
-    color: "white" // טקסט שחור במקום כחול
-  };
-
+const inactive = {
+  color: "white" // טקסט לבן כשלא פעיל
+};
 
 export default function NavBar() {
   const navigate = useNavigate();
+  const location = useLocation();
+  // קובע אם אנחנו בדף הניהול הראשי
+  const isOnAdminRoot = location.pathname === "/admin";
   const linkStyle = ({ isActive }) =>
     isActive ? { ...pill, ...active } : { ...pill, ...inactive };
 
@@ -42,48 +43,51 @@ export default function NavBar() {
       }}
     >
 
-
-
-      {/* Back & Home */}
-      <button
-        onClick={() => navigate(-1)}
-        style={{ marginRight: 12, padding: "6px 12px" }}
-      >
-        ← חזרה
-      </button>
+      {/*דף חזרה*/}
       <button
         onClick={() => navigate("/home")}
         style={{ marginRight: 24, padding: "6px 12px" }}
       >
+
+      ← חזרה
+      </button>
+
+
+      {/* כפתור בית */}
+      <button
+        onClick={() => !isOnAdminRoot && navigate("/")}
+        disabled={isOnAdminRoot}
+        style={{
+          marginRight: 12,
+          padding: "6px 12px",
+          cursor: isOnAdminRoot ? "not-allowed" : "pointer",
+          opacity: isOnAdminRoot ? 0.5 : 1,
+        }}
+      >
         🏠 בית
       </button>
 
-      {/* nav links */}
-      {/* <NavLink to="/home"        style={linkStyle} end>
-        חזרה לתפריט
-      </NavLink> */}
-      <NavLink to="/activities"  style={linkStyle}>
+
+
+      {/* קישורים בניהול */}
+      <NavLink to="/activities" style={linkStyle}>
         פעילויות
       </NavLink>
-      <NavLink to="/flyers"      style={linkStyle}>
+      <NavLink to="/flyers" style={linkStyle}>
         פליירים
       </NavLink>
-      <NavLink to="/surveys"     style={linkStyle}>
+      <NavLink to="/surveys" style={linkStyle}>
         סקרים
       </NavLink>
-      <NavLink to="/messages"    style={linkStyle}>
+      <NavLink to="/messages" style={linkStyle}>
         הודעות
       </NavLink>
-            <NavLink to="/flyers"      style={linkStyle}>
-        פליירים
-      </NavLink>
-      <NavLink to="/HomepageImages"     style={linkStyle}>
-      תמונות אווירה
+      <NavLink to="/HomepageImages" style={linkStyle}>
+        תמונות אווירה
       </NavLink>
       <NavLink to="/manage-users" style={linkStyle}>
         משתמשים
       </NavLink>
     </nav>
-    
   );
 }

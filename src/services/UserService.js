@@ -1,6 +1,6 @@
 // src/services/UserService.js
-import { db }                                     from "../firebase";
-import { doc, getDoc, setDoc }                    from "firebase/firestore";
+import { db } from "../firebase";
+import { doc, getDoc, setDoc, collection, onSnapshot } from "firebase/firestore";
 
 /**
  * Basic helper around the “users” collection.
@@ -11,7 +11,7 @@ export default class UserService {
 
   /** get specific user (or null) */
   static async get(id) {
-    const ref  = doc(db, UserService.COL, id);
+    const ref = doc(db, UserService.COL, id);
     const snap = await getDoc(ref);
     return snap.exists() ? { id: snap.id, ...snap.data() } : null;
   }
@@ -28,21 +28,27 @@ export default class UserService {
 
   /** find user by phone or create a new one */
   static async findOrCreate({ name, phone }) {
-    const id   = phone.replace(/\D/g, "");            // keep digits only
-    const ref  = doc(db, UserService.COL, id);
+    const id = phone.replace(/\D/g, "");
+    const [firstName, ...rest] = name.trim().split(" ");
+    const lastName = rest.join(" ");
+    const ref = doc(db, UserService.COL, id);
     const snap = await getDoc(ref);
 
     if (snap.exists()) {
-      // update name if it changed
-      if (name && snap.data().name !== name) {
-        await setDoc(ref, { name }, { merge: true });
+      const data = snap.data();
+      if (
+        (firstName && data.firstName !== firstName) ||
+        (lastName  && data.lastName  !== lastName)
+      ) {
+        await setDoc(ref, { firstName, lastName }, { merge: true });
       }
-      return { id, ...snap.data() };
+      return { id, ...data, firstName, lastName };
     }
 
-    await setDoc(ref, { name, phone });
-    return { id, name, phone };
+    await setDoc(ref, { firstName, lastName, phone });
+    return { id, firstName, lastName, phone };
   }
+
 
 
     static getPhoneError(phoneRaw) {
@@ -60,26 +66,36 @@ export default class UserService {
       }
 
       return null;   // ✔︎ תקין
-    }
 
+    }
 
   /** האם מספר תקין? */
   static isValidPhone(phone) {
     return UserService.getPhoneError(phone) === null;
   }
 
-
   /** (אופציונלי) וולידציה לשם */
   static isValidName(name) {
     return /^[א-תA-Za-z]{2,}(?: [א-תA-Za-z]{2,})*$/.test(name.trim());
   }
 
-
-
-  
-
-
-  
+  /**
+   * מאזין לשינויים בקולקציית המשתמשים
+   * ומעביר מפה של phone → fullName לכל callback
+   */
+  static subscribe(callback) {
+    const colRef = collection(db, UserService.COL);
+    return onSnapshot(colRef, (snap) => {
+      const users = {};
+      snap.docs.forEach((d) => {
+        const data = d.data();
+        const fullName =
+          [data.firstName, data.lastName].filter(Boolean).join(" ") ||
+          data.name?.trim() ||
+          d.id;
+        users[d.id] = fullName;
+      });
+      callback(users);
+    });
+  }
 }
-
-

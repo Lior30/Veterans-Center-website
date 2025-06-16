@@ -59,14 +59,7 @@ export default function FooterSection({
                 בית הועד החלוץ 33, ירושלים
               </Typography>
             </Box>
-            <Button
-              onClick={onOpenInfo}
-              variant="text"
-              color="inherit"
-              sx={{ textTransform: "none", p: 0 }}
-            >
-              פרטים נוספים
-            </Button>
+           
           </Grid>
 
           {/* כניסות */}

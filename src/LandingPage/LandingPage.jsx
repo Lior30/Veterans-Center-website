@@ -36,6 +36,7 @@ import SurveySection from "./SurveySection";
 import LandingDialogs from "./LandingDialogs";
 import FooterSection from "./FooterSection";
 import LandingNavBar from "./LandingNavBar";
+import MoodSection from "./MoodSection";
 
 
 const HeroSection = ({ children }) => {
@@ -96,16 +97,42 @@ const messagesRef   = useRef();
 const surveysRef    = useRef();
 
 
-  // fetch data once
-  useEffect(() => {
-    FlyerService.getActiveFlyers().then(setFlyers).catch(console.error);
-    MessageService.listActive()
-      .then((ms) => setMessages(ms.filter((m) => !m.activityId)))
-      .catch(console.error);
-    SurveyService.list().then(setSurveys).catch(console.error);
-    const unsub = ActivityService.subscribe((list) => setActivities(list));
-    return () => unsub();
-  }, []);
+useEffect(() => {
+  let allActivities = [];
+
+  // קבלת פעילויות באופן מנוי רציף
+  const activitiesUnsub = ActivityService.subscribe((list) => {
+    allActivities = list;
+    setActivities(list);
+  });
+
+  // קבלת פליירים באופן מנוי רציף
+  const flyersUnsub = FlyerService.subscribe((flyersData) => {
+    const now = new Date();
+    const activitiesById = Object.fromEntries(allActivities.map((a) => [a.id, a]));
+
+    const activeFlyers = flyersData
+      .filter((f) => {
+        const start = f.startDate?.toDate?.() ?? new Date(0);
+        const end = f.endDate?.toDate?.() ?? new Date("9999-12-31");
+        return start <= now && now <= end;
+      })
+      .map((f) => ({
+        ...f,
+        activityDate: activitiesById[f.activityId]?.date || null,
+      }));
+
+    setFlyers(activeFlyers);
+  });
+
+
+  SurveyService.list().then(setSurveys).catch(console.error);
+
+  return () => {
+    flyersUnsub();
+    activitiesUnsub();
+  };
+}, []);
 
   // load user from session storage
   useEffect(() => {
@@ -129,6 +156,31 @@ const surveysRef    = useRef();
         .catch(console.error);
     }
   }, [openMyActivities, userProfile]);
+
+  useEffect(() => {
+  const loadMessages = async () => {
+    try {
+      const allMessages = await MessageService.listActive();
+
+      if (!userProfile) {
+        // משתמש לא מזוהה – רק הודעות כלליות
+        setMessages(allMessages.filter((m) => !m.activityId));
+      } else {
+        const acts = await ActivityService.getUserActivities(userProfile.id);
+        setMyActivities(acts);
+        const actIds = acts.map((a) => a.id);
+        const visibleMessages = allMessages.filter(
+          (m) => !m.activityId || actIds.includes(m.activityId)
+        );
+        setMessages(visibleMessages);
+      }
+    } catch (err) {
+      console.error("שגיאה בטעינת הודעות:", err);
+    }
+  };
+
+  loadMessages();
+}, [userProfile]);
 
   const scrollToCalendar = () => {
     calendarRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -246,7 +298,7 @@ const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "s
 
     {/* Flyers */}
     <Box ref={flyersRef}>
-      <FlyersSection flyers={flyers} openDialog={openDialog} />
+<FlyersSection flyers={flyers} activities={activities} openDialog={openDialog} />
     </Box>
 
    {/* Messages */}
@@ -257,14 +309,20 @@ const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "s
     openDialog={openDialog}
   />
 </Box>
+{/* Mood Images Section */}
+   <MoodSection />
+
 
     {/* Calendar (Activities) */}
     <Box ref={calendarRef}>
-      <CalendarPreview
-        openDialog={openDialog}
-        userProfile={userProfile}
-        setOpenIdentify={setOpenIdentify}
-      />
+     <CalendarPreview
+  openDialog={openDialog}
+  userProfile={userProfile}
+  setOpenIdentify={setOpenIdentify}
+  activities={activities}
+  flyers={flyers}
+/>
+
     </Box>
 
     {/* Surveys */}
@@ -286,6 +344,7 @@ const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "s
       confirmCancelRegistration={confirmCancelRegistration}
       openMyActivities={openMyActivities}
       setOpenMyActivities={setOpenMyActivities}
+        flyers={flyers}
       myActivities={myActivities}
       dialog={dialog}
       openDialog={openDialog}

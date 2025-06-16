@@ -14,6 +14,8 @@ import {
   IconButton
 } from '@mui/material';
 import SectionTitle from './SectionTitle';
+import CtaButton from "./CtaButton";
+
 import EventIcon from '@mui/icons-material/Event';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -24,33 +26,36 @@ const PrevArrow = ({ onClick }) => (
     onClick={onClick}
     sx={{
       position: 'absolute',
-      top: '50%',
-      left: 8,
-      transform: 'translateY(-50%)',
-      zIndex: 2,
+      top: 8,               // 8px מהחזית העליונה של הסקשן
+      left: -32,            // 32px שמאלה מחוץ לפלייר
+      zIndex: 10,
       backgroundColor: 'rgba(0,0,0,0.4)',
       '&:hover': { backgroundColor: 'rgba(0,0,0,0.6)' },
       color: '#fff',
+      width: 32,
+      height: 32,
     }}
   >
-    <ArrowBackIosNewIcon />
+    <ArrowBackIosNewIcon fontSize="small" />
   </IconButton>
 );
+
 const NextArrow = ({ onClick }) => (
   <IconButton
     onClick={onClick}
     sx={{
       position: 'absolute',
-      top: '50%',
-      right: 8,
-      transform: 'translateY(-50%)',
-      zIndex: 2,
+      top: 8,
+      right: -32,
+      zIndex: 10,
       backgroundColor: 'rgba(0,0,0,0.4)',
       '&:hover': { backgroundColor: 'rgba(0,0,0,0.6)' },
       color: '#fff',
+      width: 32,
+      height: 32,
     }}
   >
-    <ArrowForwardIosIcon />
+    <ArrowForwardIosIcon fontSize="small" />
   </IconButton>
 );
 
@@ -67,25 +72,19 @@ const FlyerCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-export default function FlyersSection({ flyers, openDialog }) {
+export default function FlyersSection({ flyers, activities, openDialog }) {
   const theme = useTheme();
 
-  // הגדרות הסליידר
   const settings = {
-    infinite: flyers.length > 3,
-    slidesToShow: 3,
+    rtl: true,
+    infinite: flyers.length > 4,
+    slidesToShow: 4,
     slidesToScroll: 1,
-    nextArrow: <NextArrow />,
     prevArrow: <PrevArrow />,
+    nextArrow: <NextArrow />,
     responsive: [
-      {
-        breakpoint: theme.breakpoints.values.md, // <960px
-        settings: { slidesToShow: 2 },
-      },
-      {
-        breakpoint: theme.breakpoints.values.sm, // <600px
-        settings: { slidesToShow: 1 },
-      },
+      { breakpoint: theme.breakpoints.values.md, settings: { slidesToShow: 3 } },
+      { breakpoint: theme.breakpoints.values.sm, settings: { slidesToShow: 1 } },
     ],
   };
 
@@ -95,45 +94,55 @@ export default function FlyersSection({ flyers, openDialog }) {
       sx={{
         py: { xs: 4, sm: 6 },
         backgroundColor: theme.palette.background.default,
-        position: 'relative',
       }}
     >
       <Container maxWidth="lg">
         <SectionTitle icon={<EventIcon />} title="פליירים אחרונים" />
 
-        <Slider {...settings}>
-          {flyers.map((f) => (
-            <Box key={f.id} sx={{ px: 1 }}>
-              <FlyerCard>
-                <CardActionArea onClick={() => openDialog('flyer', f)}>
-                 <CardMedia
-  component="img"
-  image={f.fileUrl}
-  alt={f.name}
-  sx={{
-    width: '100%',
-    aspectRatio: '4.5/8',    // שומר על יחס רוחב־גובה מלבני
-    objectFit: 'cover',
-  }}
-/>
+        {/* העטפת ה־Slider כדי שהחיצים יתייחסו אליה */}
+        <Box sx={{ position: 'relative', mt: 2 }}>
+          <Slider {...settings}>
+            {flyers.map(f => (
+              <Box key={f.id} sx={{ px: 1 }}>
+                <FlyerCard>
+                  <CardActionArea onClick={() => openDialog('flyer', f)}>
+                    <CardMedia
+                      component="img"
+                      image={f.fileUrl}
+                      alt={f.name}
+                      sx={{
+                        width: '100%',
+                        aspectRatio: '4.5/8',
+                        objectFit: 'cover',
+                      }}
+                    />
+                 <CardContent sx={{ p: 2 }}>
+  <Typography variant="h6" noWrap>
+  {
+    activities.find((a) => a.id === f.activityId)?.name
+    || f.name  // fallback לשם הפלייר אם לא נמצאה פעילות
+  }
+</Typography>
 
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography variant="h6" gutterBottom noWrap>
-                      {f.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {new Date(f.date).toLocaleDateString('he-IL', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                      })}
-                    </Typography>
-                  </CardContent>
-                </CardActionArea>
-              </FlyerCard>
-            </Box>
-          ))}
-        </Slider>
+  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+    {f.activityDate
+      ? new Date(f.activityDate).toLocaleDateString("he-IL", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : "ללא תאריך"}
+  </Typography>
+
+</CardContent>
+
+
+                  </CardActionArea>
+                </FlyerCard>
+              </Box>
+            ))}
+          </Slider>
+        </Box>
       </Container>
     </Box>
   );
