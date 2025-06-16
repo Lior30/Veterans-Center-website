@@ -1,6 +1,8 @@
 // src/components/ActivitiesContainer.jsx
 import React, { useState, useEffect } from "react";
 import ActivityService from "../services/ActivityService";
+import ActivitiesMap from "./ActivitiesMap";
+import { Box, TextField } from "@mui/material";
 import usePublicHolidays from "../hooks/usePublicHolidays";
 import ActivitiesDesign from "./ActivitiesDesign";
 
