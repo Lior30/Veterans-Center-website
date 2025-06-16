@@ -33,15 +33,13 @@ export default function CalendarPreview({
   setOpenIdentify,
   activities,
   flyers,
-})
- {
+}) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [view, setView] = useState("timeGridWeek");
   const calendarRef = useRef(null);
   const [tag, setTag] = useState("ALL");
   const holidays = usePublicHolidays();
-
 
   const tags = useMemo(() => {
     const s = new Set();
@@ -77,31 +75,24 @@ export default function CalendarPreview({
     return [...actEv, ...holEv];
   }, [activities, holidays, tag, theme.palette]);
 
- const handleEventClick = (info) => {
-  const props = info.event.extendedProps;
-
-  // התעלמות מחגים
-  if (props.holiday) return;
-
-  // בדיקת זיהוי
-  if (!userProfile?.phone) {
-    setOpenIdentify(true);
-    return;
-  }
-
-  const activityId = props.activityId;
-  const flyer = flyers.find((f) => f.activityId === activityId);
-  const activity = activities.find((a) => a.id === activityId);
-
-  if (flyer) {
-    openDialog("flyer", flyer); // אם יש פלייר — הצג פלייר
-  } else if (activity) {
-    openDialog("activity-details", activity); // אחרת — הצג פרטי פעילות
-  } else {
-    alert("לא נמצאה פעילות תואמת");
-  }
-};
-
+  const handleEventClick = (info) => {
+    const props = info.event.extendedProps;
+    if (props.holiday) return;
+    if (!userProfile?.phone) {
+      setOpenIdentify(true);
+      return;
+    }
+    const activityId = props.activityId;
+    const flyer = flyers.find((f) => f.activityId === activityId);
+    const activity = activities.find((a) => a.id === activityId);
+    if (flyer) {
+      openDialog("flyer", flyer);
+    } else if (activity) {
+      openDialog("activity-details", activity);
+    } else {
+      alert("לא נמצאה פעילות תואמת");
+    }
+  };
 
   const goPrev = () => calendarRef.current.getApi().prev();
   const goNext = () => calendarRef.current.getApi().next();
@@ -139,39 +130,36 @@ export default function CalendarPreview({
         </Stack>
 
         {/* חיצים קודמים/הבא */}
-        
-         <NavWrapper>
-  <IconButton
-    onClick={goPrev}
-    sx={{
-      position: "absolute",
-      top: 0,
-      left: 0,
-      transform: "translate(-50%, -50%)",
-      backgroundColor: theme.palette.primary.main,
-      color: "#fff",
-      "&:hover": { backgroundColor: theme.palette.primary.dark },
-    }}
-  >
-    <ArrowBackIosIcon />
-  </IconButton>
-  <IconButton
-    onClick={goNext}
-    sx={{
-      position: "absolute",
-      top: 0,
-      right: 0,
-      transform: "translate(50%, -50%)",
-      backgroundColor: theme.palette.primary.main,
-      color: "#fff",
-      "&:hover": { backgroundColor: theme.palette.primary.dark },
-    }}
-  >
-    <ArrowForwardIosIcon />
-  </IconButton>
-</NavWrapper>
-
-      
+        <NavWrapper>
+          <IconButton
+            onClick={goPrev}
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              transform: "translate(-50%, -50%)",
+              backgroundColor: theme.palette.primary.main,
+              color: "#fff",
+              "&:hover": { backgroundColor: theme.palette.primary.dark },
+            }}
+          >
+            <ArrowBackIosIcon />
+          </IconButton>
+          <IconButton
+            onClick={goNext}
+            sx={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              transform: "translate(50%, -50%)",
+              backgroundColor: theme.palette.primary.main,
+              color: "#fff",
+              "&:hover": { backgroundColor: theme.palette.primary.dark },
+            }}
+          >
+            <ArrowForwardIosIcon />
+          </IconButton>
+        </NavWrapper>
 
         {/* סינון תגיות */}
         <Stack
@@ -202,6 +190,16 @@ export default function CalendarPreview({
             borderRadius: 2,
             overflow: "hidden",
             boxShadow: theme.shadows[1],
+            // הסתרת השעה והגדרת סגנון לכותרת האירוע
+            "& .fc-event-time": {
+              display: "none",
+            },
+            "& .fc-event-title": {
+              fontWeight: 500,
+              fontSize: isMobile ? "0.8em" : "0.9em",
+              padding: "2px",
+              whiteSpace: "normal",
+            },
           }}
         >
           <FullCalendar

@@ -1,81 +1,118 @@
 // src/components/MessagesSection.jsx
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Box,
   Container,
-  Grid,
   Card,
   CardContent,
   Typography,
+  IconButton,
+  useTheme,
+  useMediaQuery,
   styled,
 } from "@mui/material";
 import ArticleIcon from "@mui/icons-material/Article";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import SectionTitle from "./SectionTitle";
 import CtaButton from "./CtaButton";
 
 const UpdateCard = styled(Card)(({ theme }) => ({
+  flex: "0 0 auto",
+  width: 300,
   borderRadius: theme.shape.borderRadius * 2,
   overflow: "visible",
   backgroundColor: "#fff",
   boxShadow: theme.shadows[1],
   transition: "transform 0.3s, box-shadow 0.3s",
+  cursor: "pointer",
   "&:hover": {
     transform: "translateY(-8px)",
     boxShadow: theme.shadows[4],
   },
 }));
 
-export default function MessagesSection({
-  messages,
-  openDialog,      // החלפנו onReadMore ב–openDialog
-  justIdentified,
-}) {
+export default function MessagesSection({ messages, openDialog, justIdentified }) {
   const [expanded, setExpanded] = useState({});
+  const scrollRef = useRef(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const scrollAmount = isMobile ? 260 : 360;
 
   const toggleExpanded = (id) => {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const scroll = (offset) => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: offset, behavior: "smooth" });
+    }
+  };
+
   return (
-    <Box
-      component="section"
-      sx={{ py: { xs: 4, sm: 6 }, backgroundColor: "#f9f9f9" }}
-    >
-      <Container maxWidth="lg">
+    <Box component="section" sx={{ py: { xs: 4, sm: 6 }, bgcolor: "#f9f9f9" }}>
+      <Container maxWidth="md">
         <SectionTitle icon={<ArticleIcon />} title="הודעות אחרונות" />
 
-        <Grid container spacing={4}>
-          {messages.slice(0, 3).map((m) => {
-            const isExpanded = !!expanded[m.id];
-            const preview = m.body || "";
-            const displayText = isExpanded
-              ? preview
-              : preview.length > 150
-              ? preview.slice(0, 150) + "…"
-              : preview;
+        <Box sx={{ position: "relative", mt: 2 }}>
+          <IconButton
+            onClick={() => scroll(-scrollAmount)}
+            sx={{
+              position: "absolute",
+              left: 0,
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 2,
+              bgcolor: "rgba(255,255,255,0.8)",
+              "&:hover": { bgcolor: "rgba(255,255,255,1)" },
+            }}
+          >
+            <ChevronLeftIcon />
+          </IconButton>
 
-            return (
-              <Grid item xs={12} sm={6} md={4} key={m.id}>
-                <UpdateCard>
-                  <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                    <Typography variant="h6" gutterBottom>
+          <Box
+            ref={scrollRef}
+            sx={{
+              display: "flex",
+              overflowX: "auto",
+              gap: theme.spacing(2),
+              pr: theme.spacing(6),
+              scrollSnapType: "x mandatory",
+              "&::-webkit-scrollbar": { display: "none" },
+            }}
+          >
+            {messages.map((m) => {
+              const isExpanded = !!expanded[m.id];
+              const preview = m.body || "";
+              const charLimit = 100;
+              const needsTruncate = preview.length > charLimit;
+              const displayText = isExpanded
+                ? preview
+                : needsTruncate
+                ? preview.slice(0, charLimit) + "…"
+                : preview;
+
+              return (
+                <UpdateCard key={m.id}>
+                  <CardContent sx={{ p: { xs: 2, sm: 3 }, scrollSnapAlign: "start" }}>
+                    <Typography variant="subtitle1" gutterBottom>
                       {m.title}
                     </Typography>
-
                     <Typography
                       variant="body2"
                       color="text.secondary"
                       sx={{
-                        maxHeight: isExpanded ? "none" : 120,
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
                         overflow: isExpanded ? "visible" : "hidden",
                         mb: 2,
                         lineHeight: 1.5,
                       }}
+                      onClick={() => needsTruncate && toggleExpanded(m.id)}
                     >
                       {displayText}
                     </Typography>
-
-                    {preview.length > 150 && (
+                    {needsTruncate && (
                       <CtaButton
                         color="tertiary"
                         size="small"
@@ -84,7 +121,6 @@ export default function MessagesSection({
                         {isExpanded ? "קרא פחות" : "קרא עוד"}
                       </CtaButton>
                     )}
-
                     {justIdentified && (
                       <CtaButton
                         color="primary"
@@ -97,18 +133,24 @@ export default function MessagesSection({
                     )}
                   </CardContent>
                 </UpdateCard>
-              </Grid>
-            );
-          })}
-        </Grid>
+              );
+            })}
+          </Box>
 
-        <Box textAlign="center" mt={4}>
-          <CtaButton
-            color="secondary"
-            onClick={() => openDialog("all-messages")}
+          <IconButton
+            onClick={() => scroll(scrollAmount)}
+            sx={{
+              position: "absolute",
+              right: 0,
+              top: "50%",
+              transform: "translate(50%, -50%)",
+              zIndex: 2,
+              bgcolor: "rgba(255,255,255,0.8)",
+              "&:hover": { bgcolor: "rgba(255,255,255,1)" },
+            }}
           >
-            לכל ההודעות
-          </CtaButton>
+            <ChevronRightIcon />
+          </IconButton>
         </Box>
       </Container>
     </Box>

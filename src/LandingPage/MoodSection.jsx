@@ -1,0 +1,91 @@
+// src/components/MoodSection.jsx
+import React, { useState, useEffect } from "react";
+import { Box, Container, Typography, useTheme, useMediaQuery, Fade } from "@mui/material";
+import SectionTitle from "./SectionTitle";
+import BannerService from "../services/BannerService";
+
+export default function MoodSection() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [banners, setBanners] = useState([]);
+  const [index, setIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  // טוען באנרים כ"תמונות אווירה"
+  useEffect(() => {
+    BannerService.getBanners()
+      .then((items) => setBanners(items))
+      .catch((err) => console.error("Error loading banners:", err));
+  }, []);
+
+  // לולאת שינוי תמונה עם fade
+  useEffect(() => {
+    if (!banners.length) return;
+    const displayDuration = 5000;    // תצוגה כל 5 שניות
+    const fadeDuration = 800;        // משך האנימציה
+    let hideTimeout, showTimeout, cycleInterval;
+
+    const cycle = () => {
+      // אחרי הזמן מוצגים, מתחילים להסתיר
+      hideTimeout = setTimeout(() => {
+        setVisible(false);
+        // אחרי fadeDuration משנים תמונה ומראים
+        showTimeout = setTimeout(() => {
+          setIndex((i) => (i + 1) % banners.length);
+          setVisible(true);
+        }, fadeDuration);
+      }, displayDuration);
+    };
+
+    cycle();
+    cycleInterval = setInterval(cycle, displayDuration + fadeDuration * 2);
+
+    return () => {
+      clearTimeout(hideTimeout);
+      clearTimeout(showTimeout);
+      clearInterval(cycleInterval);
+    };
+  }, [banners]);
+
+  if (!banners.length) return null;
+  const current = banners[index];
+
+  return (
+    <Box component="section" sx={{ py: { xs: 4, sm: 6 }, bgcolor: "#fafafa" }}>
+      <Container maxWidth="md" sx={{ position: "relative" }}>
+       
+        <Fade in={visible} timeout={800}>
+          <Box
+            sx={{
+              width: "100%",
+              height: isMobile ? 200 : 300,
+              borderRadius: 2,
+              overflow: "hidden",
+              position: "relative",
+              boxShadow: theme.shadows[3],
+              backgroundImage: `url(${current.url})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          >
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: 0,
+                width: "100%",
+                bgcolor: "rgba(0,0,0,0.4)",
+                color: "#fff",
+                py: 1,
+                textAlign: "center",
+              }}
+            >
+              <Typography variant={isMobile ? "subtitle2" : "h6"}>
+                {current.title}
+              </Typography>
+            </Box>
+          </Box>
+        </Fade>
+      </Container>
+    </Box>
+  );
+}

@@ -36,6 +36,7 @@ import SurveySection from "./SurveySection";
 import LandingDialogs from "./LandingDialogs";
 import FooterSection from "./FooterSection";
 import LandingNavBar from "./LandingNavBar";
+import MoodSection from "./MoodSection";
 
 
 const HeroSection = ({ children }) => {
@@ -124,10 +125,6 @@ useEffect(() => {
     setFlyers(activeFlyers);
   });
 
-  // הודעות וסקרים
-  MessageService.listActive()
-    .then((ms) => setMessages(ms.filter((m) => !m.activityId)))
-    .catch(console.error);
 
   SurveyService.list().then(setSurveys).catch(console.error);
 
@@ -159,6 +156,31 @@ useEffect(() => {
         .catch(console.error);
     }
   }, [openMyActivities, userProfile]);
+
+  useEffect(() => {
+  const loadMessages = async () => {
+    try {
+      const allMessages = await MessageService.listActive();
+
+      if (!userProfile) {
+        // משתמש לא מזוהה – רק הודעות כלליות
+        setMessages(allMessages.filter((m) => !m.activityId));
+      } else {
+        const acts = await ActivityService.getUserActivities(userProfile.id);
+        setMyActivities(acts);
+        const actIds = acts.map((a) => a.id);
+        const visibleMessages = allMessages.filter(
+          (m) => !m.activityId || actIds.includes(m.activityId)
+        );
+        setMessages(visibleMessages);
+      }
+    } catch (err) {
+      console.error("שגיאה בטעינת הודעות:", err);
+    }
+  };
+
+  loadMessages();
+}, [userProfile]);
 
   const scrollToCalendar = () => {
     calendarRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -287,6 +309,9 @@ const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "s
     openDialog={openDialog}
   />
 </Box>
+{/* Mood Images Section */}
+   <MoodSection />
+
 
     {/* Calendar (Activities) */}
     <Box ref={calendarRef}>

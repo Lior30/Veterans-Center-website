@@ -250,9 +250,17 @@ export default function LandingDialogs(props) {
                 <Card variant="outlined">
                   <CardContent>
                     <Typography fontWeight="600">{m.title}</Typography>
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      {m.body}
-                    </Typography>
+                    <Typography
+  variant="body2"
+  sx={{
+    mt: 1,
+    whiteSpace: "pre-wrap",   // שומר רווחים ושורות חדשות
+    wordBreak: "break-word",  // שבירת מילים ארוכות במידת הצורך
+  }}
+>
+  {m.body}
+</Typography>
+
                     {justIdentified && (
                       <CtaButton
                         color="primary"
