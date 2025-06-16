@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { getDocs } from "firebase/firestore"; // אם לא קיים למעלה
+import FlyerService from "./FlyerService";
 
 export default class ActivityService {
   /* collection constants */
@@ -21,9 +22,20 @@ export default class ActivityService {
 
 
   /** ➖ delete מסמך שלם */
-  static delete(id) {
+  static async delete(id) {
+  try {
+    const flyers = await FlyerService.getFlyers();
+    const related = flyers.filter((f) => f.activityId === id);
+    for (const flyer of related) {
+      await FlyerService.deleteFlyer(flyer);
+    }
+
     return deleteDoc(doc(db, ActivityService.COL, id));
+  } catch (err) {
+    console.error("שגיאה במחיקת פעילות ופליירים", err);
+    throw err;
   }
+}
 
   /* ──────────────────────────── Realtime stream ──────────────────────────── */
   static subscribe(callback) {
