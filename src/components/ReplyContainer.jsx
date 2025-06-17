@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   collection,
@@ -8,6 +7,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  arrayUnion,
 } from "firebase/firestore";
 import { db } from "../firebase.js";
 import UserService from "../services/UserService.js";
@@ -52,56 +52,73 @@ function ReplyContainer({ messageId, onClose }) {
     if (!validate()) return;
 
     const fullname = `${firstName.trim()} ${lastName.trim()}`;
-    const phoneClean = phone.trim();
+    // נרמול phone: רק ספרות
+    const phoneClean = phone.trim().replace(/\D/g, "");
+    if (!phoneClean) {
+      // אפשר להודיע למשתמש או לסיים כאן
+      return;
+    }
     const replyTime = new Date().toISOString();
 
-    await addDoc(collection(db, "messages", messageId, "replies"), {
-      fullname,
-      phone: phoneClean,
-      replyText,
-      createdAt: serverTimestamp(),
-    });
-
-    const messageRef = doc(db, "messages", messageId);
-    const messageSnap = await getDoc(messageRef);
-    const messageTitle = messageSnap.exists() ? messageSnap.data().title || "" : "";
-
-    const userId = `${firstName.trim()}_${lastName.trim()}_${phoneClean}`;
-    const userRef = doc(db, "users", userId);
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) {
-      await setDoc(
-        userRef,
-        {
-          user_id: userId,
-          fullname,
-          first_name: firstName.trim(),
-          last_name: lastName.trim(),
-          phone: phoneClean,
-          is_registered: false,
-          is_club_60: false,
-          activities: [],
-          activities_date: [],
-          survey: [],
-          survey_date: [],
-          replies: [messageTitle],
-          replies_date: [replyTime],
-        },
-        { merge: true }
-      );
-    } else {
-      const data = userSnap.data();
-      const newReplies = [messageTitle, ...(data.replies || [])];
-      const newDates = [replyTime, ...(data.replies_date || [])];
-
-      await updateDoc(userRef, {
-        replies: newReplies,
-        replies_date: newDates,
+    // 1. שמירת התשובה בתת-collection של ההודעה
+    try {
+      await addDoc(collection(db, "messages", messageId, "replies"), {
+        fullname,
+        phone: phoneClean,
+        replyText,
+        createdAt: serverTimestamp(),
       });
+    } catch (e) {
+      console.error("ReplyContainer: failed to save reply:", e);
+      // אם השמירה נכשלת, סיימו כאן:
+      return;
     }
 
-    onClose?.();
+    // 2. עדכון המשתמש הקיים בלבד (בהנחה שהוא קיים) – userId רק phoneClean
+    const userId = phoneClean;
+    const userRef = doc(db, "users", userId);
+
+    try {
+      // בדיקת קיום מסמך המשתמש
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        console.warn(`ReplyContainer: user document not found for ID ${userId}. העדכון לא יתבצע.`);
+        // אם בכל זאת רוצים לעצור כאן:
+        // return;
+      } 
+
+      // 2a. השגת כותרת ההודעה (messageTitle)
+      let messageTitle = messageId;
+      try {
+        const msgSnap = await getDoc(doc(db, "messages", messageId));
+        if (msgSnap.exists()) {
+          const data = msgSnap.data();
+          if (data.title && typeof data.title === "string" && data.title.trim()) {
+            messageTitle = data.title.trim();
+          }
+        }
+      } catch (e) {
+        console.warn("ReplyContainer: could not fetch message title:", e);
+      }
+
+      // 2b. עדכון שדות replies ו-replies_date במשתמש
+      const nowIso = new Date().toISOString();
+      try {
+        await updateDoc(userRef, {
+          replies: arrayUnion(messageTitle),
+          replies_date: arrayUnion(nowIso),
+        });
+      } catch (e) {
+        console.error("ReplyContainer: updateDoc failed for userId:", userId, e);
+      }
+    } catch (e) {
+      console.error("ReplyContainer: error when accessing user document:", e);
+    }
+
+    // 3. סגירת הדיאלוג / המשך הזרימה
+    if (onClose) {
+      onClose();
+    }
   };
 
   const placeholderAlign = {

@@ -135,13 +135,13 @@ const handleChange = (qid, value) => {
       answers,
       submittedAt: new Date().toISOString(),
       survey: survey.headline, // name of the survey
-      survey_date: new Date().toLocaleDateString("he-IL"), // readable date in Hebrew
+      survey_date: arrayUnion(new Date().toISOString()),
     });
     try {
   const userRef = doc(db, "users", answers.phone.trim());
   await updateDoc(userRef, {
     survey: arrayUnion(survey.headline),
-    survey_date: arrayUnion(new Date().toLocaleDateString("he-IL")),
+    survey_date: arrayUnion(new Date().toISOString()),
   });
   
 } catch (err) {
