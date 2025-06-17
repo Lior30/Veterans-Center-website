@@ -106,7 +106,7 @@ export default function FlyersSection({ flyers, activities, openDialog }) {
       }}
     >
       <Container maxWidth="lg">
-        <SectionTitle icon={<EventIcon />} title="פליירים אחרונים" />
+      
 
         {/* העטפת ה־Slider כדי שהחיצים יתייחסו אליה */}
         <Box sx={{ position: 'relative', mt: 2 }}>
