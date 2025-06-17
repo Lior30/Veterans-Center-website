@@ -20,6 +20,15 @@ import EventIcon from '@mui/icons-material/Event';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 
+// עזר לפורמט dd\MM\yyyy עם מוביל אפסים
+const formatDateNumeric = (isoDate) => {
+  const d = new Date(isoDate);
+  const day   = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year  = d.getFullYear();
+return `${day}\\${month}\\${year}`;
+};
+
 // חיצי ניווט מותאמים
 const PrevArrow = ({ onClick }) => (
   <IconButton
@@ -124,15 +133,12 @@ export default function FlyersSection({ flyers, activities, openDialog }) {
   }
 </Typography>
 
-  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-    {f.activityDate
-      ? new Date(f.activityDate).toLocaleDateString("he-IL", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })
-      : "ללא תאריך"}
-  </Typography>
+ <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+  {f.activityDate
+    ? formatDateNumeric(f.activityDate)
+    : "ללא תאריך"}
+</Typography>
+
 
 </CardContent>
 
