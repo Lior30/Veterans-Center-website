@@ -1,5 +1,6 @@
 // src/components/LandingDialogs.jsx
 import React from "react";
+import SyncCalendarButton from "../components/SyncCalendarButton";
 import {
   Dialog,
   DialogTitle,
@@ -224,6 +225,19 @@ export default function LandingDialogs(props) {
 </Box>
 
             ))
+          )}
+
+          {myActivities.length > 0 && (
+            <SyncCalendarButton
+              activities={myActivities.map((a) => ({
+                id: a.id,
+                title: a.name,
+                // אם אין שעה ייקבע 09:00 בבוקר
+                start: new Date(`${a.date}T${(a.time || "09:00")}:00`).toISOString(),
+                end: null,
+                notes: a.description || "",
+              }))}
+            />
           )}
         </DialogContent>
         <DialogActions>
