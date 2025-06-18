@@ -16,6 +16,8 @@ export function getDesignTheme(mode) {
         main:  "#6B5B95",
         dark:  "#503A78",
         contrastText: "#FFFFFF",
+         vlight: "#F8EAFB",
+         lightblue: "#E0FFFF",
       },
 
       // צבע משני עדין (Sage Green)
