@@ -222,10 +222,6 @@ const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "s
     openDialog={openDialog}
   />
 </Box>
-{/* Mood Images Section */}
-
-
-
     {/* Calendar (Activities) */}
 {/* Calendar (Activities) */}
 <Box

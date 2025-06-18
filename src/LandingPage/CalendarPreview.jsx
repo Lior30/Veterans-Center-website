@@ -1,5 +1,5 @@
 // src/components/CalendarPreview.jsx
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useMemo, useState, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -13,12 +13,17 @@ import {
   useTheme,
   styled,
   IconButton,
+  Tabs,
+  Tab,
+  Tooltip,
+  Typography,
 } from "@mui/material";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import ViewWeekIcon from "@mui/icons-material/ViewWeek";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import EventIcon from "@mui/icons-material/Event";
 import SectionTitle from "./SectionTitle";
-import ActivityService from "../services/ActivityService";
 import usePublicHolidays from "../hooks/usePublicHolidays";
 import CtaButton from "./CtaButton";
 
@@ -41,12 +46,14 @@ export default function CalendarPreview({
   const [tag, setTag] = useState("ALL");
   const holidays = usePublicHolidays();
 
+  // build tag list
   const tags = useMemo(() => {
     const s = new Set();
     activities.forEach((a) => (a.tags || []).forEach((t) => s.add(t)));
     return ["ALL", ...Array.from(s)];
   }, [activities]);
 
+  // build events: activities + holidays
   const events = useMemo(() => {
     const actEv = activities
       .filter((a) => tag === "ALL" || (a.tags || []).includes(tag))
@@ -59,25 +66,28 @@ export default function CalendarPreview({
         startTime: a.recurring ? a.startTime : undefined,
         endTime: a.recurring ? a.endTime : undefined,
         startRecur: a.recurring ? a.date : undefined,
-        backgroundColor: theme.palette.secondary.light,
+        backgroundColor: theme.palette.primary.lightblue,
         textColor: "#000",
-        extendedProps: { activityId: a.id },
+        extendedProps: { activityId: a.id, isHoliday: false },
       }));
+
     const holEv = holidays.map((h) => ({
       id: `hol-${h.date}`,
       title: h.title || h.name,
       start: h.date,
       allDay: true,
-      backgroundColor: theme.palette.info.light,
+      backgroundColor: "#FFFACD", // צבע חגים
       textColor: "#000",
-      extendedProps: { holiday: true },
+      extendedProps: { holiday: true, isHoliday: true },
     }));
+
     return [...actEv, ...holEv];
   }, [activities, holidays, tag, theme.palette]);
 
+  // handle clicks: holidays are ignored, unknown phone triggers identify, then show flyer or details
   const handleEventClick = (info) => {
     const props = info.event.extendedProps;
-    if (props.holiday) return;
+    if (props.isHoliday) return;
     if (!userProfile?.phone) {
       setOpenIdentify(true);
       return;
@@ -85,13 +95,9 @@ export default function CalendarPreview({
     const activityId = props.activityId;
     const flyer = flyers.find((f) => f.activityId === activityId);
     const activity = activities.find((a) => a.id === activityId);
-    if (flyer) {
-      openDialog("flyer", flyer);
-    } else if (activity) {
-      openDialog("activity-details", activity);
-    } else {
-      alert("לא נמצאה פעילות תואמת");
-    }
+    if (flyer) openDialog("flyer", flyer);
+    else if (activity) openDialog("activity-details", activity);
+    else alert("לא נמצאה פעילות תואמת");
   };
 
   const goPrev = () => calendarRef.current.getApi().prev();
@@ -103,36 +109,66 @@ export default function CalendarPreview({
         <SectionTitle icon={<EventIcon />} title="לוח פעילויות" />
 
         {/* שבועי / חודשי */}
-        <Stack
-          direction="row"
-          spacing={2}
-          justifyContent="center"
-          sx={{ mb: 2, flexWrap: "wrap" }}
-        >
-          <CtaButton
-            color={view === "timeGridWeek" ? "primary" : "default"}
-            onClick={() => {
-              setView("timeGridWeek");
-              calendarRef.current.getApi().changeView("timeGridWeek");
-            }}
-          >
-            שבועי
-          </CtaButton>
-          <CtaButton
-            color={view === "dayGridMonth" ? "primary" : "default"}
-            onClick={() => {
-              setView("dayGridMonth");
-              calendarRef.current.getApi().changeView("dayGridMonth");
-            }}
-          >
-            חודשי
-          </CtaButton>
+        <Stack direction="row" spacing={6} justifyContent="center" sx={{ mb: 4 }}>
+          <Tooltip title="תצוגה שבועית">
+            <IconButton
+              onClick={() => {
+                setView("timeGridWeek");
+                calendarRef.current.getApi().changeView("timeGridWeek");
+              }}
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                color:
+                  view === "timeGridWeek"
+                    ? theme.palette.primary.light
+                    : theme.palette.text.secondary,
+              }}
+            >
+              <ViewWeekIcon fontSize="large" />
+              <Typography
+                variant="subtitle1"
+                fontWeight={view === "timeGridWeek" ? 700 : 400}
+                sx={{ mt: 0.5 }}
+              >
+                שבועי
+              </Typography>
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="תצוגה חודשית">
+            <IconButton
+              onClick={() => {
+                setView("dayGridMonth");
+                calendarRef.current.getApi().changeView("dayGridMonth");
+              }}
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                color:
+                  view === "dayGridMonth"
+                    ? theme.palette.primary.main
+                    : theme.palette.text.secondary,
+              }}
+            >
+              <CalendarMonthIcon fontSize="large" />
+              <Typography
+                variant="subtitle1"
+                fontWeight={view === "dayGridMonth" ? 700 : 400}
+                sx={{ mt: 0.5 }}
+              >
+                חודשי
+              </Typography>
+            </IconButton>
+          </Tooltip>
         </Stack>
 
         {/* חיצים קודמים/הבא */}
         <NavWrapper>
           <IconButton
-            onClick={goPrev}
+            onClick={goNext}
             sx={{
               position: "absolute",
               top: 0,
@@ -146,7 +182,7 @@ export default function CalendarPreview({
             <ArrowBackIosIcon />
           </IconButton>
           <IconButton
-            onClick={goNext}
+            onClick={goPrev}
             sx={{
               position: "absolute",
               top: 0,
@@ -162,71 +198,159 @@ export default function CalendarPreview({
         </NavWrapper>
 
         {/* סינון תגיות */}
-        <Stack
-          direction="row"
-          spacing={1}
-          justifyContent="center"
-          sx={{ mb: 3, flexWrap: "wrap" }}
-        >
-          {tags.map((t, i) => {
-            const colors = ["primary", "secondary", "success", "warning", "error"];
-            const clr = colors[i % colors.length];
-            return (
-              <CtaButton
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
+          <Tabs
+            value={tag}
+            onChange={(e, newTag) => setTag(newTag)}
+            textColor="primary"
+            indicatorColor="primary"
+            variant="scrollable"
+            scrollButtons="auto"
+            aria-label="activity tag tabs"
+            sx={{ borderBottom: 1, borderColor: "divider", maxWidth: "100%" }}
+          >
+            {tags.map((t) => (
+              <Tab
                 key={t}
-                color={tag === t ? clr : "default"}
-                size="small"
-                onClick={() => setTag(t)}
-              >
-                {t === "ALL" ? "הכל" : t}
-              </CtaButton>
-            );
-          })}
-        </Stack>
+                value={t}
+                label={t === "ALL" ? "הכל" : t}
+                sx={{
+                  fontWeight: tag === t ? 600 : 400,
+                  color:
+                    tag === t ? theme.palette.primary.main : theme.palette.text.primary,
+                }}
+              />
+            ))}
+          </Tabs>
+        </Box>
 
         {/* הפידג'ט של לוח */}
         <Box
           sx={{
             borderRadius: 2,
             overflow: "hidden",
-            boxShadow: theme.shadows[1],
-            // הסתרת השעה והגדרת סגנון לכותרת האירוע
-            "& .fc-event-time": {
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            backgroundColor: "#fafafa",
+
+            // כותרות ימים
+            "& .fc-col-header-cell": {
+              backgroundColor: theme.palette.primary.light,
+              color: theme.palette.primary.contrastText,
+              fontWeight: 600,
+              fontSize: isMobile ? "0.9em" : "1rem",
+            },
+
+            // רקע היום הנוכחי
+            "& .fc-timegrid-col.fc-day-today, & .fc-day-today": {
+              backgroundColor: theme.palette.primary.vlight,
+            },
+            "& .fc-col-header-cell.fc-day-today": {
+              color: "#000",
+            },
+
+            // אירועים בשבועי/דיילי
+            "& .fc-event": {
+              height: "auto !important",
+              minHeight: "auto !important",
+              overflow: "visible !important",
+              whiteSpace: "normal !important",
+              wordBreak: "break-word !important",
+            },
+            "& .fc-event-main": {
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: isMobile ? "4px" : "6px 8px",
+            },
+
+            // MONTHLY EVENT STYLING
+            "& .fc-daygrid-event": {
+              borderRadius: "8px",
+              color: "#fff !important",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              overflow: "visible !important",
+              whiteSpace: "normal !important",
+              wordBreak: "break-word !important",
+              margin: "2px 0",
+              padding: isMobile ? "2px" : "4px",
+            },
+            "& .fc-daygrid-event-dot": {
               display: "none",
             },
-            "& .fc-event-title": {
-              fontWeight: 500,
-              fontSize: isMobile ? "0.8em" : "0.9em",
-              padding: "2px",
-              whiteSpace: "normal",
+            "& .fc-daygrid-event .fc-event-main-frame": {
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
             },
           }}
         >
-          <FullCalendar
-            ref={calendarRef}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView="timeGridWeek"
-            locale={heLocale}
-            height="auto"
-            events={events}
-            headerToolbar={false}
-            selectable={false}
-            editable={false}
-            eventClick={handleEventClick}
-            slotMinTime="08:00:00"
-            slotMaxTime="22:00:00"
-            slotDuration="01:00:00"
-            slotLabelInterval="01:00"
-            eventTimeFormat={{
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            }}
-            slotLabelFormat={{
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            }}
+        <FullCalendar
+  ref={calendarRef}
+  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+  initialView={view}
+  locale={heLocale}
+  height="auto"
+  nowIndicator
+  allDaySlot={false}
+  events={events}
+  headerToolbar={false}
+  selectable={false}
+  editable={false}
+  eventClick={handleEventClick}
+  eventDisplay="block"
+  slotMinTime="08:00:00"
+  slotMaxTime="22:00:00"
+  slotDuration="01:00:00"
+  slotLabelInterval="01:00"
+  eventTimeFormat={{
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }}
+  slotLabelFormat={{
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }}
+
+  
+  eventDidMount={info => {
+    const titleEl = info.el.querySelector('.fc-event-title');
+    if (titleEl && titleEl.scrollHeight > titleEl.clientHeight) {
+      titleEl.style.fontSize = '0.7em';
+      titleEl.style.lineHeight = '1.1';
+    }
+  }}
+            
+            eventContent={(renderInfo) => (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  width: "100%",
+                }}
+              >
+
+              <Typography
+  className="fc-event-custom-title"
+  variant="body2"
+  sx={{
+    fontWeight: 600,
+    whiteSpace: "normal",
+    textAlign: "center",
+    lineHeight: 1.2,
+  }}
+>
+  {renderInfo.event.title}
+</Typography>
+
+
+                <Typography variant="caption">{renderInfo.timeText}</Typography>
+              </Box>
+            )}
           />
         </Box>
       </Container>
