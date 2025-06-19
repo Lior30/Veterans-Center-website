@@ -1,6 +1,7 @@
 // src/App.jsx
 import React from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
+import "leaflet/dist/leaflet.css";
 
 import NavBar from "./components/NavBar.jsx";
 import LandingPage from "./LandingPage/LandingPage.jsx";
@@ -28,6 +29,7 @@ import MessageRepliesContainer from "./components/MessageRepliesContainer.jsx";
 
 import PublicMessageBoardContainer from "./components/PublicMessageBoardContainer.jsx";
 import ManageUsersContainer from "./components/ManageUsersContainer.jsx";
+import AnalyticsDashboard from "./Analytic/AnalyticsDashboard";
 
 export default function App({ toggleTheme, mode }) {
   const { pathname } = useLocation();
@@ -46,6 +48,7 @@ export default function App({ toggleTheme, mode }) {
         <Route path="/activities" element={<ActivitiesContainer />} />
         <Route path="/flyers" element={<FlyerManager />} />
         <Route path="/manage-users" element={<ManageUsersContainer />} />
+        <Route path="/Data-analysis" element={<AnalyticsDashboard />} />
 
         {/* Surveys – admin */}
         <Route path="/surveys" element={<Surveys />} />
