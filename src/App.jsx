@@ -1,6 +1,7 @@
 // src/App.jsx
 import React from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
+import "leaflet/dist/leaflet.css";
 
 import PrivateRoute from './components/PrivateRoute';
 import NavBar from "./components/NavBar.jsx";
@@ -29,6 +30,7 @@ import MessageRepliesContainer from "./components/MessageRepliesContainer.jsx";
 
 import PublicMessageBoardContainer from "./components/PublicMessageBoardContainer.jsx";
 import ManageUsersContainer from "./components/ManageUsersContainer.jsx";
+import AnalyticsDashboard from "./Analytic/AnalyticsDashboard";
 
 export default function App({ toggleTheme, mode }) {
   const { pathname } = useLocation();
@@ -43,6 +45,7 @@ export default function App({ toggleTheme, mode }) {
         {/* ✅ Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/identificationPage" element={<IdentifyPage />} />
+          
         <Route path="/surveys/list" element={<SurveyListContainer />} />
         <Route path="/surveys/take/:id" element={<SurveyDetailContainer />} />
         <Route path="/messages/board" element={<PublicMessageBoardContainer />} />
@@ -60,6 +63,7 @@ export default function App({ toggleTheme, mode }) {
         <Route path="/manage-users" element={
           <PrivateRoute requireAdmin={true}><ManageUsersContainer /></PrivateRoute>
         } />
+        <Route path="/Data-analysis" element={<AnalyticsDashboard />} />
         <Route path="/HomepageImages" element={
           <PrivateRoute requireAdmin={true}><HomepageImagesContainer /></PrivateRoute>
         } />

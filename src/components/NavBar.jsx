@@ -85,6 +85,9 @@ export default function NavBar({ toggleTheme, mode }) {
       <NavLink to="/manage-users" style={linkStyle}>
         משתמשים
       </NavLink>
+      <NavLink to="/Data-analysis" style={linkStyle}>
+        ניתוח נתונים
+      </NavLink>
 
       {/* Spacer גמיש כדי לדחוף את הכפתור לימין */}
       <Box sx={{ flexGrow: 1 }} />

@@ -1,0 +1,62 @@
+// src/hooks/useAnalyticsData.js
+import { useState, useEffect } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
+
+//  מיפוי שכונה → אזור
+const NEIGHBORHOOD_TO_REGION = {
+  "בית הכרם":  "מרכז",
+  "גבעת רם":    "מרכז",
+  "מנחם בגין": "דרום",
+  // הוסיפו שאר השכונות שלכם
+};
+
+//  מיפוי אזור → קואורדינטות מרכזיות
+const REGION_COORDS = {
+  "מרכז": [31.778, 35.212],
+  "דרום": [31.750, 35.215],
+  "צפון": [31.806, 35.212],
+  // …
+};
+
+export default function useAnalyticsData() {
+  const [byRegion, setByRegion] = useState([]);
+
+  useEffect(() => {
+    async function fetchData() {
+      // 1. קח את כל המשתמשים
+      const snap = await getDocs(collection(db, "users"));
+
+      // 2. ספר משתמשים לפי אזור
+      const counts = {};
+      snap.forEach(doc => {
+        const addr = doc.data().address;
+        const region = NEIGHBORHOOD_TO_REGION[addr] || null;
+        if (region) counts[region] = (counts[region] || 0) + 1;
+      });
+
+      // 3. חישוב סכום כולל
+      const total = Object.values(counts).reduce((s, c) => s + c, 0) || 1;
+
+      // 4. בנה מערך של byRegion
+      const data = Object.entries(counts)
+        .map(([region, count]) => ({
+          name: region,
+          count,
+          percentage: (count / total) * 100,
+          coords: REGION_COORDS[region] || null,
+        }))
+        .filter(item => {
+          if (!item.coords) console.warn("No coords for region", item.name);
+          return !!item.coords;
+        })
+        .sort((a, b) => b.count - a.count);
+
+      setByRegion(data);
+    }
+
+    fetchData();
+  }, []);
+
+  return { byRegion };
+}
