@@ -147,13 +147,23 @@ static async registerUser(activityId, user) {
 
   // מבצעים טרנזקציה: בודקים קיבולת ונרשמים לפעילות + מעדכנים מסמך המשתמש
   try {
-    await runTransaction(db, async (tx) => {
-      const snap = await tx.get(activityRef);
+
+    const result =await runTransaction(db, async (tx) => {
+    const snap = await tx.get(activityRef);
       if (!snap.exists()) {
         console.warn("ActivityService.registerUser: activity not found:", activityId);
         throw new Error("NOT_FOUND");
       }
       const data = snap.data();
+
+      const userSnapTx = await tx.get(userRef);
+      const userData = userSnapTx.data();
+
+      // ✅ בדיקה אם הפעילות דורשת חבר מועדון 60+
+      if (data.registrationCondition === 'member60' && !userData.is_club_60) {
+        return { success: false, reason: "CONDITION_NOT_MET", message: "פעילות זו מיועדת לחברי מרכז 60+ בלבד" };
+      }
+
       const capacity = data.capacity ?? 0;
       const rawParticipants = Array.isArray(data.participants)
         ? data.participants
@@ -179,8 +189,7 @@ static async registerUser(activityId, user) {
       }
       // Capacity check
       if (capacity && participants.length >= capacity) {
-        console.warn("ActivityService.registerUser: activity FULL:", activityId);
-        throw new Error("FULL");
+        return { success: false, reason: "FULL", message: "הפעילות מלאה" };
       }
       // מוסיפים משתתף חדש
       const newParticipant = {
@@ -197,8 +206,12 @@ static async registerUser(activityId, user) {
         activities: arrayUnion(activityName),
         activities_date: arrayUnion(new Date().toISOString()),
       });
+
+      return { success: true, reason: "OK", message: "נרשמת בהצלחה 🎉" };
     });
+    
     console.log("ActivityService.registerUser: SUCCESS for phone:", normalizedPhone, "activityId:", activityId);
+    return result ?? { success: false, reason: "ERROR", message: "שגיאה לא צפויה בהרשמה" };
   } catch (err) {
     console.error("ActivityService.registerUser: Transaction failed:", err);
     throw err;
@@ -237,7 +250,19 @@ static async getUserActivities(phone) {
     const data = docSnap.data();
     const participants = data.participants || [];
 
-    const isUserInActivity = participants.some((p) => p.phone === digits);
+      if (participants.some((p) => p.phone === digits)) {
+        // כאן אתם מוודאים ש-data.time קיים
+        results.push({
+          id: docSnap.id,
+          name: data.name,
+          date: data.date,
+          time: data.starttime,            // <-- דאגו שזה שם
+          location: data.location,
+          description: data.description,
+        });
+      }
+
+
     if (isUserInActivity) {
       results.push({ id: docSnap.id, ...data });
     }

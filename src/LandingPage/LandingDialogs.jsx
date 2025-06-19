@@ -203,7 +203,10 @@ export default function LandingDialogs(props) {
     </Box>
 
     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-      <strong>שעה:</strong> {a.time || "לא צוינה"}
+      <strong>שעה:</strong>{" "}
+      {a.startTime
+        ? a.startTime
+        : "לא צוינה" /* עכשיו ברוב המקרים time יוגדר ויראה שעות והדקות */}
       {a.location && (
         <>
           <br />
@@ -233,7 +236,7 @@ export default function LandingDialogs(props) {
                 id: a.id,
                 title: a.name,
                 // אם אין שעה ייקבע 09:00 בבוקר
-                start: new Date(`${a.date}T${(a.time || "09:00")}:00`).toISOString(),
+                start: new Date(`${a.date}T${(a.startTime || "09:00")}:00`).toISOString(),
                 end: null,
                 notes: a.description || "",
               }))}
@@ -318,7 +321,7 @@ export default function LandingDialogs(props) {
                 {new Date(dialog.data.date).toLocaleDateString("he-IL")}
               </Typography>
               <Typography>
-                <strong>שעה:</strong> {dialog.data.time || "לא צוינה"}
+                <strong>שעה:</strong> {dialog.data.startTime || "לא צוינה"}
               </Typography>
               {dialog.data.location && (
                 <Typography>
@@ -387,33 +390,32 @@ export default function LandingDialogs(props) {
             לא
           </CtaButton>
           <CtaButton
-            color="primary"
-            onClick={async () => {
-              const activityId = dialog.data;
-              try {
-                const userActs = await ActivityService.getUserActivities(
-                  userProfile.id
-                );
-                const already = userActs.some((a) => a.id === activityId);
-                if (already) {
-                  alert("את/ה כבר רשום/ה לפעילות הזו");
-                  closeDialog();
-                  return;
-                }
-                await ActivityService.registerUser(activityId, {
-                  name: userProfile.name || userProfile.first_name,
-                  phone: userProfile.phone,
-                });
-                alert("נרשמת בהצלחה 🎉");
-                closeDialog();
-              } catch (err) {
-                console.error(err);
-                alert("שגיאה בהרשמה, נסה/י שוב");
-              }
-            }}
-          >
-            כן, הירשם/י
-          </CtaButton>
+                color="primary"
+                onClick={async () => {
+                  const activityId = dialog.data;
+                  try {
+                    // תפסי את התוצאה במשתנה result
+                    const result = await ActivityService.registerUser(activityId, {
+                      name: userProfile.name || userProfile.first_name,
+                      phone: userProfile.phone,
+                    });
+
+                    // תציגי למסך את ההודעה שהשירות החזיר
+                    alert(result.message);
+
+                    // אם הצלחנו – סגרי את הדיאלוג
+                    if (result.success) {
+                      closeDialog();
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    alert("שגיאה בהרשמה, נסה/י שוב");
+                  }
+                }}
+              >
+                כן, הירשם/י
+              </CtaButton>
+
         </DialogActions>
       </StyledDialog>
 
