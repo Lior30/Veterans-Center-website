@@ -7,79 +7,110 @@ import {
   CircularProgress,
   Alert,
   Box,
+  Link,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { app } from '../firebase';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from 'firebase/auth';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { app, db } from '../firebase';      // your initialized Firestore as `db`
 import { useNavigate } from 'react-router-dom';
 
-// ✅ Define CAPTCHA callback (must be global)
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
+
+// CAPTCHA callback (same as before)…
 function onCaptchaVerify(token) {
-  console.log('✅ CAPTCHA success, token:', token);
   window.dispatchEvent(new CustomEvent('captcha-verified', { detail: token }));
 }
 
-// ✅ Generate email/password from admin username and password
-export const generateEmailPasswordFromUserName = (userName, password) => {
-  const email = `website_admin_${userName}@veterans.com`;
+export const generatePassword = (password) => {
   const generatedPassword = `website_Admin!${password}#2025`;
-  return { email, password: generatedPassword };
+  return { password: generatedPassword };
 };
 
 const AdminSignIn = () => {
-  const [userName, setUserName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [infoMsg, setInfoMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [captchaPassed, setCaptchaPassed] = useState(false);
   const navigate = useNavigate();
 
   const auth = getAuth(app);
+  const firestore = getFirestore(app);
 
-  // ✅ Render CAPTCHA manually once grecaptcha is ready
+  // render reCAPTCHA (same as before)…
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (window.grecaptcha && window.grecaptcha.render) {
-        clearInterval(interval);
-        console.log('✅ reCAPTCHA loaded. Rendering...');
+    const iv = setInterval(() => {
+      if (window.grecaptcha?.render) {
+        clearInterval(iv);
         window.grecaptcha.render('recaptcha-container', {
           sitekey: import.meta.env.VITE_RECAPTCHA_SITE_KEY,
           callback: onCaptchaVerify,
         });
       }
     }, 500);
-
-    return () => clearInterval(interval);
+    return () => clearInterval(iv);
   }, []);
 
-  // ✅ Listen for captcha verification
+  // listen for captcha
   useEffect(() => {
-    const handleCaptcha = (e) => {
-      console.log('✅ CAPTCHA verified via event:', e.detail);
-      setCaptchaPassed(true);
-    };
-
-    window.addEventListener('captcha-verified', handleCaptcha);
-    return () => window.removeEventListener('captcha-verified', handleCaptcha);
+    const h = (e) => setCaptchaPassed(true);
+    window.addEventListener('captcha-verified', h);
+    return () => window.removeEventListener('captcha-verified', h);
   }, []);
 
+  // — Admin login —
   const handleSignIn = async (e) => {
     e.preventDefault();
     setErrorMsg('');
-
     if (!captchaPassed) {
       setErrorMsg('אנא אמת את עצמך עם CAPTCHA');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { password: genPwd } = generatePassword(password);
+      await signInWithEmailAndPassword(auth, email, genPwd);
+
+      navigate('/home');
+    } catch {
+      setErrorMsg('אימייל או סיסמא שגויים');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // — Forgot password —
+  const handleForgot = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setInfoMsg('');
+
+    // 1) Check they entered the correct admin email:
+    if (resetEmail.trim() !== ADMIN_EMAIL) {
+      setErrorMsg('כתובת האימייל לא נכונה');
       return;
     }
 
     setLoading(true);
     try {
-      const { email, password: generatedPassword } = generateEmailPasswordFromUserName(userName, password);
-      const userCredential = await signInWithEmailAndPassword(auth, email, generatedPassword);
-      console.log('✅ Admin signed in:', userCredential.user.email);
-      navigate('/home');
+      // 2) Send the password-reset email:
+      await sendPasswordResetEmail(auth, resetEmail);
+      setInfoMsg('נשלח קישור לאיפוס הסיסמה');
     } catch (err) {
-      console.error('❌ Sign-in error:', err.code, err.message);
-      setErrorMsg('שם משתמש או סיסמה שגויים');
+      console.error('Error sending reset email:', err);
+      // Note: with Email Enumeration Protection on, Firebase won't throw if email/user not found
+      setErrorMsg('שגיאה בשליחת המייל, נסה שוב מאוחר יותר');
     } finally {
       setLoading(false);
     }
@@ -88,32 +119,57 @@ const AdminSignIn = () => {
   return (
     <Container maxWidth="xs" sx={{ mt: 2, mb: 2 }}>
       <Typography variant="h6" align="center" gutterBottom>
-        התחברות מנהל
+        {forgotMode ? 'שכחתי סיסמא' : 'התחברות מנהל'}
       </Typography>
 
-      <Box component="form" onSubmit={handleSignIn} noValidate>
-        <TextField
-          placeholder="שם משתמש"
-          type="text"
-          value={userName}
-          onChange={(e) => setUserName(e.target.value)}
-          fullWidth
-          margin="normal"
-          required
-        />
-
-        <TextField
-          placeholder="סיסמא"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          fullWidth
-          margin="normal"
-          required
-        />
-
-        {/* ✅ Google reCAPTCHA widget renders here */}
-        <div id="recaptcha-container" style={{ marginTop: '16px', marginBottom: '8px' }}></div>
+      <Box component="form" onSubmit={forgotMode ? handleForgot : handleSignIn} noValidate>
+        {forgotMode ? (
+          <TextField
+            placeholder="הזן כתובת אימייל"
+            type="email"
+            value={resetEmail}
+            onChange={(e) => setResetEmail(e.target.value)}
+            fullWidth
+            margin="normal"
+            required
+          />
+        ) : (
+          <>
+            <TextField
+              placeholder="אימייל"
+              type="text"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              fullWidth
+              margin="normal"
+              required
+            />
+            <TextField
+              placeholder="סיסמא"
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              fullWidth
+              margin="normal"
+              required
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onMouseDown={() => setShowPassword(true)}
+                      onMouseUp={() => setShowPassword(false)}
+                      onMouseLeave={() => setShowPassword(false)}n
+                      edge="end"
+                    >
+                      <VisibilityIcon />
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
+            <div id="recaptcha-container" style={{ margin: '16px 0' }}></div>
+          </>
+        )}
 
         <Button
           type="submit"
@@ -122,15 +178,26 @@ const AdminSignIn = () => {
           disabled={loading}
           sx={{ mt: 2 }}
         >
-          {loading ? <CircularProgress size={24} color="inherit" /> : 'התחבר'}
+          {loading ? <CircularProgress size={24} color="inherit" /> : forgotMode ? 'שלח' : 'התחבר'}
         </Button>
+
+        <Box mt={1} textAlign="center">
+          <Link
+            component="button"
+            variant="body2"
+            onClick={() => {
+              setErrorMsg('');
+              setInfoMsg('');
+              setForgotMode(!forgotMode);
+            }}
+          >
+            {forgotMode ? 'חזור להתחברות' : 'שכחתי סיסמא'}
+          </Link>
+        </Box>
       </Box>
 
-      {errorMsg && (
-        <Alert severity="error" sx={{ mt: 2 }}>
-          {errorMsg}
-        </Alert>
-      )}
+      {errorMsg && <Alert severity="error" sx={{ mt: 2 }}>{errorMsg}</Alert>}
+      {infoMsg && <Alert severity="success" sx={{ mt: 2 }}>{infoMsg}</Alert>}
     </Container>
   );
 };

@@ -1,5 +1,6 @@
-/* src/index.css */
-/* Global reset and RTL support */
+/* ===== src/index.css ===== */
+
+/* 1. Global reset and RTL support */
 html,
 body,
 #root {
@@ -10,63 +11,115 @@ body,
   background-color: #ffffff;
 }
 
-/* Box-sizing reset */
-*, *::before, *::after {
+/* 2. Box-sizing reset */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-/* Default font and text color */
+/* 3. Default font and heading font */
 body {
- /* שימוש בפונט Secular One לכותרות */
+  /* כאן ניתן להוסיף font-family גלובלי */
+}
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Secular One', sans-serif;
 }
 
-}
-
-
-/* Remove scrollbars in the flyer carousel */
+/* 4. Carousel scrollbar removal */
 .flyer-carousel::-webkit-scrollbar {
   display: none;
 }
 .flyer-carousel {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;     /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
+/* 5. FullCalendar tweaks */
 .fc .fc-daygrid-day.fc-day-today {
   background-color: #ffffff !important;
 }
-/* עיצוב מותאם לפעילויות בלוח השנה */
 .custom-event {
   font-weight: bold;
   animation: fadeInEvent 0.4s ease-in;
   padding: 2px 4px;
   border-radius: 4px;
 }
-
-/* אנימציית כניסה רכה */
 @keyframes fadeInEvent {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
-/* הקטנת גובה שורות לוח השבוע */
-.fc-timegrid-slot {
-  height:2em !important;
-}
-
-/* נסיון להכריח שבלוח שבועי אירועים יוצגו אחד מתחת לשני */
+.fc-timegrid-slot { height: 2em !important; }
 .fc-v-event {
-  width: 100% !important;          /* שיתפסו את כל השורה */
-  margin-bottom: 4px !important;   /* רווח בין אירועים */
-  clear: both !important;          /* כל אירוע מתחיל שורה חדשה */
+  width: 100% !important;
+  margin-bottom: 4px !important;
+  clear: both !important;
   float: none !important;
   display: block !important;
+}
+
+/* ===== Accessibility styles ===== */
+/* High contrast */
+.high-contrast {
+  filter: contrast(200%) !important;
+  background-color: #000 !important;
+  color: #fff !important;
+}
+
+/* Grayscale */
+.grayscale {
+  filter: grayscale(100%) !important;
+}
+
+/* Invert colors */
+.invert-colors {
+  filter: invert(100%) hue-rotate(180deg) !important;
+}
+
+/* Disable animations */
+.no-animations,
+.no-animations * {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Underline all links */
+.underline-links a {
+  text-decoration: underline !important;
+}
+
+/* Dyslexic font (אם בשימוש) */
+@font-face {
+  font-family: 'OpenDyslexic';
+  src:
+    url('/fonts/OpenDyslexic-Regular.woff2') format('woff2'),
+    url('/fonts/OpenDyslexic-Regular.woff') format('woff'),
+    url('/fonts/OpenDyslexic-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+.dyslexic {
+  font-family: 'OpenDyslexic', sans-serif !important;
+}
+
+/* Skip-to-content button */
+.skip-to-content {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #000;
+  color: #fff;
+  padding: 8px;
+  z-index: 1000;
+  transition: top 0.3s;
+}
+.skip-to-content:focus {
+  top: 0;
+}
+
+/* Keyboard navigation: clear focus outline when active */
+.keyboard-nav *:focus {
+  outline: 2px dashed #91278F !important; /* החליפי בצבע הסגול של הלוגו אם שונה */
+  outline-offset: 2px;
 }

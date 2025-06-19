@@ -37,34 +37,9 @@ import LandingDialogs from "./LandingDialogs";
 import FooterSection from "./FooterSection";
 import LandingNavBar from "./LandingNavBar";
 import MoodSection from "./MoodSection";
+import HeroSection from "./HeroSection";
 
 
-const HeroSection = ({ children }) => {
-  const theme = useTheme();
-  return (
-    <Box
-      component="section"
-      sx={{
-        backgroundImage: "url('/image1.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        position: "relative",
-        display: "flex",
-        alignItems: "center",
-        py: { xs: 4, sm: 6 },
-      }}
-    >
-      <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
-          backgroundColor: "rgba(0,0,0,0.4)",
-        }}
-      />
-      <Container sx={{ position: "relative", zIndex: 1 }}>{children}</Container>
-    </Box>
-  );
-};
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -228,73 +203,11 @@ const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "s
       onScrollToMessages={scrollToMessages}
     />
 
-    {/* Hero */}
-    <HeroSection>
-      <Grid container spacing={4} alignItems="center">
-        <Grid item xs={12} md={6}>
-          <Typography
-            variant={isMobile ? "h4" : "h3"}
-            sx={{
-              color: theme.palette.primary.contrastText,
-              fontWeight: 700,
-              mb: 2,
-            }}
-          >
-            מרכז ותיקים בית הכרם
-          </Typography>
-          {userProfile?.first_name && (
-            <Typography
-              variant={isMobile ? "h5" : "h4"}
-              sx={{
-                color: theme.palette.primary.contrastText,
-                fontWeight: 700,
-                mb: 2,
-              }}
-            >
-              שלום {userProfile.first_name}!
-            </Typography>
-          )}
-          <Typography
-            sx={{
-              color: theme.palette.primary.contrastText,
-              mb: 3,
-              fontSize: isMobile ? "0.9rem" : "1rem",
-              lineHeight: 1.6,
-            }}
-          >
-            ברוכים הבאים למועדון שמביא לכם פעילויות, הרצאות ורווחה בכל יום!
-          </Typography>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-            {!userProfile?.first_name && (
-              <CtaButton color="primary" onClick={() => setOpenIdentify(true)}>
-                הזדהות
-              </CtaButton>
-            )}
-            <CtaButton
-              color="secondary"
-              component="a"
-              href="https://wa.me/0523705021"
-              startIcon={<WhatsAppIcon />}
-            >
-              וואטסאפ
-            </CtaButton>
-            <CtaButton
-              color="info"
-              component="a"
-              href="tel:0523705021"
-              startIcon={<PhoneIcon />}
-            >
-              התקשר
-            </CtaButton>
-            {userProfile?.id && (
-              <CtaButton color="success" onClick={() => setOpenMyActivities(true)}>
-                הפעילויות שלי
-              </CtaButton>
-            )}
-          </Box>
-        </Grid>
-      </Grid>
-    </HeroSection>
+  <HeroSection
+  userProfile={userProfile}
+  onOpenIdentify={() => setOpenIdentify(true)}
+  onOpenMyActivities={() => setOpenMyActivities(true)}
+/>
 
     {/* Flyers */}
     <Box ref={flyersRef}>
@@ -309,21 +222,22 @@ const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "s
     openDialog={openDialog}
   />
 </Box>
-{/* Mood Images Section */}
-   <MoodSection />
-
-
     {/* Calendar (Activities) */}
-    <Box ref={calendarRef}>
-     <CalendarPreview
-  openDialog={openDialog}
-  userProfile={userProfile}
-  setOpenIdentify={setOpenIdentify}
-  activities={activities}
-  flyers={flyers}
-/>
+{/* Calendar (Activities) */}
+<Box
+  id="calendar-view"    // ← ה-ID שאליו נדלג
+  tabIndex={-1}         // ← כדי שניתן יהיה להתמקד בו עם focus()
+  ref={calendarRef}
+>
+  <CalendarPreview
+    openDialog={openDialog}
+    userProfile={userProfile}
+    setOpenIdentify={setOpenIdentify}
+    activities={activities}
+    flyers={flyers}
+  />
+</Box>
 
-    </Box>
 
     {/* Surveys */}
     <Box ref={surveysRef}>

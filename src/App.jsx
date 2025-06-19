@@ -3,6 +3,7 @@ import React from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import "leaflet/dist/leaflet.css";
 
+import PrivateRoute from './components/PrivateRoute';
 import NavBar from "./components/NavBar.jsx";
 import LandingPage from "./LandingPage/LandingPage.jsx";
 import IdentifyPage from "./components/IdentificationPage.jsx";
@@ -33,7 +34,7 @@ import AnalyticsDashboard from "./Analytic/AnalyticsDashboard";
 
 export default function App({ toggleTheme, mode }) {
   const { pathname } = useLocation();
-  const hiddenRoutes = ["/", "/landingPage", "/identificationPage"];
+  const hiddenRoutes = ["/", "/identificationPage"];
   const showNav = !hiddenRoutes.includes(pathname);
 
   return (
@@ -41,45 +42,64 @@ export default function App({ toggleTheme, mode }) {
       {showNav && <NavBar toggleTheme={toggleTheme} mode={mode} />}
 
       <Routes>
+        {/* ✅ Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/identificationPage" element={<IdentifyPage />} />
-
-        <Route path="/home" element={<Home />} />
-        <Route path="/activities" element={<ActivitiesContainer />} />
-        <Route path="/flyers" element={<FlyerManager />} />
-        <Route path="/manage-users" element={<ManageUsersContainer />} />
-        <Route path="/Data-analysis" element={<AnalyticsDashboard />} />
-
-        {/* Surveys – admin */}
-        <Route path="/surveys" element={<Surveys />} />
-        <Route path="/surveys/create" element={<CreateSurvey />} />
-        <Route path="/surveys/results" element={<SurveyResultsList />} />
-        <Route path="/surveys/results/:id" element={<SurveyResultsDetail />} />
-        <Route path="/surveys/analysis/:id" element={<SurveyAnalysisDetail />} />
-
-        {/* Surveys – public */}
+          
         <Route path="/surveys/list" element={<SurveyListContainer />} />
         <Route path="/surveys/take/:id" element={<SurveyDetailContainer />} />
+        <Route path="/messages/board" element={<PublicMessageBoardContainer />} />
 
-        <Route
-          path="/HomepageImages"
-          element={<HomepageImagesContainer />}
-        />
+        {/* 🔐 Protected routes (admin only) */}
+        <Route path="/home" element={
+          <PrivateRoute requireAdmin={true}><Home /></PrivateRoute>
+        } />
+        <Route path="/activities" element={
+          <PrivateRoute requireAdmin={true}><ActivitiesContainer /></PrivateRoute>
+        } />
+        <Route path="/flyers" element={
+          <PrivateRoute requireAdmin={true}><FlyerManager /></PrivateRoute>
+        } />
+        <Route path="/manage-users" element={
+          <PrivateRoute requireAdmin={true}><ManageUsersContainer /></PrivateRoute>
+        } />
+        <Route path="/Data-analysis" element={<AnalyticsDashboard />} />
+        <Route path="/HomepageImages" element={
+          <PrivateRoute requireAdmin={true}><HomepageImagesContainer /></PrivateRoute>
+        } />
 
-        {/* Messages – admin */}
-        <Route path="/messages" element={<ManageMessages />} />
-        <Route path="/messages/create" element={<CreateMessage />} />
-        <Route path="/messages/list" element={<MessageListContainer />} />
-        <Route
-          path="/messages/replies/:id"
-          element={<MessageRepliesContainer />}
-        />
 
-        {/* Messages – public */}
-        <Route
-          path="/messages/board"
-          element={<PublicMessageBoardContainer />}
-        />
+        {/* 🔐 Surveys – admin */}
+        <Route path="/surveys" element={
+          <PrivateRoute requireAdmin={true}><Surveys /></PrivateRoute>
+        } />
+        <Route path="/surveys/create" element={
+          <PrivateRoute requireAdmin={true}><CreateSurvey /></PrivateRoute>
+        } />
+        <Route path="/surveys/results" element={
+          <PrivateRoute requireAdmin={true}><SurveyResultsList /></PrivateRoute>
+        } />
+        <Route path="/surveys/results/:id" element={
+          <PrivateRoute requireAdmin={true}><SurveyResultsDetail /></PrivateRoute>
+        } />
+        <Route path="/surveys/analysis/:id" element={
+          <PrivateRoute requireAdmin={true}><SurveyAnalysisDetail /></PrivateRoute>
+        } />
+
+
+        {/* 🔐 Messages – admin */}
+        <Route path="/messages" element={
+          <PrivateRoute requireAdmin={true}><ManageMessages /></PrivateRoute>
+        } />
+        <Route path="/messages/create" element={
+          <PrivateRoute requireAdmin={true}><CreateMessage /></PrivateRoute>
+        } />
+        <Route path="/messages/list" element={
+          <PrivateRoute requireAdmin={true}><MessageListContainer /></PrivateRoute>
+        } />
+        <Route path="/messages/replies/:id" element={
+          <PrivateRoute requireAdmin={true}><MessageRepliesContainer /></PrivateRoute>
+        } />
       </Routes>
     </>
   );

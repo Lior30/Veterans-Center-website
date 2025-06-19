@@ -8,76 +8,88 @@ export function getDesignTheme(mode) {
   return createTheme({
     direction: "rtl",
     palette: {
-      mode, // "light" או "dark"
+      mode,
 
+      // צבע ראשי פסטלי–עמוק (Purple Haze)
       primary: {
-        light: "#B39DDB",
-        main:  "#7E57C2",
-        dark:  "#5E35B1",
+        light: "#A692CC",
+        main:  "#6B5B95",
+        dark:  "#503A78",
         contrastText: "#FFFFFF",
+         vlight: "#F8EAFB",
+         lightblue: "#E0FFFF",
       },
+
+      // צבע משני עדין (Sage Green)
       secondary: {
-        light: "#FFCC80",
-        main:  "#FFB74D",
-        dark:  "#F57C00",
-        contrastText: "#000000",
-      },
-      tertiary: {
-        light: "#E1BEE7",
-        main:  "#CE93D8",
-        dark:  "#AB47BC",
+        light: "#B9C9A6",
+        main:  "#88B04B",
+        dark:  "#618238",
         contrastText: "#FFFFFF",
       },
+
+      // צבע טאצ' חמים (Coral Blush)
+      tertiary: {
+        light: "#F8B6A4",
+        main:  "#E27D60",
+        dark:  "#B94D3D",
+        contrastText: "#FFFFFF",
+      },
+
       info: {
-        main: "#4FC3F7",
-        contrastText: "#000000",
+        main: "#5DAE8B",
+        contrastText: "#FFFFFF",
       },
       success: {
-        main: "#81C784",
-        contrastText: "#FFFFFF",
+        main: "#82C0CC",
+        contrastText: "#2E1A47",
       },
       warning: {
-        main: "#FFD54F",
-        contrastText: "#000000",
+        main: "#FFB400",
+        contrastText: "#2E1A47",
       },
       error: {
-        main: "#E57373",
+        main: "#E15759",
         contrastText: "#FFFFFF",
       },
 
       background: mode === "dark"
-        ? { default: "#121212", paper: "#1e1e1e" }
-        : { default: "#F9F4FF", paper: "#FFFFFF" },
+        ? { default: "#2E1A47", paper: "#3E2A5A" }
+        : { default: "#F4F2F7", paper: "#FFFFFF" },
 
       text: mode === "dark"
         ? { primary: "#FFFFFF", secondary: "#CCCCCC" }
-        : { primary: "#2E1A47", secondary: "#5E3B76" },
+        : { primary: "#2E1A47", secondary: "#6B5B95" },
     },
+
     typography: {
-      fontFamily: `'Secular One', sans-serif`,
-      h1: { fontWeight: 400, fontSize: "3rem", lineHeight: 1.3 },
-      h2: { fontWeight: 400, fontSize: "2.5rem", lineHeight: 1.3 },
-      h3: { fontWeight: 400, fontSize: "2.2rem", lineHeight: 1.3 },
-      h4: { fontWeight: 400, fontSize: "1.8rem" },
-      h5: { fontWeight: 400, fontSize: "1.5rem" },
-      h6: { fontWeight: 400, fontSize: "1.3rem" },
-      body1: { fontSize: "1.2rem", lineHeight: 1.7, fontWeight: 400 },
-      body2: { fontSize: "1.1rem", lineHeight: 1.6, fontWeight: 400 },
-      button: { fontSize: "1.1rem", textTransform: "none", fontWeight: 400 },
+      // פונט מודרני וקריא
+      fontFamily: `'Inter', 'Helvetica Neue', Arial, sans-serif`,
+      h1: { fontWeight: 600, fontSize: "3rem", lineHeight: 1.2 },
+      h2: { fontWeight: 600, fontSize: "2.5rem", lineHeight: 1.25 },
+      h3: { fontWeight: 500, fontSize: "2rem", lineHeight: 1.3 },
+      h4: { fontWeight: 500, fontSize: "1.6rem" },
+      h5: { fontWeight: 500, fontSize: "1.3rem" },
+      h6: { fontWeight: 500, fontSize: "1.1rem" },
+      body1: { fontSize: "1.1rem", lineHeight: 1.6, fontWeight: 400 },
+      body2: { fontSize: "1rem", lineHeight: 1.5, fontWeight: 400 },
+      button: { fontSize: "1rem", textTransform: "none", fontWeight: 500 },
     },
+
     components: {
       MuiButton: {
         styleOverrides: {
           root: {
-            borderRadius: 8,
-            padding: "8px 24px",
+            borderRadius: 10,
+            padding: "10px 28px",
           },
         },
       },
       MuiCard: {
         styleOverrides: {
           root: {
-            borderRadius: 12,
+            borderRadius: 14,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
           },
         },
       },
