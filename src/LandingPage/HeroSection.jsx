@@ -12,6 +12,7 @@ import {
 import { WhatsApp as WhatsAppIcon, Phone as PhoneIcon } from '@mui/icons-material';
 import CtaButton from './CtaButton';
 import BannerService from '../services/BannerService';
+import ContactService from "../services/ContactService";
 
 export default function HeroSection({ userProfile, onOpenIdentify, onOpenMyActivities }) {
   const theme = useTheme();
@@ -52,6 +53,20 @@ export default function HeroSection({ userProfile, onOpenIdentify, onOpenMyActiv
       clearInterval(interval);
     };
   }, [banners]);
+
+  const [contact, setContact] = useState({
+    contactPhone: "",
+    contactWhatsapp: "",
+  });
+
+  useEffect(() => {
+    ContactService.get().then(data => {
+      setContact({
+        contactPhone: data.contactPhone || "",
+        contactWhatsapp: data.contactWhatsapp || "",
+      });
+    });
+  }, []);
 
   const currentBg = banners[idx] || '';
 
@@ -157,7 +172,8 @@ export default function HeroSection({ userProfile, onOpenIdentify, onOpenMyActiv
               <CtaButton
                 sx={{ backgroundColor: '#CE93D8', color: 'white', '&:hover': { backgroundColor: '#BA68C8' } }}
                 component="a"
-                href="https://wa.me/0523705021"
+                // href="https://wa.me/9720523705021"
+                href={`https://wa.me/972${contact.contactWhatsapp}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 startIcon={<WhatsAppIcon />}
@@ -167,7 +183,7 @@ export default function HeroSection({ userProfile, onOpenIdentify, onOpenMyActiv
               <CtaButton
                 sx={{ backgroundColor: '#E1BEE7', color: 'black', '&:hover': { backgroundColor: '#D1A3D6' } }}
                 component="a"
-                href="tel:0523705021"
+                href={`tel:972${contact.contactPhone}`}
                 startIcon={<PhoneIcon />}
               >
                 התקשר
