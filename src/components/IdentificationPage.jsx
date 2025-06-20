@@ -1,5 +1,5 @@
 // src/components/IdentifyPage.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import {
   Container,
@@ -10,6 +10,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import UserService from '../services/UserService';
+import ContactService from '../services/ContactService';
 
 const auth = getAuth();
 
@@ -28,7 +29,15 @@ export default function IdentifyPage({ onSuccess }) {
   const [message, setMessage] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const ADMIN_CONTACT = 'לפרטים והרשמה לאתר, אנא צרו קשר במספר: 052-370-5021';
+  const [contactMessage, setContactMessage] = useState('');
+
+  useEffect(() => {
+    ContactService.get().then(data => {
+      if (data?.contactMessage) {
+        setContactMessage(data.contactMessage);
+      }
+    });
+  }, []);
 
   const handleLogin = async () => {
     const trimmed = phoneNumber.trim();
@@ -49,7 +58,7 @@ export default function IdentifyPage({ onSuccess }) {
       const user = await UserService.get(trimmed);
       if (!user) {
         console.error('[IdentifyPage] user not found in database');
-        setMessage(ADMIN_CONTACT);
+        setMessage(contactMessage);
         // remove  the user from firebase authentication
         await auth.currentUser.delete().catch((err) => {
           console.error('[IdentifyPage] failed to delete user from auth', err);
@@ -75,7 +84,7 @@ export default function IdentifyPage({ onSuccess }) {
     } catch (e) {
       console.error('[IdentifyPage] login failed', e);  // log the error 
       setLoading(false);
-      setMessage(ADMIN_CONTACT);
+      setMessage(contactMessage);
     }
   };
 

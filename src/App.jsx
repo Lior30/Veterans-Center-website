@@ -32,6 +32,8 @@ import PublicMessageBoardContainer from "./components/PublicMessageBoardContaine
 import ManageUsersContainer from "./components/ManageUsersContainer.jsx";
 import AnalyticsDashboard from "./Analytic/AnalyticsDashboard";
 
+import ContactDetailsAdmin from "./components/ContactDetailsAdmin.jsx";
+
 export default function App({ toggleTheme, mode }) {
   const { pathname } = useLocation();
   const hiddenRoutes = ["/", "/identificationPage"];
@@ -66,6 +68,9 @@ export default function App({ toggleTheme, mode }) {
         <Route path="/Data-analysis" element={<AnalyticsDashboard />} />
         <Route path="/HomepageImages" element={
           <PrivateRoute requireAdmin={true}><HomepageImagesContainer /></PrivateRoute>
+        } />
+        <Route path="/contact-details" element={
+          <PrivateRoute requireAdmin={true}><ContactDetailsAdmin /></PrivateRoute>
         } />
 
 

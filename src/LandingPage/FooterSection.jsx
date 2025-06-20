@@ -1,10 +1,11 @@
 // src/components/FooterSection.jsx
-import React from "react";
+import React, { useState, useEffect }from "react";
 import { Box, Container, Grid, Typography, Button, styled } from "@mui/material";
 import HomeIcon from "@mui/icons-material/Home";
 import PhoneIcon from "@mui/icons-material/Phone";
 import MailIcon from "@mui/icons-material/Mail";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
+import ContactService from "../services/ContactService";
 
 const FooterBox = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.primary.main,
@@ -18,6 +19,19 @@ export default function FooterSection({
   onOpenIdentify,
   onOpenAdmin,
 }) {
+
+  const [contact, setContact] = useState({
+    contactPhone: "",
+    contactEmail: "",
+    contactAddress: "",
+  });
+
+  useEffect(() => {
+    ContactService.get().then(data => {
+      setContact(data);
+    });
+  }, []);
+
   return (
     <FooterBox>
       <Container dir="rtl">
@@ -47,16 +61,16 @@ export default function FooterSection({
             </Typography>
             <Box display="flex" alignItems="center" mb={1}>
               <PhoneIcon sx={{ ml: 1, color: "inherit" }} />
-              <Typography color="inherit">052-3705021</Typography>
+              <Typography color="inherit">{contact.contactPhone}</Typography>
             </Box>
             <Box display="flex" alignItems="center" mb={1}>
               <MailIcon sx={{ ml: 1, color: "inherit" }} />
-              <Typography color="inherit">osnat@example.com</Typography>
+              <Typography color="inherit">{contact.contactEmail}</Typography>
             </Box>
             <Box display="flex" alignItems="center" mb={1}>
               <LocationOnIcon sx={{ ml: 1, color: "inherit" }} />
               <Typography color="inherit">
-                בית הועד החלוץ 33, ירושלים
+                {contact.contactAddress}
               </Typography>
             </Box>
            

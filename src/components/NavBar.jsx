@@ -88,6 +88,9 @@ export default function NavBar({ toggleTheme, mode }) {
       <NavLink to="/Data-analysis" style={linkStyle}>
         ניתוח נתונים
       </NavLink>
+      <NavLink to="/contact-details" style={linkStyle}>
+        פרטי קשר
+      </NavLink>
 
       {/* Spacer גמיש כדי לדחוף את הכפתור לימין */}
       <Box sx={{ flexGrow: 1 }} />
