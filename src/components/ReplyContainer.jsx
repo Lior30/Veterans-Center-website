@@ -1,99 +1,81 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   collection,
   addDoc,
   serverTimestamp,
   doc,
   getDoc,
-  setDoc,
   updateDoc,
   arrayUnion,
 } from "firebase/firestore";
 import { db } from "../firebase.js";
-import UserService from "../services/UserService.js";
 import { Box, TextField, Button } from "@mui/material";
 
 function ReplyContainer({ messageId, onClose }) {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("");
   const [replyText, setReplyText] = useState("");
-
   const [errors, setErrors] = useState({});
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    const phone = sessionStorage.getItem("userPhone");
+    if (!phone) {
+      console.warn("🔒 No phone in sessionStorage, cannot fetch user data");
+      return;
+    }
+    const loadUser = async () => {
+      const userRef = doc(db, "users", phone);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        setUserData(userSnap.data());
+      } else {
+        console.warn("⚠️ User not found in Firestore for phone:", phone);
+      }
+    };
+    loadUser();
+  }, []);
 
   const validate = () => {
     const newErrors = {};
-
-    if (!firstName.trim()) {
-      newErrors.firstName = "נא למלא שם פרטי";
-    } else if (!UserService.isValidName(firstName.trim())) {
-      newErrors.firstName = "שם לא תקין";
-    }
-
-    if (!lastName.trim()) {
-      newErrors.lastName = "נא למלא שם משפחה";
-    } else if (!UserService.isValidName(lastName.trim())) {
-      newErrors.lastName = "שם משפחה לא תקין";
-    }
-
-    if (!UserService.isValidPhone(phone.trim())) {
-      newErrors.phone = UserService.getPhoneError(phone.trim()) || "טלפון לא תקין";
-    }
-
     if (!replyText.trim()) {
       newErrors.replyText = "נא למלא את ההודעה";
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
-    if (!validate()) return;
+    if (!validate() || !userData) return;
 
-    const fullname = `${firstName.trim()} ${lastName.trim()}`;
-    // נרמול phone: רק ספרות
-    const phoneClean = phone.trim().replace(/\D/g, "");
-    if (!phoneClean) {
-      // אפשר להודיע למשתמש או לסיים כאן
-      return;
-    }
+    const fullName = `${userData.first_name?.trim() || ""} ${userData.last_name?.trim() || ""}`;
+    const phoneClean = userData.phone?.trim().replace(/\D/g, "");
     const replyTime = new Date().toISOString();
 
-    // 1. שמירת התשובה בתת-collection של ההודעה
     try {
       await addDoc(collection(db, "messages", messageId, "replies"), {
-        fullname,
+        fullname: fullName,
         phone: phoneClean,
         replyText,
         createdAt: serverTimestamp(),
       });
     } catch (e) {
       console.error("ReplyContainer: failed to save reply:", e);
-      // אם השמירה נכשלת, סיימו כאן:
       return;
     }
 
-    // 2. עדכון המשתמש הקיים בלבד (בהנחה שהוא קיים) – userId רק phoneClean
-    const userId = phoneClean;
-    const userRef = doc(db, "users", userId);
+    const userRef = doc(db, "users", phoneClean);
 
     try {
-      // בדיקת קיום מסמך המשתמש
       const userSnap = await getDoc(userRef);
       if (!userSnap.exists()) {
-        console.warn(`ReplyContainer: user document not found for ID ${userId}. העדכון לא יתבצע.`);
-        // אם בכל זאת רוצים לעצור כאן:
-        // return;
-      } 
+        console.warn(`ReplyContainer: user document not found for ID ${phoneClean}. העדכון לא יתבצע.`);
+      }
 
-      // 2a. השגת כותרת ההודעה (messageTitle)
       let messageTitle = messageId;
       try {
         const msgSnap = await getDoc(doc(db, "messages", messageId));
         if (msgSnap.exists()) {
           const data = msgSnap.data();
-          if (data.title && typeof data.title === "string" && data.title.trim()) {
+          if (data.title && typeof data.title === "string") {
             messageTitle = data.title.trim();
           }
         }
@@ -101,7 +83,6 @@ function ReplyContainer({ messageId, onClose }) {
         console.warn("ReplyContainer: could not fetch message title:", e);
       }
 
-      // 2b. עדכון שדות replies ו-replies_date במשתמש
       const nowIso = new Date().toISOString();
       try {
         await updateDoc(userRef, {
@@ -109,13 +90,12 @@ function ReplyContainer({ messageId, onClose }) {
           replies_date: arrayUnion(nowIso),
         });
       } catch (e) {
-        console.error("ReplyContainer: updateDoc failed for userId:", userId, e);
+        console.error("ReplyContainer: updateDoc failed for userId:", phoneClean, e);
       }
     } catch (e) {
       console.error("ReplyContainer: error when accessing user document:", e);
     }
 
-    // 3. סגירת הדיאלוג / המשך הזרימה
     if (onClose) {
       onClose();
     }
@@ -129,38 +109,10 @@ function ReplyContainer({ messageId, onClose }) {
     }
   };
 
+  if (!userData) return <p>טוען פרטי משתמש…</p>;
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2, direction: "rtl" }}>
-      <TextField
-        placeholder="שם פרטי"
-        value={firstName}
-        onChange={(e) => setFirstName(e.target.value)}
-        fullWidth
-        error={!!errors.firstName}
-        helperText={errors.firstName}
-        inputProps={placeholderAlign.inputProps}
-        sx={placeholderAlign.sx}
-      />
-      <TextField
-        placeholder="שם משפחה"
-        value={lastName}
-        onChange={(e) => setLastName(e.target.value)}
-        fullWidth
-        error={!!errors.lastName}
-        helperText={errors.lastName}
-        inputProps={placeholderAlign.inputProps}
-        sx={placeholderAlign.sx}
-      />
-      <TextField
-        placeholder="טלפון"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-        fullWidth
-        error={!!errors.phone}
-        helperText={errors.phone}
-        inputProps={placeholderAlign.inputProps}
-        sx={placeholderAlign.sx}
-      />
       <TextField
         placeholder="כתוב את תגובתך כאן..."
         value={replyText}

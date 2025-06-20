@@ -13,6 +13,8 @@ export default function CreateSurveyContainer() {
   
   const [headline, setHeadline] = useState("");
 
+  const [hasExpiration, setHasExpiration] = useState(true);
+
   const [expiresAt, setExpiresAt] = useState(() => {
   const now = new Date();
   now.setSeconds(0, 0); // clear seconds and ms
@@ -120,13 +122,13 @@ export default function CreateSurveyContainer() {
   of_activity: activityId === "general" ? "כללי" : activityId,
 };
 
-if (expiresAt) {
-  payload.expires_at = new Date(expiresAt).toISOString();
-}
+if (hasExpiration && expiresAt) {
+    payload.expires_at = new Date(expiresAt).toISOString();
+  }
 
 
     await SurveyService.create(payload);
-    navigate("/surveys/results");
+    navigate("/surveys");
   };
 
   const handleCancel = () => {
@@ -158,6 +160,8 @@ if (expiresAt) {
       onActivityChange={handleActivityChange}
       expiresAt={expiresAt}                   
       onExpiresAtChange={(e) => setExpiresAt(e.target.value)}
+      hasExpiration={hasExpiration}                    
+      onHasExpirationChange={(e) => setHasExpiration(e.target.checked)}
     />
   );
 }

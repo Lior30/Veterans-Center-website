@@ -20,7 +20,9 @@ export default function CreateSurveyDesign({
   activityId,
   onActivityChange,
   expiresAt,                
-  onExpiresAtChange
+  onExpiresAtChange,
+  hasExpiration,               
+  onHasExpirationChange
 }) {
   return (
     <div style={{ padding: 40, maxWidth: 600, margin: "0 auto", direction: "rtl" }}>
@@ -58,15 +60,29 @@ export default function CreateSurveyDesign({
       </div>
 
       <div style={{ margin: "20px 0" }}>
-  <TextField
-    label="תאריך תפוגה (אופציונלי)"
-    type="datetime-local"
-    InputLabelProps={{ shrink: true }}
-    value={expiresAt}
-    onChange={onExpiresAtChange}
-    fullWidth
-  />
+  <label>
+    <input
+      type="checkbox"
+      checked={hasExpiration}
+      onChange={onHasExpirationChange}
+    />{" "}
+    הוסף תאריך תפוגה
+  </label>
 </div>
+
+{/* Expiration picker, shown only if enabled */}
+{hasExpiration && (
+  <div style={{ margin: "20px 0" }}>
+    <TextField
+      label="תאריך תפוגה"
+      type="datetime-local"
+      InputLabelProps={{ shrink: true }}
+      value={expiresAt}
+      onChange={onExpiresAtChange}
+      fullWidth
+    />
+  </div>
+)}
 
       {/* Questions */}
       {questions.map((q, idx) => (
@@ -145,14 +161,24 @@ export default function CreateSurveyDesign({
         </div>
       ))}
 
+      {questions.length === 0 && (
+  <div style={{ color: "red", marginBottom: 10 }}>
+    ❗ יש להוסיף לפחות שאלה אחת לפני פרסום הסקר
+  </div>
+)}
+
       {/* Actions */}
       <div style={{ marginTop: 20 }}>
         <button onClick={onAddQuestion} style={{ marginRight: 12 }}>
           + הוסף שאלה
         </button>
-        <button onClick={onSubmit} style={{ marginRight: 8 }}>
-          ✅ פרסם סקר
-        </button>
+        <button
+  onClick={onSubmit}
+  style={{ marginRight: 8 }}
+  disabled={questions.length === 0}
+>
+  ✅ פרסם סקר
+</button>
         <button onClick={onCancel}>← ביטול</button>
       </div>
     </div>

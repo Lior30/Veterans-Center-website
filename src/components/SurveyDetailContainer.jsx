@@ -1,5 +1,5 @@
 // src/components/SurveyDetailContainer.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useRef  } from "react";
 import { doc, getDoc, collection, addDoc, getDocs,updateDoc,arrayUnion } from "firebase/firestore";
 import { useParams, useNavigate } from "react-router-dom";
 import { db } from "../firebase.js";
@@ -8,25 +8,30 @@ import SurveyService from "../services/SurveyService.js";
 import ActivityService from "../services/ActivityService.js";
 import UserService from "../services/UserService.js";
 import { saveSurveyResponse } from "../services/SurveyService";
+import useUserProfile from "../hooks/useUserProfile";
 
 
 export default function SurveyDetailContainer({ surveyId, onClose }) {
   const params = useParams();
-  const id = surveyId || params?.id;
+  const idRef = useRef(surveyId || params?.id);
+  const id = idRef.current;
   const navigate = useNavigate();
+  const [userPhone] = useState(() => sessionStorage.getItem("userPhone"));
 
   const [survey, setSurvey] = useState(null);
   const [activityTitle, setActivityTitle] = useState("");
   const [answers, setAnswers] = useState({});
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
-  const [blocked, setBlocked] = useState(false);
+  const [blocked, setBlocked] = useState(null);
   const [responses, setResponses] = useState([]);
   const [submitError, setSubmitError] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const [blockCheckReady, setBlockCheckReady] = useState(false);
 
   useEffect(() => {
     if (!id) {
-    console.error("⛔ Cannot load survey: id is undefined");
+    console.warn("⏭️ Skipping load — no valid survey ID yet");
     return;
     }
 
@@ -61,40 +66,78 @@ setSurvey(s);
 
       // 3) Load all existing responses for this survey
       const rSnap = await getDocs(collection(db, "surveys", id, "responses"));
-      const responseData = rSnap.docs.map((d) => d.data());
-      setResponses(responseData);
-      checkIfBlocked(responseData);
+const responseData = rSnap.docs.map((d) => d.data());
+setResponses(responseData);
+
     }
     load();
   }, [id]);
 
-  const checkIfBlocked = (allResponses) => {
-  const fname = (answers.firstName || "").trim();
-  const lname = (answers.lastName || "").trim();
-  const phone = (answers.phone || "").trim();
-  if (!fname || !lname || !phone) return;
+  useEffect(() => {
+  async function loadUserInfoAndCheckBlocked() {
+    const phone = sessionStorage.getItem("userPhone");
+    console.log("👤 Loading user info for phone:", phone);
+    if (!phone) return;
 
-  const userId = `${fname}_${lname}_${phone}`;
-  const isBlocked = allResponses.some((r) => {
-    const a = r.answers || {};
-    return `${a.firstName}_${a.lastName}_${a.phone}` === userId;
-  });
-  setBlocked(isBlocked);
-};
+    try {
+      const userRef = doc(db, "users", phone);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+  console.warn("⚠️ No user found for phone:", phone);
+  return;
+}
+
+      const data = userSnap.data();
+      setUserData(data);
+
+      console.log("✅ userData loaded:", data);
+
+      const firstName = data.first_name?.trim() || "";
+      const lastName = data.last_name?.trim() || "";
+      const userPhone = data.phone?.trim() || "";
+
+      setAnswers((prev) => ({
+        ...prev,
+        firstName,
+        lastName,
+        phone: userPhone,
+      }));
+
+      // Wait until responses are ready
+      const userId = `${firstName}_${lastName}_${userPhone}`;
+const isBlocked = responses.some((r) => {
+  const a = r.answers || {};
+  return `${a.firstName}_${a.lastName}_${a.phone}` === userId;
+});
+setBlocked(isBlocked);
+console.log("🛑 Block check:", isBlocked);
+setBlockCheckReady(true);
+
+    } catch (err) {
+      console.error("שגיאה בטעינת פרטי משתמש או בדיקת כפילות:", err);
+    }
+  }
+
+  loadUserInfoAndCheckBlocked();
+}, [responses]);
 
   useEffect(() => {
   const fname = (answers.firstName || "").trim();
   const lname = (answers.lastName || "").trim();
   const phone = (answers.phone || "").trim();
-  if (!fname || !lname || !phone) return;
+
+  if (!fname || !lname || !phone || responses.length === 0) return;
 
   const userId = `${fname}_${lname}_${phone}`;
   const isBlocked = responses.some((r) => {
     const a = r.answers || {};
     return `${a.firstName}_${a.lastName}_${a.phone}` === userId;
   });
+
   setBlocked(isBlocked);
+  setBlockCheckReady(true);
 }, [answers, responses]);
+
 
 const handleChange = (qid, value) => {
   setAnswers((prev) => {
@@ -148,6 +191,9 @@ const handleChange = (qid, value) => {
   console.error("⚠️ Failed to update user survey history:", err);
 }
 
+console.log("✅ Rendering form — blocked is:", blocked, "at", new Date().toISOString());
+
+
     setSubmitError(null);
     setSubmitted(true);
     if (onClose) onClose();
@@ -163,7 +209,10 @@ const handleChange = (qid, value) => {
     else navigate("/surveys/list");
   };
 
-  if (!survey) return <p>טוען סקר…</p>;
+ if (!survey || !userData || blocked === null) {
+  console.log("⏳ Waiting on data — survey:", !!survey, "userData:", !!userData, "blocked:", blocked);
+  return <p>טוען סקר…</p>;
+}
 
   return (
   <>
@@ -178,6 +227,7 @@ const handleChange = (qid, value) => {
       onCancel={handleCancel}
       submitted={submitted}
       submitError={submitError}
+      isUserLoggedIn={!!userData}
     />
   </>
 );
