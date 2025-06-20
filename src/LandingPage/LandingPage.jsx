@@ -167,20 +167,56 @@ const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "s
   const closeDialog = () => setDialog({ type: "", data: null });
 
   const confirmCancelRegistration = async () => {
-    if (!cancelDialog.activityId || !userProfile?.phone) return;
-    try {
-      await ActivityService.removeUser(cancelDialog.activityId, {
-        phone: userProfile.phone,
-        name: userProfile.name,
-      });
-      setMyActivities((prev) =>
-        prev.filter((a) => a.id !== cancelDialog.activityId)
-      );
-      setCancelDialog({ open: false, activityId: null });
-    } catch (err) {
-      console.error("Error cancelling registration", err);
+  if (!cancelDialog.activityId || !userProfile?.phone) return;
+
+  try {
+    // 1. הסרה מהמסמך Activity (עפ״י id)
+    await ActivityService.removeUser(cancelDialog.activityId, {
+      phone: userProfile.phone,
+      name: userProfile.name,
+    });
+
+    // 2. מציאת שם הפעילות
+    const act = activities.find((a) => a.id === cancelDialog.activityId);
+    const actName = act?.name;
+
+    // 3. הסרה משדה activities (עפ״י שם)
+    if (actName) {
+      await UserService.removeActivity(userProfile.phone, actName);
     }
-  };
+
+    // 4. עדכון state מקומי
+    setUserProfile((prev) => ({
+      ...prev,
+      activities: prev.activities.filter((n) => n !== actName),
+    }));
+
+    
+    setCancelDialog({ open: false, activityId: null });
+  } catch (err) {
+    console.error("Error cancelling registration", err);
+    alert("אירעה שגיאה בביטול ההרשמה");
+  }
+};
+const handleFillSurvey = (survey) => {
+  const tag = (survey.of_activity || "").trim();
+
+  // מותר תמיד אם אין שיוך או "כללי"
+  if (!tag || tag === "כללי") {
+    openDialog("survey", survey.id);
+    return;
+  }
+
+  // הרשאה: שם הפעילות נמצא בשדה activities של המשתמש
+  const acts = (userProfile?.activities || []).map((s) => s.trim());
+  if (acts.includes(tag)) {
+    openDialog("survey", survey.id);
+  } else {
+    alert(`הסקר מיועד רק למשתתפי הפעילות: ${tag}`);
+  }
+};
+
+
 
   const handleIdentifySuccess = async () => {
     sessionStorage.setItem("justIdentified", "true");
@@ -241,12 +277,16 @@ const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "s
 
     {/* Surveys */}
     <Box ref={surveysRef}>
-      <SurveySection
-        surveys={surveys}
-        justIdentified={justIdentified}
-        onFillSurvey={(id) => openDialog("survey", id)}
-        onViewAllSurveys={() => openDialog("all-surveys")}
-      />
+ {justIdentified && (
+  <SurveySection
+    surveys={surveys}
+    userProfile={userProfile}
+    justIdentified={justIdentified}
+    onFillSurvey={handleFillSurvey}
+    onViewAllSurveys={() => openDialog("all-surveys")}
+  />
+)}
+
     </Box>
 
     {/* Dialogs & Footer */}
@@ -260,6 +300,7 @@ const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "s
       setOpenMyActivities={setOpenMyActivities}
         flyers={flyers}
       myActivities={myActivities}
+        setUserProfile={setUserProfile} 
       dialog={dialog}
       openDialog={openDialog}
       closeDialog={closeDialog}

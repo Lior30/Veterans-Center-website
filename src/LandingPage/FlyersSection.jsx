@@ -87,7 +87,7 @@ export default function FlyersSection({ flyers, activities, openDialog }) {
   const settings = {
     rtl: true,
     infinite: flyers.length > 4,
-    slidesToShow: 4,
+    slidesToShow: 5,
     slidesToScroll: 1,
     prevArrow: <PrevArrow />,
     nextArrow: <NextArrow />,
@@ -101,11 +101,11 @@ export default function FlyersSection({ flyers, activities, openDialog }) {
     <Box
       component="section"
       sx={{
-        py: { xs: 4, sm: 6 },
+        py: { xs: 4, sm: 2 },
         backgroundColor: theme.palette.background.default,
       }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth="xl">
       
 
         {/* העטפת ה־Slider כדי שהחיצים יתייחסו אליה */}

@@ -52,7 +52,7 @@ export default function MessagesSection({ messages, openDialog, justIdentified }
   return (
     <Box component="section" sx={{ py: { xs: 4, sm: 6 }, bgcolor: "#f9f9f9" }}>
       <Container maxWidth="md">
-        <SectionTitle icon={<ArticleIcon />} title="הודעות אחרונות" />
+        <SectionTitle icon={<ArticleIcon />} title="הודעות " />
 
         <Box sx={{ position: "relative", mt: 2 }}>
           <IconButton
