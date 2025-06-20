@@ -172,7 +172,6 @@ export default function HeroSection({ userProfile, onOpenIdentify, onOpenMyActiv
               <CtaButton
                 sx={{ backgroundColor: '#CE93D8', color: 'white', '&:hover': { backgroundColor: '#BA68C8' } }}
                 component="a"
-                // href="https://wa.me/9720523705021"
                 href={`https://wa.me/972${contact.contactWhatsapp}`}
                 target="_blank"
                 rel="noopener noreferrer"

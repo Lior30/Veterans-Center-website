@@ -65,14 +65,15 @@ export default function App({ toggleTheme, mode }) {
         <Route path="/manage-users" element={
           <PrivateRoute requireAdmin={true}><ManageUsersContainer /></PrivateRoute>
         } />
-        <Route path="/Data-analysis" element={<AnalyticsDashboard />} />
+        <Route path="/Data-analysis" element={
+          <PrivateRoute requireAdmin={true}><AnalyticsDashboard /></PrivateRoute>
+        } />
         <Route path="/HomepageImages" element={
           <PrivateRoute requireAdmin={true}><HomepageImagesContainer /></PrivateRoute>
         } />
         <Route path="/contact-details" element={
           <PrivateRoute requireAdmin={true}><ContactDetailsAdmin /></PrivateRoute>
         } />
-
 
         {/* 🔐 Surveys – admin */}
         <Route path="/surveys" element={

@@ -5,6 +5,7 @@ import FacebookIcon from "@mui/icons-material/Facebook";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import PhoneIcon from "@mui/icons-material/Phone";
 import AccessibilityWidget from "./AccessibilityWidget";
+import ContactService from "../services/ContactService";
 
 export default function LandingNavBar({
   onScrollToFlyers,
@@ -20,6 +21,20 @@ export default function LandingNavBar({
     const handleScroll = () => setIsSticky(window.scrollY > 100);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const [contact, setContact] = useState({
+      contactPhone: "",
+      contactWhatsapp: "",
+  });
+  
+  useEffect(() => {
+    ContactService.get().then(data => {
+      setContact({
+        contactPhone: data.contactPhone || "",
+        contactWhatsapp: data.contactWhatsapp || "",
+      });
+    });
   }, []);
 
   return (
@@ -52,14 +67,14 @@ export default function LandingNavBar({
         </IconButton>
         <IconButton
           component="a"
-          href="https://wa.me/0523705021"
+          href={`https://wa.me/972${contact.contactWhatsapp}`}
           target="_blank"
           rel="noopener noreferrer"
           sx={{ color: purple }}
         >
           <WhatsAppIcon />
         </IconButton>
-        <IconButton component="a" href="tel:0523705021" sx={{ color: purple }}>
+        <IconButton component="a" href={`tel:972${contact.contactPhone}`} sx={{ color: purple }}>
           <PhoneIcon />
         </IconButton>
       </Box>

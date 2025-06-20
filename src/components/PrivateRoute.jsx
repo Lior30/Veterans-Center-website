@@ -1,18 +1,20 @@
 // components/PrivateRoute.jsx
 import { Navigate } from 'react-router-dom';
-import { getAuth } from 'firebase/auth';
+import { useAuth } from '../context/AuthProvider.jsx';
 
 const PrivateRoute = ({ children, requireAdmin = false }) => {
-  const auth = getAuth();
-  const user = auth.currentUser;
+  const { user } = useAuth();
+
+  if (user === undefined) {
+    // Still loading – optionally show a loader here
+    return null;
+  }
 
   if (!user) {
     return <Navigate to="/" replace />;
   }
 
-  // Admin check: match email
   const isAdmin = user.email === import.meta.env.VITE_ADMIN_EMAIL;
-
   if (requireAdmin && !isAdmin) {
     return <Navigate to="/not-authorized" replace />;
   }
