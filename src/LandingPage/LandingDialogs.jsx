@@ -1,4 +1,4 @@
-// src/components/LandingDialogs.jsx
+// src/components/LandingDialogs.jsx (updated)
 import React from "react";
 import SyncCalendarButton from "../components/SyncCalendarButton";
 import {
@@ -22,10 +22,11 @@ import SurveyDetailContainer from "../components/SurveyDetailContainer";
 import AdminSignIn from "../components/AdminSignIn";
 import IdentifyPage from "../components/IdentificationPage";
 import CtaButton from "./CtaButton";
-import ActivityService from "../services/ActivityService";
 import EventIcon from "@mui/icons-material/Event";
-
-// Override Dialog paper for consistent padding & rounded corners
+import ActivityService from "../services/ActivityService"; 
+// ─────────────────────────────────────────────────────────────────────────────
+//  Dialog wrapper styling
+// ─────────────────────────────────────────────────────────────────────────────
 const StyledDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiPaper-root": {
     borderRadius: theme.shape.borderRadius * 2,
@@ -33,34 +34,49 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
   },
 }));
 
-export default function LandingDialogs(props) {
-  const {
-    infoOpen,
-    setInfoOpen,
-    cancelDialog,
-    setCancelDialog,
-    confirmCancelRegistration,
-    openMyActivities,
-    setOpenMyActivities,
-    myActivities,
-    dialog,
-    openDialog,
-    flyers,
-    closeDialog,
-    messages,
-    activities,
-    surveys,
-    userProfile,
-    justIdentified,
-    openIdentify,
-    setOpenIdentify,
-    openAdminSignIn,
-    setOpenAdminSignIn,
-    handleIdentifySuccess,
-  } = props;
-
+// -----------------------------------------------------------------------------
+//  LandingDialogs
+// -----------------------------------------------------------------------------
+export default function LandingDialogs({
+  /* state & setters passed from LandingPage */
+  infoOpen,
+  setInfoOpen,
+  cancelDialog,
+  setCancelDialog,
+  confirmCancelRegistration,
+  openMyActivities,
+  setOpenMyActivities,
+  dialog,
+  openDialog,
+  flyers,
+  closeDialog,
+  messages,
+  activities,
+   setUserProfile,
+  surveys,
+  userProfile,
+  justIdentified,
+  openIdentify,
+  setOpenIdentify,
+  openAdminSignIn,
+  setOpenAdminSignIn,
+  handleIdentifySuccess,
+}) {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
+  // helper — מאחד תאריכים + שעה למופע Date
+  const toDateTime = (a) => new Date(`${a.date}T${a.startTime || "23:59"}:00`);
+
+  // פעילויות שבהן המשתמש רשום ➊ לפי id ➋ או לפי name (כי ב‑userProfile.activities ראינו שמורים שמות)
+  const userActs = activities.filter(
+    (a) =>
+      userProfile?.activities?.includes(a.id) ||
+      userProfile?.activities?.includes(a.name)
+  );
+
+  // פעילויות עתידיות בלבד
+  const upcomingActs = userActs.filter((a) => toDateTime(a) >= new Date());
 
   return (
     <>
@@ -115,17 +131,13 @@ export default function LandingDialogs(props) {
           >
             ביטול
           </CtaButton>
-          <CtaButton
-            color="error"
-            variant="contained"
-            onClick={confirmCancelRegistration}
-          >
+          <CtaButton color="error" variant="contained" onClick={confirmCancelRegistration}>
             בטל הרשמה
           </CtaButton>
         </DialogActions>
       </StyledDialog>
 
-      {/* 3. My activities */}
+            {/* 3. My activities */}
       <StyledDialog
         open={openMyActivities}
         onClose={() => setOpenMyActivities(false)}
@@ -135,113 +147,93 @@ export default function LandingDialogs(props) {
         <DialogTitle sx={{ color: theme.palette.primary.main }}>
           הפעילויות שלי
         </DialogTitle>
-        <DialogContent>
-          {myActivities.length === 0 ? (
-            <Typography>לא נמצאו פעילויות שאליהן נרשמת.</Typography>
-          ) : (
-            myActivities.map((a) => (
-           <Box
-  key={a.id}
-  sx={{
-    mb: 2,
-    p: 2,
-    borderRadius: 2,
-    boxShadow: 1,
-    backgroundColor: theme.palette.background.paper,
-    display: "flex", // שינוי חשוב
-    flexDirection: "row", // אופקית
-    gap: 2,
-  }}
->
-  {/* הפלייר מימין */}
-  {flyers?.some((f) => f.activityId === a.id) && (
-    <Box
-      onClick={() =>
-        openDialog("flyer", {
-          ...flyers.find((f) => f.activityId === a.id),
-          fromMyActivities: true,
-        })
-      }
-      sx={{
-        cursor: "pointer",
-        width: 140,
-        height: 180,
-        flexShrink: 0,
-        borderRadius: 2,
-        overflow: "hidden",
-        boxShadow: 1,
-        "&:hover": { boxShadow: 3 },
-      }}
-    >
-      <Box
-        component="img"
-        src={flyers.find((f) => f.activityId === a.id)?.fileUrl}
-        alt="פלייר"
-        sx={{
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-        }}
-      />
-    </Box>
-  )}
-
-  {/* תוכן הפעילות משמאל */}
-  <Box flex="1">
-    <Box
-      display="flex"
-      justifyContent="space-between"
-      alignItems="center"
-      flexWrap="wrap"
-    >
-      <Typography variant="subtitle1" fontWeight="600">
-        {a.name || "ללא שם"}
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        {new Date(a.date).toLocaleDateString("he-IL")}
-      </Typography>
-    </Box>
-
-    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-      <strong>שעה:</strong>{" "}
-      {a.startTime
-        ? a.startTime
-        : "לא צוינה" /* עכשיו ברוב המקרים time יוגדר ויראה שעות והדקות */}
-      {a.location && (
-        <>
-          <br />
-          <strong>מיקום:</strong> {a.location}
-        </>
-      )}
-    </Typography>
-
-    <Box display="flex" justifyContent="flex-end" mt={1}>
-      <CtaButton
-        color="error"
-        size="small"
-        onClick={() => setCancelDialog({ open: true, activityId: a.id })}
-      >
-        ביטול הרשמה
-      </CtaButton>
-    </Box>
-  </Box>
-</Box>
-
-            ))
-          )}
-
-          {myActivities.length > 0 && (
+         {/* סנכרון ללוח השנה */}
+          {upcomingActs.length > 0 && (
             <SyncCalendarButton
-              activities={myActivities.map((a) => ({
+              activities={upcomingActs.map((a) => ({
                 id: a.id,
                 title: a.name,
-                // אם אין שעה ייקבע 09:00 בבוקר
-                start: new Date(`${a.date}T${(a.startTime || "09:00")}:00`).toISOString(),
+                start: new Date(`${a.date}T${a.startTime || "09:00"}:00`).toISOString(),
                 end: null,
                 notes: a.description || "",
               }))}
             />
           )}
+        <DialogContent>
+          {upcomingActs.length === 0 ? (
+            <Typography>לא נמצאו פעילויות עתידיות שאליהן נרשמת.</Typography>
+          ) : (
+            upcomingActs.map((a) => (
+              <Box
+                key={a.id}
+                sx={{
+                  mb: 2,
+                  p: 2,
+                  borderRadius: 2,
+                  boxShadow: 1,
+                  backgroundColor: theme.palette.background.paper,
+                  display: "flex",
+                  gap: 2,
+                }}
+              >
+                {/* פלייר */}
+                {flyers?.some((f) => f.activityId === a.id) && (
+                  <Box
+                    onClick={() =>
+                      openDialog("flyer", {
+                        ...flyers.find((f) => f.activityId === a.id),
+                        fromMyActivities: true,
+                      })
+                    }
+                    sx={{
+                      cursor: "pointer",
+                      width: 140,
+                      height: 180,
+                      flexShrink: 0,
+                      borderRadius: 2,
+                      overflow: "hidden",
+                      boxShadow: 1,
+                      "&:hover": { boxShadow: 3 },
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={flyers.find((f) => f.activityId === a.id)?.fileUrl}
+                      alt="פלייר"
+                      sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  </Box>
+                )}
+
+                {/* פרטי פעילות */}
+                <Box flex={1}>
+                  <Box display="flex" justifyContent="space-between" flexWrap="wrap">
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      {a.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {new Date(a.date).toLocaleDateString("he-IL")}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    <strong>שעה:</strong> {a.startTime || "לא צוינה"}
+                   
+                  </Typography>
+                  <Box display="flex" justifyContent="flex-end" mt={1}>
+                    <CtaButton
+                      color="error"
+                      size="small"
+                      onClick={() => setCancelDialog({ open: true, activityId: a.id })}
+                    >
+                      ביטול הרשמה
+                    </CtaButton>
+                  </Box>
+                </Box>
+              </Box>
+            ))
+          )}
+
+         
         </DialogContent>
         <DialogActions>
           <CtaButton color="secondary" onClick={() => setOpenMyActivities(false)}>
@@ -249,6 +241,8 @@ export default function LandingDialogs(props) {
           </CtaButton>
         </DialogActions>
       </StyledDialog>
+
+
 
       {/* 4. All messages */}
       <StyledDialog
@@ -389,32 +383,31 @@ export default function LandingDialogs(props) {
           <CtaButton color="default" onClick={closeDialog}>
             לא
           </CtaButton>
-          <CtaButton
-                color="primary"
-                onClick={async () => {
-                  const activityId = dialog.data;
-                  try {
-                    // תפסי את התוצאה במשתנה result
-                    const result = await ActivityService.registerUser(activityId, {
-                      name: userProfile.name || userProfile.first_name,
-                      phone: userProfile.phone,
-                    });
+        <CtaButton
+  color="primary"
+  onClick={async () => {
+    const activityId = dialog.data;
 
-                    // תציגי למסך את ההודעה שהשירות החזיר
-                    alert(result.message);
+    try {
+      const result = await ActivityService.registerUser(activityId, {
+        name: userProfile.name || userProfile.first_name,
+        phone: userProfile.phone,
+      });
 
-                    // אם הצלחנו – סגרי את הדיאלוג
-                    if (result.success) {
-                      closeDialog();
-                    }
-                  } catch (err) {
-                    console.error(err);
-                    alert("שגיאה בהרשמה, נסה/י שוב");
-                  }
-                }}
-              >
-                כן, הירשם/י
-              </CtaButton>
+      alert(result.message);               // הודעת הצלחה/כישלון
+
+      if (result.success) {
+        closeDialog();                     // סוגר את דיאלוג ההרשמה
+        window.location.reload();          // ← רענון העמוד
+      }
+    } catch (err) {
+      console.error(err);
+      alert("שגיאה בהרשמה, נסה/י שוב");
+    }
+  }}
+>
+  כן, הירשם/י
+</CtaButton>
 
         </DialogActions>
       </StyledDialog>

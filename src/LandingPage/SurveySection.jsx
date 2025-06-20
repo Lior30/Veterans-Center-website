@@ -15,26 +15,29 @@ import PollIcon from "@mui/icons-material/Poll";
 import SectionTitle from "./SectionTitle";
 import CtaButton from "./CtaButton";
 
-const SurveyCard = styled(Card)(({ theme }) => ({
-  borderRadius: theme.shape.borderRadius * 2,
-  overflow: "hidden",
-  backgroundColor: theme.palette.background.paper,
-  boxShadow: theme.shadows[1],
-  transition: "transform 0.3s, box-shadow 0.3s",
-  "&:hover": {
-    transform: "translateY(-8px)",
-    boxShadow: theme.shadows[4],
-  },
-}));
-
+/**
+ * מציג את כל הסקרים הפתוחים.
+ * את בדיקת ההרשאה למילוי (activities ↔ of_activity) מבצעים
+ * בפונקציה onFillSurvey שמקבלת את אובייקט הסקר כולו.
+ *
+ * props:
+ *   surveys          – מערך הסקרים הפתוחים
+ *   userProfile      – אובייקט משתמש (אפשרי null) – לא נחוץ לסינון כאן
+ *   justIdentified   – האם המשתמש מחובר (מציגים כפתורי מילוי רק אז)
+ *   onFillSurvey     – callback(surveyObj)   ← מקבל את אובייקט הסקר
+ *   onViewAllSurveys – callback   (לכפתור “לכל הסקרים” במובייל)
+ */
 export default function SurveySection({
   surveys,
+  userProfile,
   justIdentified,
   onFillSurvey,
   onViewAllSurveys,
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  // במובייל – מציגים עד 3 כרטיסים
   const displayed = isMobile ? surveys.slice(0, 3) : surveys;
 
   return (
@@ -53,8 +56,9 @@ export default function SurveySection({
                   <Typography variant="h6" gutterBottom noWrap>
                     {s.headline}
                   </Typography>
+
                   {justIdentified && (
-                    <CtaButton color="primary" onClick={() => onFillSurvey(s.id)}>
+                    <CtaButton color="primary" onClick={() => onFillSurvey(s)}>
                       למילוי
                     </CtaButton>
                   )}
@@ -75,3 +79,16 @@ export default function SurveySection({
     </Box>
   );
 }
+
+/* כרטיס עם סטייל אחיד */
+const SurveyCard = styled(Card)(({ theme }) => ({
+  borderRadius: theme.shape.borderRadius * 2,
+  overflow: "hidden",
+  backgroundColor: theme.palette.background.paper,
+  boxShadow: theme.shadows[1],
+  transition: "transform 0.3s, box-shadow 0.3s",
+  "&:hover": {
+    transform: "translateY(-8px)",
+    boxShadow: theme.shadows[4],
+  },
+}));

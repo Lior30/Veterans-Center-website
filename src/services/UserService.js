@@ -1,6 +1,17 @@
 // src/services/UserService.js
 import { db } from "../firebase";
-import { doc, getDoc, setDoc, collection, onSnapshot } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  arrayRemove,
+  collection,
+  onSnapshot,
+  
+  arrayUnion,
+} from "firebase/firestore";
+
 
 /**
  * Basic helper around the “users” collection.
@@ -20,6 +31,22 @@ export default class UserService {
   static isValidPhone(phone) {
     return /^05\d{8}$/.test(phone.replace(/\D/g, ""));
   }
+
+  /** הסרת שם פעילות משדה activities של המשתמש */
+static async removeActivity(phone, activityName) {
+  const ref = doc(db, UserService.COL, phone);
+  await updateDoc(ref, {
+    activities: arrayRemove(activityName),
+  });
+}
+
+static async addActivity(phone, activityName) {
+  const ref = doc(db, UserService.COL, phone);
+  await updateDoc(ref, {
+    activities: arrayUnion(activityName),
+  });
+}
+
 
   /** וולידציה לשם: אותיות מרובות מילים, מינימום 2 תווים כל מילה */
   static isValidName(name) {
