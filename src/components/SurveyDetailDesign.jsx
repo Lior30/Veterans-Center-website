@@ -13,7 +13,9 @@ export default function SurveyDetailDesign({
   onCancel,
   submitted,
   submitError,
+  isUserLoggedIn,
 }) {
+  
   const placeholderAlign = {
     inputProps: { style: { textAlign: "right" } },
     sx: {
@@ -46,41 +48,45 @@ export default function SurveyDetailDesign({
 )}
 
 
-      <TextField
-        placeholder="שם פרטי"
-        value={answers.firstName || ""}
-        onChange={(e) => onChange("firstName", e.target.value)}
-        fullWidth
-        error={!!errors.firstName}
-        helperText={errors.firstName}
-        inputProps={placeholderAlign.inputProps}
-        sx={placeholderAlign.sx}
-        style={{ marginBottom: 16 }}
-      />
+      {!isUserLoggedIn && (
+  <>
+    <TextField
+      placeholder="שם פרטי"
+      value={answers.firstName || ""}
+      onChange={(e) => onChange("firstName", e.target.value)}
+      fullWidth
+      error={!!errors.firstName}
+      helperText={errors.firstName}
+      inputProps={placeholderAlign.inputProps}
+      sx={placeholderAlign.sx}
+      style={{ marginBottom: 16 }}
+    />
 
-      <TextField
-        placeholder="שם משפחה"
-        value={answers.lastName || ""}
-        onChange={(e) => onChange("lastName", e.target.value)}
-        fullWidth
-        error={!!errors.lastName}
-        helperText={errors.lastName}
-        inputProps={placeholderAlign.inputProps}
-        sx={placeholderAlign.sx}
-        style={{ marginBottom: 16 }}
-      />
+    <TextField
+      placeholder="שם משפחה"
+      value={answers.lastName || ""}
+      onChange={(e) => onChange("lastName", e.target.value)}
+      fullWidth
+      error={!!errors.lastName}
+      helperText={errors.lastName}
+      inputProps={placeholderAlign.inputProps}
+      sx={placeholderAlign.sx}
+      style={{ marginBottom: 16 }}
+    />
 
-      <TextField
-        placeholder="טלפון"
-        value={answers.phone || ""}
-        onChange={(e) => onChange("phone", e.target.value)}
-        fullWidth
-        error={!!errors.phone}
-        helperText={errors.phone}
-        inputProps={placeholderAlign.inputProps}
-        sx={placeholderAlign.sx}
-        style={{ marginBottom: 24 }}
-      />
+    <TextField
+      placeholder="טלפון"
+      value={answers.phone || ""}
+      onChange={(e) => onChange("phone", e.target.value)}
+      fullWidth
+      error={!!errors.phone}
+      helperText={errors.phone}
+      inputProps={placeholderAlign.inputProps}
+      sx={placeholderAlign.sx}
+      style={{ marginBottom: 24 }}
+    />
+  </>
+)}
 
       {survey.questions
         .filter((q) => q.id !== "fullname" && q.id !== "phone")
@@ -133,17 +139,21 @@ export default function SurveyDetailDesign({
       )}
 
       <Box sx={{ mt: 4, display: "flex", justifyContent: "space-between" }}>
-        <Button variant="outlined" onClick={onCancel}>
-          ביטול
-        </Button>
-        <Button
-          variant="contained"
-          onClick={onSubmit}
-          type="button"
-          disabled={blocked}
-        >
-          שלח
-        </Button>
+       {blocked === null && (
+  <Button variant="contained" disabled>
+    בודק הרשאות…
+  </Button>
+)}
+{blocked === false && (
+  <Button
+    variant="contained"
+    onClick={onSubmit}
+    type="button"
+  >
+    שלח
+  </Button>
+)}
+
       </Box>
     </Box>
   );

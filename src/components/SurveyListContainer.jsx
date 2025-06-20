@@ -14,7 +14,6 @@ export default function SurveyListContainer() {
     const snap = await getDocs(collection(db, "surveys"));
     const surveysData = snap.docs.map((doc) => {
       const data = doc.data();
-      console.log("📋 Loaded survey:", data.headline, "| expires_at:", data.expires_at);
       return { id: doc.id, ...data };
     });
     setSurveys(surveysData);
