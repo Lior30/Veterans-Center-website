@@ -2,13 +2,11 @@
 import { useState, useEffect } from "react";
 import {
   Typography,
-  Button,
   Container,
   Grid,
   Card,
   CardActionArea,
   CardContent,
-  Box,
 } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 import EventIcon from "@mui/icons-material/Event";
@@ -16,6 +14,9 @@ import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import PollIcon from "@mui/icons-material/Poll";
 import MessageIcon from "@mui/icons-material/Message";
 import GroupIcon from "@mui/icons-material/Group";
+import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import ContactMailIcon from "@mui/icons-material/ContactMail";
 import MessageService from "../services/MessageService";
 
 export default function Home() {
@@ -23,9 +24,9 @@ export default function Home() {
 
   useEffect(() => {
     // Only general messages (no activityId)
-    MessageService.list().then((ms) =>
-      setMessages(ms.filter((m) => !m.activityId))
-    );
+    MessageService.list()
+      .then((ms) => setMessages(ms.filter((m) => !m.activityId)))
+      .catch(console.error);
   }, []);
 
   // Duplicate for seamless scroll (still available if needed)
@@ -57,6 +58,21 @@ export default function Home() {
       icon: <GroupIcon fontSize="large" />,
       to: "/manage-users",
     },
+    {
+      label: "תמונות אווירה",
+      icon: <PhotoLibraryIcon fontSize="large" />,
+      to: "/HomepageImages",
+    },
+    {
+      label: "ניתוח נתונים",
+      icon: <BarChartIcon fontSize="large" />,
+      to: "/Data-analysis",
+    },
+    {
+      label: "פרטי קשר",
+      icon: <ContactMailIcon fontSize="large" />,
+      to: "/contact-details",
+    },
   ];
 
   return (
@@ -66,7 +82,7 @@ export default function Home() {
           variant="h4"
           align="center"
           gutterBottom
-          sx={{ mt: -2 }}  // זז כלפי מעלה ב־theme.spacing(2)=16px
+          sx={{ mt: -2 }}
         >
           דף ניהול מרכז ותיקים
         </Typography>
@@ -78,7 +94,7 @@ export default function Home() {
                 sx={{
                   borderRadius: 2,
                   boxShadow: 3,
-                  width: 200,      // רוחב קבוע של 200px
+                  width: 200,
                   transition: "transform 0.2s, box-shadow 0.2s",
                   "&:hover": {
                     transform: "translateY(-4px)",
