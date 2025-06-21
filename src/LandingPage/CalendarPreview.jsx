@@ -198,31 +198,44 @@ export default function CalendarPreview({
         </NavWrapper>
 
         {/* סינון תגיות */}
-        <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-          <Tabs
-            value={tag}
-            onChange={(e, newTag) => setTag(newTag)}
-            textColor="primary"
-            indicatorColor="primary"
-            variant="scrollable"
-            scrollButtons="auto"
-            aria-label="activity tag tabs"
-            sx={{ borderBottom: 1, borderColor: "divider", maxWidth: "100%" }}
-          >
-            {tags.map((t) => (
-              <Tab
-                key={t}
-                value={t}
-                label={t === "ALL" ? "הכל" : t}
-                sx={{
-                  fontWeight: tag === t ? 600 : 400,
-                  color:
-                    tag === t ? theme.palette.primary.main : theme.palette.text.primary,
-                }}
-              />
-            ))}
-          </Tabs>
-        </Box>
+<Box
+  sx={{
+    display: "flex",
+    justifyContent: "center",
+    mb: 3,
+    overflowX: "auto",          // ← מאפשר גלילה אופקית
+    scrollbarWidth: "none",     // ← מסתיר סקּרול־בר בפיירפוקס
+    "&::-webkit-scrollbar": { display: "none" }, // ← מסתיר בכרום/ספארי
+  }}
+>
+  <Tabs
+    value={tag}
+    onChange={(e, newTag) => setTag(newTag)}
+    variant="scrollable"
+    scrollButtons          // ← תמיד מציג חיצים
+    allowScrollButtonsMobile   // ← חובה במובייל כדי לא להסתיר
+    aria-label="activity tag tabs"
+    textColor="primary"
+    indicatorColor="primary"
+    sx={{ borderBottom: 1, borderColor: "divider" }}
+  >
+    {tags.map((t) => (
+      <Tab
+        key={t}
+        value={t}
+        label={t === "ALL" ? "הכל" : t}
+        wrapped         // במידת הצורך יורד לשתי שורות
+        sx={{
+          fontWeight: tag === t ? 600 : 400,
+          color:
+            tag === t ? theme.palette.primary.main : theme.palette.text.primary,
+          minWidth: 90,           // רוחב־מינימום אחיד
+        }}
+      />
+    ))}
+  </Tabs>
+</Box>
+
 
         {/* הפידג'ט של לוח */}
         <Box
@@ -241,9 +254,9 @@ export default function CalendarPreview({
             },
 
             // רקע היום הנוכחי
-            "& .fc-timegrid-col.fc-day-today, & .fc-day-today": {
-              backgroundColor: theme.palette.primary.vlight,
-            },
+          "& .fc-timegrid-col.fc-day-today, & .fc-daygrid-day.fc-day-today": {
+backgroundColor: theme.palette.primary.vlight + " !important",},
+
             "& .fc-col-header-cell.fc-day-today": {
               color: "#000",
             },

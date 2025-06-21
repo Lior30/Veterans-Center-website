@@ -198,19 +198,28 @@ useEffect(() => {
     alert("אירעה שגיאה בביטול ההרשמה");
   }
 };
-const handleFillSurvey = (survey) => {
-  const tag = (survey.of_activity || "").trim();
+/** החזרת שם פעילות לפי id; אם id כבר שם – מחזיר אותו כמו שהוא */
+const getActivityName = (idOrName) => {
+  // חיפוש ברשימת הפעילויות שהוטענה ל-state
+  const act = activities.find((a) => a.id === idOrName);
+  return act ? act.name : idOrName;
+};
 
-  // מותר תמיד אם אין שיוך או "כללי"
+const handleFillSurvey = (survey) => {
+  const tagRaw = (survey.of_activity || "").trim();   // מה שמגיע מהסקר
+  const tag = getActivityName(tagRaw);                // מתרגם id→name (או משאיר שם)
+
+  // סקר כללי / ללא־שיוך
   if (!tag || tag === "כללי") {
     openDialog("survey", survey.id);
     return;
   }
 
-  // הרשאה: שם הפעילות נמצא בשדה activities של המשתמש
+  // רשימת שמות הפעילויות של המשתמש
   const acts = (userProfile?.activities || []).map((s) => s.trim());
+
   if (acts.includes(tag)) {
-    openDialog("survey", survey.id);
+    openDialog("survey", survey.id);                  // מורשה
   } else {
     alert(`הסקר מיועד רק למשתתפי הפעילות: ${tag}`);
   }
