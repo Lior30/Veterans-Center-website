@@ -51,7 +51,6 @@ export default function IdentifyPage({ onSuccess }) {
 
     try {
       const { email, password } = generateEmailPassword(trimmed);
-      console.log('[IdentifyPage] attempting login with', email, password);
       await signInWithEmailAndPassword(auth, email, password);
 
       // login succeeded but we need to check if the user exists
@@ -65,24 +64,17 @@ export default function IdentifyPage({ onSuccess }) {
         });
         throw new Error('User not found in database and removed from auth');
       }
-     else {
-  console.log('[IdentifyPage] user found in database', user);
-  sessionStorage.setItem("userPhone", trimmed);       // ✅ שמירת טלפון
-  sessionStorage.setItem("justIdentified", "true");   // ✅ הוספנו את זה!
-}
+      else {
+        sessionStorage.setItem("userPhone", trimmed);       // ✅ שמירת טלפון
+        sessionStorage.setItem("justIdentified", "true");   // ✅ הוספנו את זה!
+      }
 
-      console.log('[IdentifyPage] login succeeded');
       setLoading(false);
       // only call onSuccess here
       if (typeof onSuccess === 'function') {
-        console.log('[IdentifyPage] calling onSuccess()');
         onSuccess();
       }
-      else {
-        console.log('[IdentifyPage] internal coding error !!! illegal function onSuccess()');
-      }
     } catch (e) {
-      console.error('[IdentifyPage] login failed', e);  // log the error 
       setLoading(false);
       setMessage(contactMessage);
     }

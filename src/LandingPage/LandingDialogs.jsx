@@ -160,80 +160,128 @@ export default function LandingDialogs({
             />
           )}
         <DialogContent>
-          {upcomingActs.length === 0 ? (
-            <Typography>לא נמצאו פעילויות עתידיות שאליהן נרשמת.</Typography>
-          ) : (
-            upcomingActs.map((a) => (
-              <Box
-                key={a.id}
-                sx={{
-                  mb: 2,
-                  p: 2,
-                  borderRadius: 2,
-                  boxShadow: 1,
-                  backgroundColor: theme.palette.background.paper,
-                  display: "flex",
-                  gap: 2,
-                }}
-              >
-                {/* פלייר */}
-                {flyers?.some((f) => f.activityId === a.id) && (
-                  <Box
-                    onClick={() =>
-                      openDialog("flyer", {
-                        ...flyers.find((f) => f.activityId === a.id),
-                        fromMyActivities: true,
-                      })
-                    }
-                    sx={{
-                      cursor: "pointer",
-                      width: 140,
-                      height: 180,
-                      flexShrink: 0,
-                      borderRadius: 2,
-                      overflow: "hidden",
-                      boxShadow: 1,
-                      "&:hover": { boxShadow: 3 },
-                    }}
-                  >
-                    <Box
-                      component="img"
-                      src={flyers.find((f) => f.activityId === a.id)?.fileUrl}
-                      alt="פלייר"
-                      sx={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
-                  </Box>
-                )}
+  {upcomingActs.map((a) => {
+  // Prepare location string
+  const loc = a.location;
+  const locationStr =
+    typeof loc === 'string'
+      ? loc
+      : loc && typeof loc === 'object'
+      ? loc.address || `${loc.lat},${loc.lng}`
+      : '';
 
-                {/* פרטי פעילות */}
-                <Box flex={1}>
-                  <Box display="flex" justifyContent="space-between" flexWrap="wrap">
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      {a.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {new Date(a.date).toLocaleDateString("he-IL")}
-                    </Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    <strong>שעה:</strong> {a.startTime || "לא צוינה"}
-                   
-                  </Typography>
-                  <Box display="flex" justifyContent="flex-end" mt={1}>
-                    <CtaButton
-                      color="error"
-                      size="small"
-                      onClick={() => setCancelDialog({ open: true, activityId: a.id })}
-                    >
-                      ביטול הרשמה
-                    </CtaButton>
-                  </Box>
-                </Box>
-              </Box>
-            ))
+  return (
+    <Box
+      key={a.id}
+      sx={{
+        mb: 2,
+        p: 2,
+        borderRadius: 2,
+        boxShadow: 1,
+        backgroundColor: theme.palette.background.paper,
+        display: "flex",
+        gap: 2,
+      }}
+    >
+      {/* פלייר */}
+      {flyers?.some((f) => f.activityId === a.id) && (
+        <Box
+          onClick={() =>
+            openDialog("flyer", {
+              ...flyers.find((f) => f.activityId === a.id),
+              fromMyActivities: true,
+            })
+          }
+          sx={{
+            cursor: "pointer",
+            width: 140,
+            height: 180,
+            flexShrink: 0,
+            borderRadius: 2,
+            overflow: "hidden",
+            boxShadow: 1,
+            "&:hover": { boxShadow: 3 },
+          }}
+        >
+          <Box
+            component="img"
+            src={flyers.find((f) => f.activityId === a.id)?.fileUrl}
+            alt="פלייר"
+            sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        </Box>
+      )}
+
+      {/* פרטי פעילות */}
+      <Box flex={1} display="flex" flexDirection="column" justifyContent="space-between">
+        {/* Name */}
+        <Typography variant="h6" fontWeight={600} gutterBottom>
+          {a.name}
+        </Typography>
+
+        {/* Date */}
+        <Box display="flex" alignItems="baseline" sx={{ mt: 0.5 }}>
+          <Typography variant="subtitle2" fontWeight={600} color="text.primary" sx={{ minWidth: '60px' }}>
+            תאריך:
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {new Date(a.date).toLocaleDateString("he-IL")}
+          </Typography>
+        </Box>
+
+        {/* Time */}
+        <Box display="flex" alignItems="baseline" sx={{ mt: 0.5 }}>
+          <Typography variant="subtitle2" fontWeight={600} color="text.primary" sx={{ minWidth: '60px' }}>
+            שעה:
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {a.startTime || "לא צוינה"}
+          </Typography>
+        </Box>
+
+        {/* Location (if any) */}
+        {locationStr && (
+          <Box display="flex" alignItems="baseline" sx={{ mt: 0.5 }}>
+            <Typography variant="subtitle2" fontWeight={600} color="text.primary" sx={{ minWidth: '60px' }}>
+              מיקום:
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {locationStr}
+            </Typography>
+          </Box>
+        )}
+
+        {/* Buttons aligned to the right */}
+        <Box display="flex" justifyContent="flex-end" gap={1} mt={1}>
+          {locationStr && (
+            <CtaButton
+              component="a"
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                locationStr
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              color="primary"
+              size="small"
+            >
+              ניווט
+            </CtaButton>
           )}
+          <CtaButton
+            color="error"
+            size="small"
+            onClick={() => setCancelDialog({ open: true, activityId: a.id })}
+          >
+            ביטול הרשמה
+          </CtaButton>
+        </Box>
+      </Box>
+    </Box>
+  );
+})}
 
-         
+
+          
         </DialogContent>
         <DialogActions>
           <CtaButton color="secondary" onClick={() => setOpenMyActivities(false)}>
@@ -319,7 +367,7 @@ export default function LandingDialogs({
               </Typography>
               {dialog.data.location && (
                 <Typography>
-                  <strong>מיקום:</strong> {dialog.data.location}
+                  <strong>מיקום:</strong> {dialog.data.location.address}
                 </Typography>
               )}
               {dialog.data.description && (
