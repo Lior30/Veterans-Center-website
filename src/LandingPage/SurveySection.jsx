@@ -95,7 +95,7 @@ export default function SurveySection({
 
         {isMobile && surveys.length > 3 && (
           <Box textAlign="center" mt={4}>
-            <CtaButton color="secondary" onClick={onViewAllSurveys}>
+            <CtaButton color="primary" onClick={onViewAllSurveys}>
               לכל הסקרים
             </CtaButton>
           </Box>

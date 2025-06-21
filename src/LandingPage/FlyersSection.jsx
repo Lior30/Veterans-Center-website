@@ -1,4 +1,5 @@
 // src/components/FlyersSection.jsx
+// Responsive‑only tweaks – no logic changes
 import React from "react";
 import Slider from "react-slick";
 import {
@@ -18,7 +19,7 @@ import EventIcon from "@mui/icons-material/Event";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 
-/* פורמט תאריך dd\MM\yyyy */
+/* dd\MM\yyyy */
 const formatDateNumeric = (isoDate) => {
   const d = new Date(isoDate);
   const day = String(d.getDate()).padStart(2, "0");
@@ -27,53 +28,48 @@ const formatDateNumeric = (isoDate) => {
   return `${day}\\${month}\\${year}`;
 };
 
-/* חץ שמאל */
-const PrevArrow = ({ onClick }) => (
-  <IconButton
-    onClick={onClick}
-    sx={{
-      position: "absolute",
-      top: "50%",
-      left: -22,
-      transform: "translateY(-50%)",
-      zIndex: 10,
-      width: 40,
-      height: 40,
-      borderRadius: "50%",
-      color: "#fff",
-      background: "linear-gradient(135deg,#8e24aa 0%,#6a1b9a 100%)",
-      boxShadow: "0 3px 10px rgba(106,27,154,.4)",
-      "&:hover": { background: "linear-gradient(135deg,#7b1fa2 0%,#4a148c 100%)" },
-    }}
-  >
+/* ARROWS */
+/* חץ כללי */
+const ArrowBtn = styled(IconButton)(({ theme }) => ({
+  position: "absolute",
+  top: "50%",
+  transform: "translateY(-50%)",
+  zIndex: 10,
+  width: 40,
+  height: 40,
+  borderRadius: "50%",
+  color: "#fff",
+  background: "linear-gradient(135deg,#8e24aa 0%,#6a1b9a 100%)",
+  boxShadow: "0 3px 10px rgba(106,27,154,.4)",
+  "&:hover": { background: "linear-gradient(135deg,#7b1fa2 0%,#4a148c 100%)" },
+  "&::before": {               /* ☚ מבטל את glyph ברירת-המחדל של slick */
+    content: "none",
+  },
+  "&.slick-disabled": {        /* כשהחץ מנוטרל – מסתירים אותו לגמרי */
+    opacity: 0,
+    pointerEvents: "none",
+  },
+  [theme.breakpoints.down("sm")]: {
+    width: 34,
+    height: 34,
+    boxShadow: "0 2px 6px rgba(106,27,154,.35)",
+  },
+}));
+
+/* חצים ימין/שמאל */
+const PrevArrow = ({ className, style, onClick }) => (
+  <ArrowBtn className={className} style={style} onClick={onClick} sx={{ left: -22 }}>
     <ArrowBackIosNewIcon fontSize="small" />
-  </IconButton>
+  </ArrowBtn>
 );
 
-/* חץ ימין */
-const NextArrow = ({ onClick }) => (
-  <IconButton
-    onClick={onClick}
-    sx={{
-      position: "absolute",
-      top: "50%",
-      right: -22,
-      transform: "translateY(-50%)",
-      zIndex: 10,
-      width: 40,
-      height: 40,
-      borderRadius: "50%",
-      color: "#fff",
-      background: "linear-gradient(135deg,#8e24aa 0%,#6a1b9a 100%)",
-      boxShadow: "0 3px 10px rgba(106,27,154,.4)",
-      "&:hover": { background: "linear-gradient(135deg,#7b1fa2 0%,#4a148c 100%)" },
-    }}
-  >
+const NextArrow = ({ className, style, onClick }) => (
+  <ArrowBtn className={className} style={style} onClick={onClick} sx={{ right: -22 }}>
     <ArrowForwardIosIcon fontSize="small" />
-  </IconButton>
+  </ArrowBtn>
 );
 
-/* כרטיס פלייר עם קו-מתאר וצל בהובר */
+/* CARD */
 const FlyerCard = styled(Card)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 2,
   overflow: "hidden",
@@ -89,6 +85,8 @@ const FlyerCard = styled(Card)(({ theme }) => ({
 
 export default function FlyersSection({ flyers, activities, openDialog }) {
   const theme = useTheme();
+  const md = theme.breakpoints.values.md;
+  const sm = theme.breakpoints.values.sm;
 
   const settings = {
     rtl: true,
@@ -98,21 +96,19 @@ export default function FlyersSection({ flyers, activities, openDialog }) {
     prevArrow: <PrevArrow />,
     nextArrow: <NextArrow />,
     responsive: [
-      { breakpoint: theme.breakpoints.values.md, settings: { slidesToShow: 3 } },
-      { breakpoint: theme.breakpoints.values.sm, settings: { slidesToShow: 1 } },
+      { breakpoint: md, settings: { slidesToShow: 3 } },
+      { breakpoint: sm, settings: { slidesToShow: 2 } },
+      { breakpoint: 480, settings: { slidesToShow: 1 } },
     ],
   };
 
   return (
-    <Box
-      component="section"
-      sx={{
-        background: "linear-gradient(180deg,#f7f3ff 0%,#efe7ff 100%)",
-      }}
-    >
-      <Container maxWidth="lg">
+    <Box component="section" sx={{  background: `linear-gradient(180deg, #ffffff 0%, ${theme.palette.primary.vlight} 100%)`,
+ }}>
+      <Container maxWidth="lg" sx={{  }}>
+        {/* TITLE */}
 
-        <Box sx={{ position: "relative", mt: 3 }}>
+        <Box sx={{ position: "relative", mt: 2 }}>
           <Slider {...settings}>
             {flyers.map((f) => (
               <Box key={f.id} sx={{ px: 1 }}>
@@ -127,13 +123,25 @@ export default function FlyersSection({ flyers, activities, openDialog }) {
                         aspectRatio: "4.5/8",
                         objectFit: "cover",
                         objectPosition: "top",
+                        [theme.breakpoints.down("sm")]: {
+                          aspectRatio: "3.5/6.5",
+                        },
                       }}
                     />
-                    <CardContent sx={{ p: 2, textAlign: "center" }}>
-                      <Typography variant="subtitle1" fontWeight={600} noWrap>
+                    <CardContent sx={{ p: { xs: 1.25, sm: 2 }, textAlign: "center" }}>
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight={600}
+                        noWrap
+                        sx={{ fontSize: { xs: "0.85rem", sm: "0.9rem" } }}
+                      >
                         {activities.find((a) => a.id === f.activityId)?.name || f.name}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ fontSize: { xs: "0.75rem", sm: "0.8rem" } }}
+                      >
                         {f.activityDate ? formatDateNumeric(f.activityDate) : "ללא תאריך"}
                       </Typography>
                     </CardContent>
