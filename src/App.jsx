@@ -34,6 +34,8 @@ import MessageRepliesContainer from "./components/MessageRepliesContainer.jsx";
 import PublicMessageBoardContainer from "./components/PublicMessageBoardContainer.jsx";
 import ManageUsersContainer from "./components/ManageUsersContainer.jsx";
 import AnalyticsDashboard from "./Analytic/AnalyticsDashboard";
+import TagsDetailsPage    from "./Analytic/TagsDetailsPage";
+import SurveyDetailsPage from './Analytic/SurveyDetailsPage';
 
 import ContactDetailsAdmin from "./components/ContactDetailsAdmin.jsx";
 
@@ -79,6 +81,13 @@ export default function App({ toggleTheme, mode }) {
         <Route path="/Data-analysis" element={
           <PrivateRoute requireAdmin={true}><AnalyticsDashboard /></PrivateRoute>
         } />
+        <Route path="/tags-details" element={
+          <PrivateRoute requireAdmin={true}><TagsDetailsPage/></PrivateRoute>
+       }/>
+        <Route path="/survey-details" element={
+          <PrivateRoute requireAdmin={true}><SurveyDetailsPage/></PrivateRoute>
+       }/>
+
         <Route path="/HomepageImages" element={
           <PrivateRoute requireAdmin={true}><HomepageImagesContainer /></PrivateRoute>
         } />

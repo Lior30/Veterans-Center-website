@@ -16,13 +16,13 @@ export default function DonutChart({ title, data, size = 180 }) {
         border       : '1px solid #e9ecef',
         borderRadius : 12,
         boxShadow    : '0 2px 12px rgba(0,0,0,.08)',
-        padding      : 16,
-        width        : size,
+        padding      : 20,
+        width        : 220,
         //  title + donut + legend
         height       : size + 90,
         display      : 'flex',
         flexDirection: 'column',
-        alignItems   : 'center'
+        alignItems   : 'right'
       }}
     >
 
@@ -31,7 +31,7 @@ export default function DonutChart({ title, data, size = 180 }) {
         fontWeight: 600,
         fontSize  : 16,
         marginBottom: 8,
-        textAlign : 'center',
+        textAlign : 'right',
         color     : '#495057'
       }}>
         {title}
@@ -51,10 +51,19 @@ export default function DonutChart({ title, data, size = 180 }) {
           borderWidth={1}
           borderColor={{ from: 'color', modifiers: [['darker', 0.3]] }}
           animate={false}
+            layers={[
+            'arcs',
+            'arcLabels',
+            'arcLinkLabels',
+            'legends'
+          ]}
+          style={{ pointerEvents: 'none' }}
         />
       </div>
 
       {/* ───────── מקרא ───────── */}
+
+
       <div style={{
         marginTop : 12,
         display   : 'flex',

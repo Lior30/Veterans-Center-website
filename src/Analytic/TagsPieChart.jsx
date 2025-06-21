@@ -1,6 +1,7 @@
 // src/components/TagsPieChart.jsx
 import React, { useMemo } from 'react';
 import { ResponsivePie }   from '@nivo/pie';
+import TagsDetailsPage from './TagsDetailsPage';
 
 /* ───────────── צבעים קבועים (עד 10) ───────────── */
 const BASE_COLORS = [

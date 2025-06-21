@@ -41,17 +41,10 @@ export default function RegistrationsLineChart({ activities = [] }) {
     //   id: WEEKDAYS[i],
     //   data: HOURS.map(h => ({ x: h.toString(), y: row[h] }))
     // }));
-  const series = table
-    .map((row, i) => {
-      const totalRow = Object.values(row).reduce((s, v) => s + v, 0);
-      if (totalRow === 0) return null;                  // לדלג על יום בלי נתונים
-
-      return {
-        id: WEEKDAYS[i],
-        data: HOURS.map(h => ({ x: String(h), y: row[h] }))
-      };
-    })
-    .filter(Boolean);  
+  const series = table.map((row, i) => ({
+    id: WEEKDAYS[i],
+    data: HOURS.map(h => ({ x: String(h), y: row[h] }))
+  }));
 
 
 
@@ -59,7 +52,9 @@ export default function RegistrationsLineChart({ activities = [] }) {
       ...series.flatMap(s => s.data.map(p => p.y))
     );                                                      // ★
 
-    return { data: series, maxY: max };                     // ★
+    console.log('table', table);
+    console.log(activities);
+    return { data: series, maxY: max };  
   }, [activities]);
 
 
