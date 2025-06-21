@@ -1,7 +1,8 @@
 // src/components/Analytic/JerusalemMap.jsx
 import React from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import '../index.css';
 
 /**
  * Expects a prop:
@@ -26,9 +27,9 @@ export default function JerusalemMap({ locations = [] }) {
 
   return (
     <MapContainer
-      center={[31.7683, 35.2137]}   // מרכז ירושלים
+      center={[31.7683, 35.2137]}   /* מרכז ירושלים */
       zoom={12}
-      style={{ height: '400px', width: '100%' }}
+      style={{ height: 400, width: '100%' }}
       scrollWheelZoom={false}
     >
       <TileLayer
@@ -36,22 +37,38 @@ export default function JerusalemMap({ locations = [] }) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      {locations.map(loc => (
-        <CircleMarker
-          key={loc.name}
-          center={loc.coords}
-          radius={10 + (loc.count / maxCount) * 20}
-          fillOpacity={0.6}
-          stroke={false}
-          fillColor="#8e2c88"
-        >
-          <Popup>
-            <strong>{loc.name}</strong>
-            <br />
-            {loc.count} כניסות בשבוע האחרון
-          </Popup>
-        </CircleMarker>
-      ))}
+{locations.map(loc => {
+  const radius = 10 + (loc.count / maxCount) * 20;   // ← רדיוס לכל עיגול
+
+  return (
+    <CircleMarker
+      key={loc.name}
+      center={loc.coords}
+      radius={radius}
+      fillOpacity={0.6}
+      stroke={false}
+      fillColor="#8e2c88"
+    >
+      <Tooltip
+  direction="top"
+  offset={[0, -12]}      // 12 px מעל הסמן, אין X
+  opacity={0.9}
+  sticky
+  className="hover-tip"  // ← מחלקה חדשה
+>
+  <div style={{ textAlign: 'center', direction: 'rtl' }}>
+    <strong>{loc.name}</strong><br />
+    {loc.count} משתמשים<br />
+    {(loc.percent * 100).toFixed(1)}%
+  </div>
+</Tooltip>
+
+
+    </CircleMarker>
+  );
+})}
+
+
     </MapContainer>
   );
 }
