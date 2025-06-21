@@ -744,15 +744,17 @@ const togglePaid = async (phone) => {
               if (e.key === "Enter" && addressQuery.trim()) {
                 const results = await geoProvider.search({ query: addressQuery });
                 if (results.length > 0) {
-                  const { x: lng, y: lat, label: address } = results[0];
-                  setAddressQuery(address);
+                  const typedAddress = addressQuery; // Save the user's input before the API overrides it
+                  const { x: lng, y: lat } = results[0];
+
+                  // Keep the input unchanged and save only the user input to form state
                   onFormChange((f) => ({
                     ...f,
-                    location: { address, lat, lng },
+                    location: { address: typedAddress, lat, lng },
                   }));
-      // עדכון מצב המפה
-      setMapCenter([lat, lng]);
-      setMapZoom(15);
+                  // עדכון מצב המפה
+                  setMapCenter([lat, lng]);
+                  setMapZoom(15);
                 }
               }
             }}

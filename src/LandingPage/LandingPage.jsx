@@ -133,36 +133,36 @@ useEffect(() => {
   }, [openMyActivities, userProfile]);
 
   useEffect(() => {
-  const loadMessages = async () => {
-    try {
-      const allMessages = await MessageService.listActive();
+    const loadMessages = async () => {
+      try {
+        const allMessages = await MessageService.listActive();
 
-      if (!userProfile) {
-        // משתמש לא מזוהה – רק הודעות כלליות
-        setMessages(allMessages.filter((m) => !m.activityId));
-      } else {
-        const acts = await ActivityService.getUserActivities(userProfile.id);
-        setMyActivities(acts);
-        const actIds = acts.map((a) => a.id);
-        const visibleMessages = allMessages.filter(
-          (m) => !m.activityId || actIds.includes(m.activityId)
-        );
-        setMessages(visibleMessages);
+        if (!userProfile || !userProfile.id) {
+          // משתמש לא מזוהה או אין מזהה – רק הודעות כלליות
+          setMessages(allMessages.filter((m) => !m.activityId));
+        } else {
+          const acts = await ActivityService.getUserActivities(userProfile.id);
+          setMyActivities(acts);
+          const actIds = acts.map((a) => a.id);
+          const visibleMessages = allMessages.filter(
+            (m) => !m.activityId || actIds.includes(m.activityId)
+          );
+          setMessages(visibleMessages);
+        }
+      } catch (err) {
+        console.error("שגיאה בטעינת הודעות:", err);
       }
-    } catch (err) {
-      console.error("שגיאה בטעינת הודעות:", err);
-    }
-  };
+    };
 
-  loadMessages();
-}, [userProfile]);
+    loadMessages();
+  }, [userProfile]);
 
   const scrollToCalendar = () => {
     calendarRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-const scrollToFlyers   = () => flyersRef.current?.scrollIntoView({ behavior: "smooth" });
-const scrollToMessages = () => messagesRef.current?.scrollIntoView({ behavior: "smooth" });
-const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToFlyers   = () => flyersRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToMessages = () => messagesRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "smooth" });
   const openDialog = (type, data) => setDialog({ type, data });
   const closeDialog = () => setDialog({ type: "", data: null });
 

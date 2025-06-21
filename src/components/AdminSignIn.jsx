@@ -158,7 +158,7 @@ const AdminSignIn = () => {
                     <IconButton
                       onMouseDown={() => setShowPassword(true)}
                       onMouseUp={() => setShowPassword(false)}
-                      onMouseLeave={() => setShowPassword(false)}n
+                      onMouseLeave={() => setShowPassword(false)}
                       edge="end"
                     >
                       <VisibilityIcon />

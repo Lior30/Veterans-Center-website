@@ -261,11 +261,6 @@ static async getUserActivities(phone) {
           description: data.description,
         });
       }
-
-
-    if (isUserInActivity) {
-      results.push({ id: docSnap.id, ...data });
-    }
   });
 
   return results;
