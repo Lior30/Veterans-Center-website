@@ -135,8 +135,8 @@ export default function NavBar({ toggleTheme, mode }) {
           </Button>
         </Box>
 
-        {/* Spacer to push theme toggle right */}
-        <Box sx={{ flexGrow: 1 }} />
 
-  );
+      </Toolbar>
+    </AppBar>
+  );
 }
