@@ -1,5 +1,5 @@
 // src/components/ActivitiesDesign.jsx
-import { Autocomplete } from "@mui/material";
+import Autocomplete, { createFilterOptions } from "@mui/material/Autocomplete";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 
 import {
@@ -60,6 +60,9 @@ const WEEKDAYS = [
   { label: "ו׳", value: 6 },
   { label: "ש׳", value: 0 },
 ];
+
+// מאפשר להוסיף פריטי freeSolo
+const filter = createFilterOptions();
 
 export default function ActivitiesDesign({
   tab,
@@ -171,11 +174,11 @@ const filteredParticipants = (selAct?.participants || []).filter((p) => {
     if (!selAct) return;
 
     const map = {};
-    // selAct.participants is now [{ name, phone }, …]
-   // פשוט תשתמשי בפרופרטי name ולא fullname
-   (selAct.participants || []).forEach(({ name, phone }) => {
-     map[phone] = `${name} — ${phone}`;
-   });
+
+ (selAct.participants || []).forEach(({ name, phone }) => {
+   map[phone] = `${name} — ${phone}`;
+ });
+
 
     setUsers(map);
   }, [selAct]);
@@ -406,10 +409,37 @@ const togglePaid = async (phone) => {
       </Box>
 
       {tab === 0 && (
-        <Box sx={{ mt: 2, textAlign: "right" }}>
+        <Box sx={{ mt: 2, textAlign: "right",  }}>
+
           <Button variant="contained" onClick={onNew} sx={{ mb: 2, ml: 2 }}>
             הוספת פעילות
           </Button>
+
+          
+   {/* ==== כפתורים לשם הוספה/הסרה של תגיות ברשימה ==== */}
+   <Box
+     sx={{
+       display: "flex",
+       alignItems: "center",
+       gap: 1,
+       mb: 2
+     }}
+   >
+     <Button
+       variant="outlined"
+       onClick={() => setNewTagDialogOpen(true)}
+     >
+       הוסף תגית
+     </Button>
+     <Button
+       variant="outlined"
+       color="error"
+       onClick={() => setRemoveTagDialogOpen(true)}
+     >
+       הסר תגית
+     </Button>
+   </Box>
+
 
           {/* שדה חיפוש */}
           <TextField
@@ -420,6 +450,8 @@ const togglePaid = async (phone) => {
             sx={{ mb: 2 }}
             inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
           />
+
+
 
           <Box sx={{ height: 500 }}>
             <DataGrid
@@ -566,31 +598,64 @@ const togglePaid = async (phone) => {
             inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
           />
 
-          {/* Autocomplete לבחירת תגיות בלבד */}
-          <Autocomplete
-            multiple
-            options={allTags}
-            getOptionLabel={(opt) => opt}
-            value={form.tags || []}
-            onChange={(_, newTags) =>
-              onFormChange((f) => ({ ...f, tags: newTags }))
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="בחר תגיות"
-                required
-                InputLabelProps={{ shrink: true }}
-                inputProps={{
-                  ...params.inputProps,
-                  dir: "rtl",
-                  style: { textAlign: "right" },
-                }}
-                fullWidth
-              />
-            )}
-            sx={{ textAlign: "right", right: 0, left: "auto" }}
-          />
+<Autocomplete
+  freeSolo
+  multiple
+  options={allTags}
+  filterOptions={(options, params) => {
+    const filtered = filter(options, params);
+    const { inputValue } = params;
+    // אם יש קלט חדש, מציעים אותו כאובייקט
+    if (inputValue !== "") {
+      filtered.push({
+        inputValue,
+        title: `Add "${inputValue}"`,
+      });
+    }
+    return filtered;
+  }}
+  getOptionLabel={(option) => {
+    // מחרוזת רגילה
+    if (typeof option === "string") {
+      return option;
+    }
+    // אופציה חדשה
+    if (option.inputValue) {
+      return option.inputValue;
+    }
+    // אופציה קיימת
+    return option;
+  }}
+  value={form.tags || []}
+  onChange={(_, newValue) => {
+    // newValue יכול להיות מערך של מחרוזות או אובייקטים
+    const tags = newValue.map((v) =>
+      typeof v === "string" ? v : v.inputValue || v
+    );
+    onFormChange((f) => ({ ...f, tags }));
+    // מוסיפים תגיות חדשות ל־allTags
+    tags.forEach((t) => {
+      if (!allTags.includes(t)) {
+        setAllTags((prev) => [...prev, t]);
+      }
+    });
+  }}
+  renderInput={(params) => (
+    <TextField
+      {...params}
+      placeholder="בחר או כתוב תגית חדשה"
+      required
+      InputLabelProps={{ shrink: true }}
+      fullWidth
+      inputProps={{
+        ...params.inputProps,
+        dir: "rtl",
+        style: { textAlign: "right" },
+      }}
+    />
+  )}
+  sx={{ textAlign: "right" }}
+/>
 
           <TextField
             label="תאריך"

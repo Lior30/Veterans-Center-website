@@ -95,10 +95,6 @@ export default function NavBar({ toggleTheme, mode }) {
       {/* Spacer גמיש כדי לדחוף את הכפתור לימין */}
       <Box sx={{ flexGrow: 1 }} />
 
-      {/* כפתור מצב לילה/יום */}
-      <IconButton color="inherit" onClick={toggleTheme} sx={{ ml: 1 }}>
-        {mode === "dark" ? <Brightness7 /> : <Brightness4 />}
-      </IconButton>
     </nav>
   );
 }
