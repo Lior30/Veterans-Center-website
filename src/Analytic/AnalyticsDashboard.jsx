@@ -12,10 +12,10 @@ import RegistrationsLineChart from './RegistrationsLineChart';
 import DonutChart              from './DonutChart'; 
 import DailyVisitsCard  from './DailyVisitorsCard';
 import WeeklyVisitsCard from './WeeklyVisitsCard';
+import { Link } from 'react-router-dom';
 
 /* ───────────────────────────── דשבורד ───────────────────────────── */
 export default function AnalyticsDashboard() {
-  const [tagStats, setTagStats] = useState([]);
   const [locations, setLocations] = useState([]); 
   const [allActivities, setAllActivities] = useState([]);
   const [dailyVisitors , setDailyVisitors ] = useState(0);
@@ -23,95 +23,66 @@ export default function AnalyticsDashboard() {
   const [changePercent , setChangePercent ] = useState(0);
   const [usersBreakdown , setUsersBreakdown ] = useState([]);
   const [surveyBreakdown, setSurveyBreakdown] = useState([]);
+  const [tagStats,    setTagStats]    = useState([]); 
+  const [surveyDetails,   setSurveyDetails]   = useState([]); 
 
-  useEffect(() => {
-  const todayStart   = new Date();  todayStart.setHours(0,0,0,0);
-  const weekAgoStart = new Date();  weekAgoStart.setDate(weekAgoStart.getDate() - 7);
+useEffect(() => {
+  const now = new Date();
 
-  // מאזין בזמן-אמת
+  // מתי השבוע התחיל (שבת בחצות)
+  const weekStart = new Date(now);
+  weekStart.setDate(weekStart.getDate() - now.getDay());
+  weekStart.setHours(0, 0, 0, 0);
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+
+  // מתי שבוע שעבר התחיל
+  const prevWeekStart = new Date(weekStart);
+  prevWeekStart.setDate(prevWeekStart.getDate() - 7);
+
+  // מתי השבוע הזה עד עכשיו (עד היום והשעה הנוכחיים)
+  const thisWeekEnd = new Date(now);
+
+  // מתי שבוע שעבר עד אותו זמן
+  const lastWeekEnd = new Date(prevWeekStart);
+  lastWeekEnd.setDate(lastWeekEnd.getDate() + now.getDay());
+  lastWeekEnd.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+
+
   const q = query(
     collection(db, "visits"),
-    orderBy("timestamp", "desc")   // לא חובה אבל נוח
+    orderBy("timestamp", "desc")
   );
-
   const unsubscribe = onSnapshot(q, snap => {
-    let today = 0, last7 = 0, prev7 = 0;
+    let todayCount    = 0;
+    let thisWeekCount = 0;
+    let lastWeekCount = 0;
 
     snap.forEach(doc => {
       const ts = doc.data().timestamp.toDate();
-      if (ts >= todayStart)           today++;
-      if (ts >= weekAgoStart)         last7++;
-      if (ts < weekAgoStart &&
-          ts >= weekAgoStart - 7 * 24 * 60 * 60 * 1000)
-        prev7++;
-    });
 
-    setDailyVisitors(today);
-    setWeeklyVisitors(last7);
+       if (ts >= todayStart && ts <= now) {
+        todayCount++;
+      }
+
+      if (ts >= weekStart && ts <= thisWeekEnd) {
+        thisWeekCount++;
+      }
+
+      if (ts >= prevWeekStart && ts <= lastWeekEnd) {
+        lastWeekCount++;
+      }
+    });
+    setDailyVisitors  (todayCount);
+    setWeeklyVisitors(thisWeekCount);
     setChangePercent(
-      prev7 ? ((last7 - prev7) / prev7 * 100).toFixed(0) : 0
+      lastWeekCount
+            ? Math.round((thisWeekCount - lastWeekCount) / lastWeekCount * 100)
+            : 100  // אם שבוע שעבר היה 0, אז הכל זה גידול של 100%
     );
   });
 
-  // ניקוי listener כשעוזבים את הדף
   return () => unsubscribe();
-}, []);
-
-
-
-  useEffect(() => {
-  (async () => {
-    const snap = await getDocs(collection(db, 'users'));
-    let registered = 0, senior = 0;
-
-    snap.forEach(d => {
-      const u = d.data();
-      if (u.is_registered) registered += 1;
-      if (u.is_club_60)    senior     += 1;
-    });
-
-           // משתמשים – סגול (#7e64e0) מול צהוב (#ffd400)
-    setUsersBreakdown([
-      { id: 'משתמשים רשומים', value: registered, color: '#7e64e0' },
-      { id: 'חברי מרכז 60+',   value: senior,     color: '#ffd400' }
-    ]);
-  })();
-}, []);
-
-useEffect(() => {
-  (async () => {
-    // 1. כל הפעילויות: participants לפי id
-    const actSnap = await getDocs(collection(db, 'activities'));
-    const participantsByAct = {};
-    actSnap.forEach(doc => {
-      const d = doc.data();
-      const n = Array.isArray(d.participants) ? d.participants.length : 0;
-      participantsByAct[doc.id] = n;
-    });
-
-    // 2. כל תשובות הסקרים
-    const ansSnap = await getDocs(collection(db, 'surveyResponses'));
-    const answeredByAct = {};
-    ansSnap.forEach(doc => {
-      const { activityId } = doc.data();
-      if (!activityId) return;
-      answeredByAct[activityId] = (answeredByAct[activityId] || 0) + 1;
-    });
-
-    // 3. סכימה גלובלית
-    let answered = 0, could = 0;
-    Object.entries(participantsByAct).forEach(([id, p]) => {
-      answered += answeredByAct[id] || 0;
-      could    += p;
-    });
-
-    // סקרים – סגול (#7e64e0) מול תכלת-בהיר (#20bdff)
-    setSurveyBreakdown([
-      { id: 'ענו',    value: answered,            color: '#7e64e0' },
-      { id: 'לא ענו', value: Math.max(could-answered,0), color: '#3de2da' }
-    ]);
-
-  })();
 }, []);
 
 
@@ -141,6 +112,100 @@ useEffect(() => {
   })();
 }, []);
 
+
+
+  useEffect(() => {
+  (async () => {
+    const snap = await getDocs(collection(db, 'users'));
+    let registered = 0, senior = 0;
+
+    snap.forEach(d => {
+      const u = d.data();
+      if (u.is_registered) registered += 1;
+      if (u.is_club_60)    senior     += 1;
+    });
+
+           // משתמשים – סגול (#7e64e0) מול צהוב (#ffd400)
+    setUsersBreakdown([
+      { id: 'משתמשים רשומים', value: registered, color: '#7e64e0' },
+      { id: 'חברי מרכז 60+',   value: senior,     color: ' #ffe87e' }
+    ]);
+  })();
+}, []);
+
+useEffect(() => {
+  (async () => {
+    // 1. שליפת כל הפעילויות
+    const actSnap = await getDocs(collection(db, 'activities'));
+    const participantsByAct = {};
+    const titleByAct        = {};
+    actSnap.forEach(doc => {
+      const d = doc.data();
+      titleByAct[doc.id] = d.title || d.name || doc.id;
+      participantsByAct[doc.id] = Array.isArray(d.participants)
+        ? d.participants.length
+        : 0;
+    });
+
+    // 2. שליפת כל התגובות לסקר
+    const ansSnap = await getDocs(collection(db, 'surveyResponses'));
+    const answeredByAct = {};
+    ansSnap.forEach(doc => {
+      const { activityId } = doc.data();
+      if (!activityId) return;
+      answeredByAct[activityId] = (answeredByAct[activityId] || 0) + 1;
+    });
+
+    // 3. סכימה גלובלית ל־donut המרכזי
+    let answered = 0, could = 0;
+    Object.entries(participantsByAct).forEach(([id, count]) => {
+      answered += answeredByAct[id] || 0;
+      could    += count;
+    });
+    setSurveyBreakdown([
+      { id: 'ענו', value: answered, color: '#7e64e0' },
+      { id: 'לא ענו', value: could - answered, color: '#3de2da' }
+    ]);
+
+    // 4. בונים את מערך הבר האופקי
+    const details = Object.entries(participantsByAct).map(
+      ([id, reg]) => ({
+        title:      titleByAct[id],
+        registered: reg,
+        answered:   answeredByAct[id] || 0
+      })
+    );
+    setSurveyDetails(details);
+
+  })();         // <-- זה סוגר את ה-IIFE (async)
+}, []);        // <-- זה סוגר את ה-useEffect
+
+
+
+  useEffect(() => {
+  (async () => {
+    const snap = await getDocs(collection(db, 'activities'));
+
+    /* ---- RAW activities (כפי שהן) ---- */
+    const raw = snap.docs.map(d => d.data());
+    setAllActivities(raw);                     // <-- חדש
+
+    /* ---- Tag statistics ---- */
+    const rows = raw.flatMap(d => {
+      const participants = Array.isArray(d.participants)
+        ? d.participants.length
+        : 0;
+      const capacity = d.capacity ?? 0;
+
+      return (d.tags ?? []).map(tag => ({
+        tag,
+        participants,
+        capacity,
+      }));
+    });
+    setTagStats(rows);
+  })();
+}, []);
 
 
 
@@ -184,29 +249,6 @@ useEffect(() => {
     }));
 
     setLocations(withPct);
-  })();
-}, []);
-
-
-useEffect(() => {
-  (async () => {
-    const snap = await getDocs(collection(db, 'activities'));
-
-    const rows = snap.docs.flatMap(doc => {
-      const d = doc.data();
-      const participants = Array.isArray(d.participants)
-        ? d.participants.length
-        : 0;
-      const capacity = d.capacity ?? 0;
-
-      return (d.tags ?? []).map(tag => ({
-        tag,
-        participants,
-        capacity,
-      }));
-    });
-
-    setTagStats(rows);
   })();
 }, []);
 
@@ -272,6 +314,24 @@ useEffect(() => {
         }}>
           הרשמות לפי תגית
         </h3>
+         <div style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          marginBottom: 12
+        }}>
+            <Link to="/tags-details" style={{ textDecoration: 'none' }}>
+              <button style={{
+                padding: '6px 12px',
+                background: '#7e64e0',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}>
+             תצוגת תגיות
+           </button>
+         </Link>
+        </div>
 
         <TagsPieChart activities={tagStats} />
       </div>
@@ -298,9 +358,9 @@ useEffect(() => {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(2, 140px)',  // 2 עמודות קבועות
-              gap: 100,
-              justifyContent: 'center',                // יישור אופקי
+              gridTemplateColumns: 'repeat(2,200px)',  // 2 עמודות קבועות
+              gap: 40,
+              justifyContent: 'right',                // יישור אופקי
               marginTop: 8 
             }}
           >
@@ -312,14 +372,35 @@ useEffect(() => {
             />
 
           {/* דונאט: היענות לסקרים */}
+          <div style={{ position: 'relative' }}>
             <DonutChart
               title="היענות לסקרים"
               data={surveyBreakdown}
               size={180}
               colors={['#7e64e0', '#3de1da']}
             />
+
+           {/* <Link to="/survey-details" state={{ surveyDetails }}>
+            <button
+              style={{
+                padding: '4px 6px',
+                fontSize: '12px',
+                border: 'none',
+                background: '#7e64e0',
+                color: '#fff',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              ←
+            </button>
+          </Link> */}
+
+            </div>
         </div>
         </div>
+
+
 
 
         {/* ── Map (ימין, משתרע לשתי שורות) ── */}
