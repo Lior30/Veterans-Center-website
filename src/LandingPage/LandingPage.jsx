@@ -246,6 +246,8 @@ const handleFillSurvey = (survey) => {
       onScrollToFlyers={scrollToFlyers}
       onScrollToSurveys={scrollToSurveys}
       onScrollToMessages={scrollToMessages}
+        justIdentified={justIdentified}
+
     />
 
   <HeroSection
