@@ -10,24 +10,43 @@ import ActivitiesTable from './ActivitiesTable';
 import JerusalemMap from './JerusalemMap';
 import RegistrationsLineChart from './RegistrationsLineChart';
 import DonutChart              from './DonutChart'; 
+import DailyVisitsCard  from './DailyVisitorsCard';
+import WeeklyVisitsCard from './WeeklyVisitsCard';
 
 /* ───────────────────────────── דשבורד ───────────────────────────── */
 export default function AnalyticsDashboard() {
   const [tagStats, setTagStats] = useState([]);
   const [locations, setLocations] = useState([]); 
   const [allActivities, setAllActivities] = useState([]);
+  const [dailyVisitors , setDailyVisitors ] = useState(0);
+  const [weeklyVisitors, setWeeklyVisitors] = useState(0);
+  const [changePercent , setChangePercent ] = useState(0);
+  const [usersBreakdown , setUsersBreakdown ] = useState([]);
+  const [surveyBreakdown, setSurveyBreakdown] = useState([]);
 
-  // ▸ טבעת ❶   משתמשים: רשומים / 60+
-  const [usersBreakdown, setUsersBreakdown] = useState([
-    { id: 'משתמשים רשומים', value: 0 },
-    { id: 'חברי מרכז 60+',  value: 0 }
-  ]);
+  useEffect(() => {
+  (async () => {
+    const todayStart   = new Date();  todayStart.setHours(0,0,0,0);
+    const weekAgoStart = new Date();  weekAgoStart.setDate(weekAgoStart.getDate() - 7);
 
-  // ▸ טבעת ❷   סקרים: ענו / לא ענו
-  const [surveyBreakdown, setSurveyBreakdown] = useState([
-    { id: 'ענו',    value: 0 },
-    { id: 'לא ענו', value: 0 }
-  ]);
+    const visitsSnap = await getDocs(collection(db, 'visits'));
+    let today = 0, last7 = 0, prev7 = 0;
+
+    visitsSnap.forEach(doc => {
+      const ts = doc.data().timestamp.toDate();
+      if (ts >= todayStart) today++;
+      if (ts >= weekAgoStart) last7++;
+      if (ts <  weekAgoStart && ts >= weekAgoStart - 7*24*60*60*1000)
+        prev7++;
+    });
+
+    setDailyVisitors(today);
+    setWeeklyVisitors(last7);
+    setChangePercent(prev7 ? ((last7 - prev7) / prev7 * 100).toFixed(0) : 0);
+  })();
+}, []);
+
+
 
   useEffect(() => {
   (async () => {
@@ -180,69 +199,7 @@ useEffect(() => {
   })();
 }, []);
 
-  /* ─────── נתונים לדוגמה ─────── */
-  const [metrics] = useState({
-    weeklyVisitors: 1031,
-    totalConverted: 30,
-    changePercent: 13
-  });
-  const osData = [
-    { Macintosh: [
-        { id: 'Display',  value: 45 },
-        { id: 'Email',    value: 11 },
-        { id: 'Facebook', value: 11 },
-        { id: 'Organic',  value: 27 },
-        { id: 'Search',   value: 6  }
-      ]},
-    { Windows: [
-        { id: 'Display',  value: 46 },
-        { id: 'Email',    value: 7  },
-        { id: 'Facebook', value: 5  },
-        { id: 'Organic',  value: 27 },
-        { id: 'Search',   value: 15 }
-      ]},
-    { Linux: [
-        { id: 'Display',  value: 41 },
-        { id: 'Email',    value: 12 },
-        { id: 'Facebook', value: 7  },
-        { id: 'Organic',  value: 34 },
-        { id: 'Search',   value: 6  }
-      ]}
-  ];
 
-  const barData = [
-    { hour: '0',  '1 Lifetime Purchase': 5,  '2': 8,  '3 or 4': 12, '5 to 10 Above': 3  },
-    { hour: '2',  '1 Lifetime Purchase': 7,  '2': 12, '3 or 4': 15, '5 to 10 Above': 5  },
-    { hour: '4',  '1 Lifetime Purchase': 10, '2': 18, '3 or 4': 22, '5 to 10 Above': 8  },
-    { hour: '6',  '1 Lifetime Purchase': 15, '2': 25, '3 or 4': 30, '5 to 10 Above': 12 },
-    { hour: '8',  '1 Lifetime Purchase': 20, '2': 32, '3 or 4': 38, '5 to 10 Above': 15 },
-    { hour: '10', '1 Lifetime Purchase': 25, '2': 40, '3 or 4': 45, '5 to 10 Above': 20 },
-    { hour: '12', '1 Lifetime Purchase': 30, '2': 45, '3 or 4': 50, '5 to 10 Above': 25 },
-    { hour: '14', '1 Lifetime Purchase': 28, '2': 42, '3 or 4': 48, '5 to 10 Above': 22 },
-    { hour: '16', '1 Lifetime Purchase': 32, '2': 48, '3 or 4': 52, '5 to 10 Above': 28 },
-    { hour: '18', '1 Lifetime Purchase': 35, '2': 50, '3 or 4': 55, '5 to 10 Above': 30 },
-    { hour: '20', '1 Lifetime Purchase': 30, '2': 45, '3 or 4': 50, '5 to 10 Above': 25 },
-    { hour: '22', '1 Lifetime Purchase': 20, '2': 35, '3 or 4': 40, '5 to 10 Above': 18 }
-  ];
-
-  const lineData = [
-    {
-      id: 'Brand A',
-      data: [
-        { x: 'Jan', y: 10 }, { x: 'Feb', y: 15 }, { x: 'Mar', y: 13 },
-        { x: 'Apr', y: 18 }, { x: 'May', y: 22 }, { x: 'Jun', y: 20 },
-        { x: 'Jul', y: 25 }, { x: 'Aug', y: 28 }, { x: 'Sep', y: 30 }
-      ]
-    },
-    {
-      id: 'Brand B',
-      data: [
-        { x: 'Jan', y: 8 }, { x: 'Feb', y: 12 }, { x: 'Mar', y: 10 },
-        { x: 'Apr', y: 16 }, { x: 'May', y: 14 }, { x: 'Jun', y: 18 },
-        { x: 'Jul', y: 15 }, { x: 'Aug', y: 20 }, { x: 'Sep', y: 17 }
-      ]
-    }
-  ];
 
   /* סגנון כרטיס בסיסי */
   const cardStyle = {
@@ -309,68 +266,22 @@ useEffect(() => {
       </div>
 
         {/* ── שני KPI (אמצע) ── */}
-        <div
-          style={{
-            gridColumn: 2,   // עדיין הטור האמצעי
-            gridRow:    1,   // עדיין השורה העליונה
-            flexDirection: 'column',// ← שורות אנכיות
-            gap: 16
-          }}
-        >
-          {/* Total Converted */}
-           <div style={{ display: 'flex', gap: 16 }}>
-          <div style={{ ...cardStyle, flex: 1, minHeight: 110 }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{
-                fontSize: '34px',
-                fontWeight: '700',
-                color: '#212529',
-                lineHeight: '1'
-              }}>
-                {metrics.totalConverted.toLocaleString()}
-              </div>
-              <div style={{
-                fontSize: '13px',
-                color: '#6c757d',
-                marginTop: '4px',
-                marginBottom: '8px'
-              }}>
-                כניסות היום
-              </div>
-            </div>
-          </div>
-
-          {/* Weekly Visitors */}
-          <div style={{ ...cardStyle, flex: 1, minHeight: 110 }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{
-                fontSize: '34px',
-                fontWeight: '700',
-                color: '#212529',
-                lineHeight: '1'
-              }}>
-                {metrics.weeklyVisitors.toLocaleString()}
-              </div>
-              <div style={{
-                fontSize: '13px',
-                color: '#6c757d',
-                marginTop: '4px',
-                marginBottom: '8px'
-              }}>
-                כניסות בשבוע האחרון
-              </div>
-              <div style={{
-                fontSize: '13px',
-                display: 'flex',
-                justifyContent: 'center',
-                gap: '4px'
-              }}>
-                <span style={{ color: '#6c757d' }}>משבוע שעבר: </span>
-                <span style={{ color: '#28a745' }}>▲ {metrics.changePercent}%</span>
-              </div>
-            </div>
-          </div>
-          </div>
+      <div
+      style={{
+        gridColumn: 2,                 // הטור המרכזי
+        gridRow   : '1 / span 2',      // שורה 1 וגם 2
+        display   : 'flex',
+        flexDirection: 'column',
+        gap: 16
+      }}
+    >
+      {/* === שורת KPI-ים (לצד זה) === */}
+      
+      <div style={{ display: 'flex', gap: 16 }}>
+        <DailyVisitsCard  count={dailyVisitors} />
+        <WeeklyVisitsCard count={weeklyVisitors}
+                          deltaPct={changePercent} />
+      </div>
 
           {/* דונאט: סוגי משתמשים */}
           <div
@@ -379,7 +290,7 @@ useEffect(() => {
               gridTemplateColumns: 'repeat(2, 140px)',  // 2 עמודות קבועות
               gap: 100,
               justifyContent: 'center',                // יישור אופקי
-              marginTop: 40 
+              marginTop: 8 
             }}
           >
             <DonutChart
