@@ -1,11 +1,23 @@
 // =========  src/services/BannerService.js  =========
 import { db, storage } from "../firebase";
 import {
-  collection, addDoc, getDocs, query, orderBy, limit,
-  writeBatch, doc, updateDoc, serverTimestamp
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  orderBy,
+  limit,
+  writeBatch,
+  doc,
+  updateDoc,
+  deleteDoc,          // ← added
+  serverTimestamp
 } from "firebase/firestore";
 import {
-  ref, uploadBytes, getDownloadURL, deleteObject
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject
 } from "firebase/storage";
 
 const COLL = "homepageBanners";
@@ -36,10 +48,10 @@ const service = {
       link,
       startDate: start || null,
       endDate:   end   || null,
-      duration,          //  <<<<<<<<<<<<<<   שם השדה אחיד
+      duration,
       order: await nextOrder(),
       createdAt: serverTimestamp(),
-      storagePath: fileRef.fullPath,
+      storagePath: fileRef.fullPath, // שמירת fullPath למחיקה
       filename: file.name,
     });
   },
@@ -67,9 +79,16 @@ const service = {
 
   /* מחיקה */
   async deleteBanner(banner) {
-    await deleteObject(ref(storage, banner.storagePath));
-    // אם אתה מוחק מסמך:
-    // await deleteDoc(doc(db, COLL, banner.id));
+    // 1) מחיקת הקובץ מה־Storage (אם כבר נמחק – מתעלם)
+    try {
+      await deleteObject(ref(storage, banner.storagePath));
+    } catch (err) {
+      if (err.code !== "storage/object-not-found") {
+        throw err;
+      }
+    }
+    // 2) מחיקת המסמך ב־Firestore
+    await deleteDoc(doc(db, COLL, banner.id));
   },
 };
 
