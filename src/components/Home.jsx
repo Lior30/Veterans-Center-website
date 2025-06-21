@@ -1,13 +1,13 @@
 // src/components/Home.jsx
 import React, { useState, useEffect } from "react";
 import {
-  Typography,
+  Box,
   Container,
   Grid,
   Card,
   CardActionArea,
   CardContent,
-  Box,
+  Typography,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
@@ -22,7 +22,7 @@ import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
 import BarChartIcon     from "@mui/icons-material/BarChart";
 import ContactMailIcon  from "@mui/icons-material/ContactMail";
 
-import MessageService   from "../services/MessageService";
+import MessageService from "../services/MessageService";
 
 export default function Home() {
   const theme    = useTheme();
@@ -46,121 +46,136 @@ export default function Home() {
     { label: "פרטי קשר",         icon: <ContactMailIcon  fontSize="large" />, to: "/contact-details"  },
   ];
 
+  const rows = [
+    adminItems.slice(0, 4),
+    adminItems.slice(4, 8),
+  ];
+
   return (
-    <>
-      {/* ראשית: פס עליון עם גרדיאנט */}
+    <Box
+      sx={{
+        backgroundColor: theme.palette.mode === "light" ? "#faf9ff" : theme.palette.background.default,
+        pt: 0,                  // כאן
+        pb: { xs: 4, md: 6 },   // וכאן
+      }}
+    >
+      {/* פס עליון עם גרדיאנט + כותרת עם קו */}
       <Box
         sx={{
           background: `linear-gradient(135deg, ${theme.palette.primary.vlight} 0%, ${theme.palette.secondary.light} 100%)`,
-          py: { xs: 5, sm: 7 },
-          mb: { xs: 4, sm: 6 },
-          borderBottomLeftRadius: 48,
-          borderBottomRightRadius: 48,
+          py: { xs: 4, sm: 6 },
+          mb: { xs: 3, sm: 5 },
+          borderBottomLeftRadius: 64,
+          borderBottomRightRadius: 64,
         }}
       >
         <Container maxWidth="md">
           <Typography
             variant={isMobile ? "h4" : "h3"}
             align="center"
-            sx={{ fontWeight: 700, color: theme.palette.primary.dark }}
+            sx={{
+              fontWeight: 700,
+              color: theme.palette.primary.dark,
+              position: "relative",
+              "&::after": {
+                content: '""',
+                display: "block",
+                width: 80,
+                height: 4,
+                borderRadius: 2,
+                background: theme.palette.primary.main,
+                mx: "auto",
+                mt: 1,
+              },
+            }}
           >
             דף ניהול מרכז ותיקים
           </Typography>
-
-          {/* טיקר אופציונלי */}
-          {messages.length > 0 && (
-            <Box
-              sx={{
-                mt: 3,
-                overflow: "hidden",
-                whiteSpace: "nowrap",
-                "& > span": {
-                  display: "inline-block",
-                  pr: 6,
-                  animation: "ticker 20s linear infinite",
-                },
-                "@keyframes ticker": {
-                  "0%":   { transform: "translateX(100%)" },
-                  "100%": { transform: "translateX(-100%)" },
-                },
-                color: theme.palette.text.secondary,
-                fontSize: { xs: "0.85rem", sm: "0.95rem" },
-              }}
-            >
-              <span>{[...messages, ...messages].map(m => m.title).join("   ⚬   ")}</span>
-            </Box>
-          )}
         </Container>
       </Box>
 
-      {/* רשת הכרטיסים */}
-      <Container sx={{ pb: { xs: 6, md: 8 } }}>
-        <Grid container spacing={4} justifyContent="center">
-          {adminItems.map(it => (
-            <Grid item key={it.label} xs={12} sm={6} md={3}>
-              <Card
-                sx={{
-                  height: "100%",
-                  borderRadius: 3,
-                  background: theme.palette.background.paper,
-                  border: `1px solid ${theme.palette.divider}`,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                  transition: "transform .25s, box-shadow .25s",
-                  "&:hover": {
-                    transform: "translateY(-6px)",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-                  },
-                }}
-              >
-                <CardActionArea
-                  component={RouterLink}
-                  to={it.to}
-                  sx={{ height: "100%" }}
+      {/* שתי שורות של 4 כרטיסים כל אחת */}
+      <Container maxWidth="lg" sx={{ pb: { xs: 6, md: 8 } }}>
+        {rows.map((rowItems, rowIndex) => (
+          <Grid
+            container
+            spacing={{ xs: 2, md: 4 }}
+            justifyContent="center"
+            key={rowIndex}
+            sx={{ mb: rowIndex === 0 ? 4 : 0 }}
+          >
+            {rowItems.map(it => (
+              <Grid item xs={12} sm={6} md={3} key={it.label}>
+                <Card
+                  sx={{
+                    height: "100%",
+                    borderRadius: 4,
+                    bgcolor: theme.palette.background.paper,
+                    border: `1px solid ${theme.palette.divider}`,
+                    backdropFilter: "blur(6px)",
+                    boxShadow: "0 6px 16px rgba(0,0,0,0.08)",
+                    transition: "transform .3s, box-shadow .3s",
+                    "&:hover": {
+                      transform: "translateY(-8px) scale(1.02)",
+                      boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
+                    },
+                  }}
                 >
-                  <CardContent
-                    sx={{
-                      py: 7,
-                      textAlign: "center",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 1.5,
-                    }}
+                  <CardActionArea
+                    component={RouterLink}
+                    to={it.to}
+                    sx={{ height: "100%" }}
                   >
-                    <Box
+                    <CardContent
                       sx={{
-                        width: 60,
-                        height: 60,
-                        borderRadius: "50%",
+                        py: { xs: 6, md: 8 },
+                        textAlign: "center",
                         display: "flex",
+                        flexDirection: "column",
                         alignItems: "center",
-                        justifyContent: "center",
-                        background: theme.palette.primary.vlight,
-                        color: theme.palette.primary.main,
-                        fontSize: 32,
+                        gap: 2,
                       }}
                     >
-                      {it.icon}
-                    </Box>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        mt: 1,
-                        fontSize: { xs: "1.05rem", sm: "1.1rem" },
-                        fontWeight: 600,
-                        color: theme.palette.text.primary,
-                      }}
-                    >
-                      {it.label}
-                    </Typography>
-                  </CardContent>
-                </CardActionArea>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+                      <Box
+                        sx={{
+                          width: 64,
+                          height: 64,
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: theme.palette.primary.vlight,
+                          color: theme.palette.primary.main,
+                          fontSize: 34,
+                          transition: "box-shadow .3s, transform .3s",
+                          "&:hover": {
+                            boxShadow: `0 0 0 12px ${theme.palette.primary.vlight}`,
+                            transform: "scale(1.1)",
+                          },
+                        }}
+                      >
+                        {it.icon}
+                      </Box>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          mt: 1,
+                          fontSize: { xs: "1rem", sm: "1.1rem" },
+                          fontWeight: 700,
+                          color: theme.palette.text.primary,
+                          letterSpacing: "0.5px",
+                        }}
+                      >
+                        {it.label}
+                      </Typography>
+                    </CardContent>
+                  </CardActionArea>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        ))}
       </Container>
-    </>
+    </Box>
   );
 }

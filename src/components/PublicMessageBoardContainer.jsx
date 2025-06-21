@@ -19,9 +19,9 @@ import ReplyContainer from "./ReplyContainer.jsx";
  * לוח הודעות ציבורי עם גרירה-ושחרור לשינוי סדר.
  */
 export default function PublicMessageBoardContainer() {
-  const [messages,    setMessages]    = useState([]);
+  const [messages, setMessages] = useState([]);
   const [selectedMsg, setSelectedMsg] = useState(null);
-  const dragIndexRef = useRef(null);            // כדי לזכור מי נגרר
+  const dragIndexRef = useRef(null); // כדי לזכור מי נגרר
 
   /* ─── טעינת ההודעות ─── */
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function PublicMessageBoardContainer() {
 
       // עדכון מקומי מהיר
       const updated = [...messages];
-      updated[srcIdx]   = msgB;
+      updated[srcIdx] = msgB;
       updated[targetIdx] = msgA;
       setMessages(updated);
     } catch (err) {
@@ -70,21 +70,59 @@ export default function PublicMessageBoardContainer() {
         {messages.map((m, idx) => (
           <Card
             key={m.id}
-            sx={{ mb: 2, cursor: "grab" }}
+            sx={{
+              mb: 2,
+              cursor: "grab",
+              boxShadow: 3,
+              borderRadius: 3,
+              transition: "transform 0.2s ease-in-out, box-shadow 0.2s",
+              "&:hover": {
+                transform: "scale(1.01)",
+                boxShadow: 6,
+              },
+              background: "linear-gradient(135deg, #f9f9f9 0%, #ffffff 100%)",
+              border: "1px solid #e0e0e0",
+            }}
             draggable
             onDragStart={handleDragStart(idx)}
             onDragOver={handleDragOver}
             onDrop={handleDrop(idx)}
           >
             <CardContent>
-              <Typography variant="h6">{m.title}</Typography>
-              <Typography variant="body2" sx={{ mt: 1 }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: "bold",
+                  fontSize: "1.2rem",
+                  color: "#333",
+                  mb: 1,
+                }}
+              >
+                {m.title}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "#555",
+                  fontSize: "0.95rem",
+                  whiteSpace: "pre-line",
+                  lineHeight: 1.5,
+                }}
+              >
                 {m.body}
               </Typography>
               <Button
-                variant="outlined"
+                variant="contained"
                 size="small"
-                sx={{ mt: 2 }}
+                sx={{
+                  mt: 2,
+                  backgroundColor: "#673ab7",
+                  "&:hover": {
+                    backgroundColor: "#5e35b1",
+                  },
+                  borderRadius: 2,
+                  fontWeight: "bold",
+                }}
                 onClick={() => setSelectedMsg(m)}
               >
                 השב
@@ -100,8 +138,22 @@ export default function PublicMessageBoardContainer() {
         onClose={() => setSelectedMsg(null)}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            boxShadow: 6,
+          },
+        }}
       >
-        <DialogTitle>השב להודעה: {selectedMsg?.title}</DialogTitle>
+        <DialogTitle
+          sx={{
+            backgroundColor: "#f3e5f5",
+            fontWeight: "bold",
+            fontSize: "1.2rem",
+          }}
+        >
+          השב להודעה: {selectedMsg?.title}
+        </DialogTitle>
         <DialogContent dividers>
           <ReplyContainer
             messageId={selectedMsg?.id}
@@ -109,7 +161,15 @@ export default function PublicMessageBoardContainer() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setSelectedMsg(null)}>סגור</Button>
+          <Button
+            onClick={() => setSelectedMsg(null)}
+            sx={{
+              fontWeight: "bold",
+              color: "#673ab7",
+            }}
+          >
+            סגור
+          </Button>
         </DialogActions>
       </Dialog>
     </>

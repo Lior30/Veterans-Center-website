@@ -1,165 +1,260 @@
-import CtaButton from "../LandingPage/CtaButton";
+// src/components/HomepageImagesDesign.jsx
 import React, { useState, useRef } from "react";
-import BannerService from "../services/BannerService.js"; // העלאה
+import CtaButton from "../LandingPage/CtaButton";
+import BannerService from "../services/BannerService.js";
+import {
+  Container,
+  Paper,
+  Typography,
+  TextField,
+  Stack,
+  Box,
+  Grid,
+  IconButton,
+  InputAdornment,
+} from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 
-/* ───────────────── טופס העלאה ───────────────── */
+//
+// BannerUploader: the upload form
+//
 function BannerUploader({ onUpload }) {
   const [title, setTitle] = useState("");
-  const [file,  setFile]  = useState(null);
+  const [file, setFile] = useState(null);
   const [start, setStart] = useState("");
-  const [end,   setEnd]   = useState("");
+  const [end, setEnd] = useState("");
   const [duration, setDuration] = useState(5);
   const dropRef = useRef();
 
   const onFileChange = (e) => setFile(e.target.files[0]);
-  const onDrop       = (e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) setFile(f); };
-  const onDragOver   = (e) => e.preventDefault();
+  const onDrop = (e) => {
+    e.preventDefault();
+    const f = e.dataTransfer.files[0];
+    if (f) setFile(f);
+    dropRef.current.style.borderColor = "";
+  };
+  const onDragOver = (e) => {
+    e.preventDefault();
+    dropRef.current.style.borderColor = "#673ab7";
+  };
+  const onDragLeave = (e) => {
+    e.preventDefault();
+    dropRef.current.style.borderColor = "";
+  };
 
   async function handleSubmit() {
-    if (!title.trim() || !file) { alert("שם וקובץ חובה"); return; }
-    if (end && start && end < start) { alert("תאריך סיום לפני תאריך התחלה"); return; }
-
+    if (!title.trim() || !file) {
+      alert("שם וקובץ חובה");
+      return;
+    }
+    if (end && start && end < start) {
+      alert("תאריך סיום לפני תאריך התחלה");
+      return;
+    }
     try {
       await BannerService.uploadBanner({
-        title, file, link: "", start, end, durationSec: Number(duration) || 5,
+        title,
+        file,
+        link: "",
+        start,
+        end,
+        durationSec: Number(duration) || 5,
       });
-      /* ניקוי */
-      setTitle(""); setFile(null); setStart(""); setEnd(""); setDuration(5);
+      setTitle("");
+      setFile(null);
+      setStart("");
+      setEnd("");
+      setDuration(5);
       onUpload?.();
-    } catch (err) { alert("העלאה נכשלה: " + err.code); }
+    } catch (err) {
+      alert("העלאה נכשלה: " + err.code);
+    }
   }
 
   return (
-    <div style={{ margin: "2rem auto", textAlign: "center", maxWidth: 450 }}>
-      <h3>העלאת באנר ראשי חדש</h3>
+    <Paper
+      elevation={3}
+      sx={{
+        p: 4,
+        mb: 6,
+        maxWidth: 500,
+        mx: "auto",
+        bgcolor: "background.paper",
+      }}
+    >
+      <Typography variant="h6" gutterBottom>
+העלאת תמונה חדשה    
+  </Typography>
 
-      {/* שם */}
-      <label>
-        שם:
-        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
-               style={{ marginInlineStart: 10 }} />
-      </label>
+      <Stack spacing={2}>
+        <TextField
+          label="שם "
+          fullWidth
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
 
-      {/* תאריכים */}
-      <div style={{ marginTop: 10 }}>
-        <label>
-          הצג החל מ-
-          <input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
-        </label>
-        &nbsp;ועד&nbsp;
-        <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
-      </div>
+        <Stack direction="row" spacing={2}>
+          <TextField
+            label="הצג החל מ־"
+            type="date"
+            fullWidth
+            InputLabelProps={{ shrink: true }}
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+          />
+          <TextField
+            label="עד (כולל)"
+            type="date"
+            fullWidth
+            InputLabelProps={{ shrink: true }}
+            value={end}
+            onChange={(e) => setEnd(e.target.value)}
+          />
+        </Stack>
 
-      {/* משך הצגה */}
-      <div style={{ marginTop: 10 }}>
-        <label>
-          משך הצגה (שניות):
-          <input type="number" min="1" value={duration}
-                 onChange={(e) => setDuration(e.target.value)}
-                 style={{ width: 70, marginInlineStart: 8 }} />
-        </label>
-      </div>
+        <TextField
+          label="משך הצגה (שניות)"
+          type="number"
+          inputProps={{ min: 1 }}
+          fullWidth
+          value={duration}
+          onChange={(e) => setDuration(e.target.value)}
+        />
 
-      {/* קובץ */}
-      <div
-        ref={dropRef}
-        onDrop={onDrop}
-        onDragOver={onDragOver}
-        style={{
-          marginTop: 20, padding: 20,
-          border: "2px dashed #ccc", borderRadius: 6, background: "#fafafa"
-        }}
-      >
-        {file ? <p>קובץ: {file.name}</p> : <p>גרור תמונה לכאן או בחר ידנית</p>}
-        <input type="file" accept="image/*" onChange={onFileChange} />
-      </div>
+        <Box
+          ref={dropRef}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          sx={{
+            p: 3,
+            border: "2px dashed",
+            borderColor: "divider",
+            borderRadius: 2,
+            textAlign: "center",
+            bgcolor: "background.default",
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            {file ? `קובץ: ${file.name}` : "גרור תמונה לכאן או בחר ידנית"}
+          </Typography>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={onFileChange}
+            style={{ marginTop: 8 }}
+          />
+        </Box>
 
-      <CtaButton onClick={handleSubmit} style={{ marginTop: 22 }}>שמור</CtaButton>
-    </div>
+        <Box textAlign="center">
+          <CtaButton onClick={handleSubmit}>שמור </CtaButton>
+        </Box>
+      </Stack>
+    </Paper>
   );
 }
 
-/* ───────────────── רשימת תמונות ───────────────── */
+//
+// HomepageImagesDesign: the existing banners grid
+//
 export default function HomepageImagesDesign({
-  banners, onUpload, onDelete,
-  onDragStart, onDragEnter,
-  onDurationChange, onDurationBlur
+  banners,
+  onUpload,
+  onDelete,
+  onDragStart,
+  onDragEnter,
+  onDurationChange,
+  onDurationBlur,
 }) {
   return (
-    <div style={{ maxWidth: 960, margin: "0 auto" }}>
+    <Container maxWidth="lg">
+      {/* Uploader */}
       <BannerUploader onUpload={onUpload} />
 
-      <h3 style={{ textAlign: "center", marginTop: 40 }}>תמונות קיימות</h3>
+      {/* Title */}
+      <Typography variant="h6" align="center" gutterBottom>
+        תמונות קיימות
+      </Typography>
       {banners.length === 0 && (
-        <p style={{ textAlign: "center" }}>אין עדיין תמונות.</p>
+        <Typography align="center" color="text.secondary">
+          אין עדיין תמונות.
+        </Typography>
       )}
 
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 24,
-          justifyContent: "center",
-        }}
-      >
+      {/* Grid of banners */}
+      <Grid container spacing={4} justifyContent="center" sx={{ mt: 2 }}>
         {banners.map((banner, idx) => (
-          <div
-            key={banner.id}
-            draggable
-            onDragStart={(e) => onDragStart(e, idx)}
-            onDragEnter={(e) => onDragEnter(e, idx)}
-            style={{
-              width: 220,
-              border: "1px solid #e0e0e0",
-              borderRadius: 8,
-              padding: 8,
-              textAlign: "center",
-              background: "#fff",
-              cursor: "grab",
-              userSelect: "none",
-            }}
-          >
-            <img
-              src={banner.url}
-              alt={banner.title}
-              style={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 4 }}
-            />
-
-            <h4 style={{ margin: "8px 0 0" }}>{banner.title}</h4>
-            <small>סדר: {banner.order}</small>
-
-            {/* עריכת משך הצגה */}
-            <div style={{ marginTop: 6 }}>
-              <label style={{ fontSize: 12 }}>
-                משך (שניות):
-                <input
-                  type="number"
-                  min="1"
-                  value={banner.durationSec}
-                  onChange={(e) => onDurationChange(banner.id, Number(e.target.value))}
-                  onBlur={(e)   => onDurationBlur(banner.id, Number(e.target.value))}
-                  style={{ width: 60, marginInlineStart: 6 }}
-                />
-              </label>
-            </div>
-
-            <button
-              onClick={() => onDelete(banner)}
-              style={{
-                marginTop: 10,
-                padding: "4px 10px",
-                background: "#e53935",
-                color: "white",
-                border: "none",
-                borderRadius: 4,
-                cursor: "pointer",
+          <Grid item key={banner.id}>
+            <Box
+              component="div"
+              draggable
+              onDragStart={(e) => onDragStart(e, idx)}
+              onDragEnter={(e) => onDragEnter(e, idx)}
+              sx={{
+                width: 240,
+                p: 2,
+                position: "relative",
+                bgcolor: "background.paper",
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: "divider",
+                textAlign: "center",
+                cursor: "grab",
+                "&:hover": { boxShadow: 6 },
               }}
             >
-              🗑️ מחק
-            </button>
-          </div>
+              <Box
+                component="img"
+                src={banner.url}
+                alt={banner.title}
+                sx={{
+                  width: "100%",
+                  height: 140,
+                  objectFit: "cover",
+                  borderRadius: 1,
+                }}
+              />
+
+              <Typography variant="subtitle1" sx={{ mt: 1 }}>
+                {banner.title}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                סדר: {banner.order}
+              </Typography>
+
+              <TextField
+                variant="outlined"
+                size="small"
+                label="משך"
+                type="number"
+                inputProps={{ min: 1 }}
+                value={banner.durationSec}
+                onChange={(e) =>
+                  onDurationChange(banner.id, Number(e.target.value))
+                }
+                onBlur={(e) =>
+                  onDurationBlur(banner.id, Number(e.target.value))
+                }
+                sx={{ mt: 1, width: 100 }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">שניות</InputAdornment>
+                  ),
+                }}
+              />
+
+              <IconButton
+                size="small"
+                onClick={() => onDelete(banner)}
+                sx={{ position: "absolute", top: 8, right: 8 }}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          </Grid>
         ))}
-      </div>
-    </div>
+      </Grid>
+    </Container>
   );
 }

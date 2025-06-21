@@ -1,51 +1,70 @@
-import CtaButton from "../LandingPage/CtaButton";
-// =========  src/components/FlyerUploaderArea.jsx  =========
+// src/components/FlyerUploaderArea.jsx
 import React, { useState, useRef, useEffect } from "react";
 import FlyerService from "../services/FlyerService.js";
 import ActivityService from "../services/ActivityService";
+import CtaButton from "../LandingPage/CtaButton";
+import {
+  Box,
+  Typography,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Stack,
+  useTheme,
+  useMediaQuery,
+} from "@mui/material";
 
 export default function FlyerUploaderArea({ onUpload }) {
-  const [name, setName]       = useState("");
-  const [file, setFile]       = useState(null);
-  const [startDate, setStart] = useState("");   // yyyy-mm-dd
-  const [endDate,   setEnd]   = useState("");
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [name, setName] = useState("");
+  const [file, setFile] = useState(null);
+  const [startDate, setStart] = useState("");
+  const [endDate, setEnd] = useState("");
   const [activities, setActivities] = useState([]);
   const [activityId, setActivityId] = useState("");
-  const dropRef               = useRef();
+  const dropRef = useRef();
 
-  /* -------- Load activities -------- */
   useEffect(() => {
     const unsub = ActivityService.subscribe((acts) => setActivities(acts));
     return () => unsub();
   }, []);
 
-  /* -------- Drag & Drop -------- */
   const handleFileChange = (e) => setFile(e.target.files[0]);
 
   const handleDrop = (e) => {
     e.preventDefault();
     const f = e.dataTransfer.files[0];
     if (f) setFile(f);
-    dropRef.current.style.border = "2px dashed #bbb";
+    dropRef.current.style.borderColor = theme.palette.primary.main;
   };
 
-  const handleDrag = (e) => {
+  const handleDragOver = (e) => {
     e.preventDefault();
-    dropRef.current.style.border = "2px dashed #673ab7";
+    dropRef.current.style.borderColor = theme.palette.primary.dark;
   };
 
-  /* -------- Submit -------- */
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    dropRef.current.style.borderColor = theme.palette.divider;
+  };
+
   const handleSubmit = async () => {
-    if (!name.trim() || !file)      return alert("שם וקובץ חובה");
-    if (!activityId)                return alert("בחרי פעילות לפני שמירה");
+    if (!name.trim() || !file) return alert("שם וקובץ חובה");
+    if (!activityId) return alert("בחרי פעילות לפני שמירה");
     if (endDate && startDate && endDate < startDate)
       return alert("תאריך סיום חייב להיות אחרי תאריך התחלה");
 
     try {
       await FlyerService.uploadFlyer({ name, file, startDate, endDate, activityId });
-      // ניקוי טופס
-      setName(""); setFile(null); setStart(""); setEnd(""); setActivityId("");
-      onUpload?.();  // ריענון רשימה מה-parent
+      setName("");
+      setFile(null);
+      setStart("");
+      setEnd("");
+      setActivityId("");
+      onUpload?.();
     } catch (err) {
       console.error(err);
       alert("העלאה נכשלה: " + (err.code || err.message));
@@ -53,84 +72,112 @@ export default function FlyerUploaderArea({ onUpload }) {
   };
 
   return (
-    <div style={{ direction: "rtl", maxWidth: 400 }}>
-      {/* שם הפלייר */}
-      <label>
-        שם:
-        <input
-          type="text"
+    <Box
+      sx={{
+        direction: "rtl",
+        maxWidth: 480,
+        mx: "auto",
+        p: { xs: 2, sm: 3 },
+        bgcolor: theme.palette.background.paper,
+        borderRadius: 2,
+        boxShadow: 1,
+      }}
+    >
+      <Typography variant="h5" align="center" gutterBottom sx={{ mb: 2, fontWeight: 600 }}>
+        העלאת פלייר
+      </Typography>
+
+      <Stack spacing={isMobile ? 2 : 3}>
+        {/* שם הפלייר */}
+        <TextField
+          label="שם הפלייר"
+          variant="outlined"
+          fullWidth
           value={name}
           onChange={(e) => setName(e.target.value)}
-          style={{ width: "100%", marginBottom: 10 }}
         />
-      </label>
 
-      {/* בחירת פעילות */}
-      <label style={{ display: 'block', marginTop: 10 }}>
-        פעילות:
-        <select
-          value={activityId}
-          onChange={(e) => setActivityId(e.target.value)}
-          style={{ width: "100%", marginTop: 5 }}
-        >
-          <option value="">-- בחרי פעילות --</option>
-          {activities.map((act) => (
-            <option key={act.id} value={act.id}>
-              {act.name} — {act.date}
-            </option>
-          ))}
-        </select>
-      </label>
+        {/* בחירת פעילות */}
+        <FormControl fullWidth>
+          <InputLabel id="activity-select-label">בחרי פעילות</InputLabel>
+          <Select
+            labelId="activity-select-label"
+            label="בחרי פעילות"
+            value={activityId}
+            onChange={(e) => setActivityId(e.target.value)}
+          >
+            <MenuItem value="">
+              <em>-- ללא פעילות --</em>
+            </MenuItem>
+            {activities.map((act) => (
+              <MenuItem key={act.id} value={act.id}>
+                {act.name} &mdash; {act.date}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-      {/* תאריכי הצגה */}
-      <div style={{ marginTop: 10 }}>
-        <label>
-          הצג החל מ-
-          <input
+        {/* תאריכי הצגה */}
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <TextField
+            label="הצג החל מ־"
             type="date"
+            InputLabelProps={{ shrink: true }}
+            fullWidth
             value={startDate}
             onChange={(e) => setStart(e.target.value)}
           />
-        </label>
-        <label style={{ marginInlineStart: 15 }}>
-          ועד (כולל)
-          <input
+          <TextField
+            label="ועד (כולל)"
             type="date"
+            InputLabelProps={{ shrink: true }}
+            fullWidth
             value={endDate}
             onChange={(e) => setEnd(e.target.value)}
           />
-        </label>
-      </div>
+        </Stack>
 
-      {/* Drop area */}
-      <div
-        ref={dropRef}
-        onDrop={handleDrop}
-        onDragOver={handleDrag}
-        onDragLeave={(e) => {
-          e.preventDefault();
-          dropRef.current.style.border = "2px dashed #bbb";
-        }}
-        style={{
-          marginTop: 15,
-          padding: 20,
-          textAlign: "center",
-          border: "2px dashed #bbb",
-          borderRadius: 6,
-          background: "#fafafa",
-        }}
-      >
-        {file ? <p>קובץ: {file.name}</p> : <p>גרור קובץ לכאן או בחר ידנית</p>}
-        <input type="file" accept="image/*,application/pdf" onChange={handleFileChange} />
-      </div>
+        {/* Drop area */}
+        <Box
+          ref={dropRef}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          sx={{
+            p: 3,
+            textAlign: "center",
+            border: `2px dashed ${theme.palette.divider}`,
+            borderRadius: 1,
+            bgcolor: theme.palette.grey[50],
+            position: "relative",
+            overflow: "hidden",
+            "& input[type='file']": {
+              position: "absolute",
+              top: 0, left: 0, width: "100%", height: "100%",
+              opacity: 0, cursor: "pointer",
+            },
+          }}
+        >
+          {file ? (
+            <Typography>{file.name}</Typography>
+          ) : (
+            <Typography color="text.secondary">
+              גרור קובץ לכאן או לחצי כדי לבחור
+            </Typography>
+          )}
+          <input type="file" accept="image/*,application/pdf" onChange={handleFileChange} />
+        </Box>
 
-      {/* שמירה */}
-      <CtaButton onClick={handleSubmit}
-        style={{ marginTop: 20 }}
-        disabled={!name.trim() || !file || !activityId}
-      >
-        שמור
-      </CtaButton>
-    </div>
+        {/* כפתור שמירה */}
+        <CtaButton
+          onClick={handleSubmit}
+          disabled={!name.trim() || !file || !activityId}
+          fullWidth
+          sx={{ mt: 1 }}
+        >
+          שמור פלייר
+        </CtaButton>
+      </Stack>
+    </Box>
   );
 }
