@@ -1,3 +1,4 @@
+import CtaButton from "../LandingPage/CtaButton";
 // =========  src/components/FlyerUploaderArea.jsx  =========
 import React, { useState, useRef, useEffect } from "react";
 import FlyerService from "../services/FlyerService.js";
@@ -124,13 +125,12 @@ export default function FlyerUploaderArea({ onUpload }) {
       </div>
 
       {/* שמירה */}
-      <button
-        onClick={handleSubmit}
+      <CtaButton onClick={handleSubmit}
         style={{ marginTop: 20 }}
         disabled={!name.trim() || !file || !activityId}
       >
         שמור
-      </button>
+      </CtaButton>
     </div>
   );
 }

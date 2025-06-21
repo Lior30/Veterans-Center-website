@@ -123,3 +123,8 @@ h1, h2, h3, h4, h5, h6 {
   outline: 2px dashed #91278F !important; /* החליפי בצבע הסגול של הלוגו אם שונה */
   outline-offset: 2px;
 }
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

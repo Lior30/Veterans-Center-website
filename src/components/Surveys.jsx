@@ -1,3 +1,4 @@
+import CtaButton from "../LandingPage/CtaButton";
 // src/components/Surveys.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
@@ -10,9 +11,9 @@ export default function Surveys() {
     <div style={{ padding: "40px", maxWidth: 1000, margin: "0 auto", direction: "rtl" }}>
       {/* Create Survey Button */}
       <div style={{ marginBottom: 20 }}>
-        <button onClick={() => navigate("/surveys/create")} style={{ float: "left" }}>
+        <CtaButton onClick={() => navigate("/surveys/create")} style={{ float: "left" }}>
           יצירת סקר חדש
-        </button>
+        </CtaButton>
         <div style={{ clear: "both" }} />
       </div>
 
