@@ -3,7 +3,7 @@ import * as XLSX from "xlsx";           // ❶
 import { saveAs } from "file-saver";
 import { db, auth, firebaseConfig  } from "../firebase"; // <-- add auth here
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  deleteUser } from "firebase/auth";
+ deleteUser  } from "firebase/auth";
 import { initializeApp, deleteApp, getApp } from "firebase/app";
 import { generateEmailPassword } from "./IdentificationPage";
 import { collection, collectionGroup, doc, setDoc, getDoc, getDocs, query, where, updateDoc, deleteDoc, writeBatch } from "firebase/firestore";
@@ -20,8 +20,19 @@ import {
   DialogTitle,
   DialogContent,
   IconButton,
+  Tabs, Tab 
   // … שאר ה-imports הקיימים
 } from "@mui/material";
+import DownloadIcon from "@mui/icons-material/Download";
+
+
+
+  const palette = {
+    primary:  "#6c5c94",      // סגול חדש
+    primaryHL:"#6c5c94",      // אם תרצה מעט כהה יותר: "#584b7c"
+    bgHeader:"#f7f5fb",
+    border:  "#e3dfff",
+  }
 
 async function fixMissingUserFields() {
   const snap = await getDocs(collection(db, "users"));
@@ -203,7 +214,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   const [newFirstName, setNewFirstName] = useState("");
   const [newLastName, setNewLastName] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [activeTab, setActiveTab] = useState("registered");
+  const [activeTab, setActiveTab] = React.useState("registered");
   const [phoneTouched, setPhoneTouched] = useState(false);
   const phoneError = UserService.getPhoneError(newPhone);
   const isPhoneValid = phoneError === null;
@@ -628,34 +639,6 @@ try {
     markDeleted(phone);
   }
 
-  /* ✦✦ 2.  מחיקת-קבוצה חדשה  ✦✦ */
-  async function deleteSelected() {
-    if (selected.size === 0) return;
-
-    const confirmed = window.confirm("האם אתה בטוח שאתה רוצה למחוק את כל המשתמשים?");
-    if (!confirmed) return;
-
-    const promises = [];
-    const phones   = [];
-
-    for (const id of selected) {
-      const u = allUsers.find(x => ensureUserId(x) === id);
-      if (u) {
-        phones.push(u.phone);
-        promises.push(deleteUserSilent(u));   // ← בלי חלונות דיאלוג
-      }
-    }
-
-    await Promise.all(promises);              // מחכים שכל המחיקות יסתיימו
-    setSelected(new Set());                   // איפוס הבחירה
-
-    // ריענון הרשימה פעם אחת בלבד
-    const fresh = await getDocs(collection(db, "users"));
-    setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
-
-    alert("המשתמשים נמחקו בהצלחה");
-  }
-
 
   async function deleteUserCore(user) {
 
@@ -932,12 +915,13 @@ async function saveEditedUser(u) {
   }
 
 
-  <button
-      style={{ border:"none", background:"transparent", cursor:"pointer" }}
-      onClick={() => toggleRow(u.user_id)}
-    >
-      ⋯ 
-    </button>
+  // <button
+  //     style={{ border:"none", background:"transparent", cursor:"pointer" }}
+  //     onClick={() => toggleRow(u.user_id)}
+  //   >
+  //           ⋯ 
+  //   </button>
+
 
       function toggleRow(id, cat = "all") {
         const key = `${id}|${cat}`;
@@ -952,7 +936,14 @@ async function saveEditedUser(u) {
 
   return (
     <>
-    <Box sx={{ maxWidth: "1200px", margin: "0 auto", padding: 4 }}>
+    <Box sx={{
+      maxWidth: "1200px",
+      margin: "0 auto",
+      padding: 4,
+      background:"#fff",
+      borderRadius:"12px",
+      boxShadow:"0 2px 6px rgba(0,0,0,.05)"
+    }}>
     {/* ◄◄ שורת הכותרת + ייצוא ►► */}
     <div style={{
       display:"flex",
@@ -965,18 +956,18 @@ async function saveEditedUser(u) {
       {/* <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 4, mb: 2 }}> */}
 
       <Typography variant="h4" component="h1">
-        ניהול משתמשים
+        משתמשים
       </Typography>
             
 
-      {/* כפתור ייצוא בצד שמאל */}
-      <Button
-        variant="outlined"
+
+      <IconButton
         onClick={() => setShowExport(true)}
-        sx={{ fontWeight:"bold" }}
+        sx={{ border:`1px solid ${palette.primary}`, color:palette.primary }}
       >
-        ייצוא ל- Excel
-      </Button>
+        <DownloadIcon fontSize="small" />
+      </IconButton>
+
       {/* </Box> */}
 
     </div>
@@ -991,22 +982,28 @@ async function saveEditedUser(u) {
     ></div>
 
 
-      <label style={{ display:"flex", alignItems:"center", gap:8, marginTop: 16 }}>
-        חיפוש:
-        <input
-          type="text"
-          placeholder="שם / משפחה / טלפון"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{
-            padding:"4px 8px",
-            borderRadius:4,
-            border:"1px solid #ccc",
-            width:180
-          }}
-        />
-      </label>
-      
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 2 }}>
+  <Typography sx={{ fontWeight: 600, minWidth: 48 }}>חיפוש:</Typography>
+
+  <TextField
+    size="small"
+    placeholder="שם / משפחה / טלפון"
+    value={search}
+    onChange={e => setSearch(e.target.value)}
+    sx={{
+      width: 220,
+      // צבעי סגול למסגרת + פוקוס
+      "& .MuiOutlinedInput-root": {
+        borderRadius: "8px",
+        "& fieldset": { borderColor: palette.primary },
+        "&:hover fieldset": { borderColor: palette.primaryHL },
+        "&.Mui-focused fieldset": { borderColor: palette.primary }
+      },
+      // צבע סמן קלט
+      "& input": { direction: "rtl" }
+    }}
+  />
+</Box>
     
 
 
@@ -1033,50 +1030,78 @@ async function saveEditedUser(u) {
 
         
         {/* SHOW בצד ימין */}
-        <label
-          style={{
+
+        <Box
+          sx={{
             position: "absolute",
             right: 0,
             display: "flex",
             alignItems: "center",
-            gap: 8,
-
+            gap: 1
           }}
         >
-          הצג:
-          <select value={filter} onChange={(e) => onFilterChange(e.target.value)}>
+          <Typography sx={{ fontWeight: 600, minWidth: 36 }}>הצג:</Typography>
+
+          <TextField
+            select
+            size="small"
+            value={filter}
+            onChange={e => onFilterChange(e.target.value)}
+            sx={{
+              minWidth: 130,
+              // סגול למסגרת
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "8px",
+                "& fieldset": { borderColor: palette.primary },
+                "&:hover fieldset": { borderColor: palette.primaryHL },
+                "&.Mui-focused fieldset": { borderColor: palette.primary }
+              }
+            }}
+            SelectProps={{
+              native: true,      // משתמש ב־<select> מקורי כדי לשמור RTL נקי
+              sx: {
+                "& option": { direction: "rtl" } // יישור טקסט ברשימה
+              }
+            }}
+          >
             <option value="all">כל המשתמשים</option>
             <option value="activity">נרשמים</option>
             <option value="survey">סקרים</option>
             <option value="replies">תגובות</option>
             <option value="both">פעילות + סקר</option>
-          </select>
-        </label>
+          </TextField>
+        </Box>
 
         {/* טאבים במרכז */}
 
         
-        <div
-          style={{
-            display: "inline-flex",
-            borderRadius: 9999,
-            backgroundColor: "#eee",
-            padding: 4,
-          }}
+        {/* --- Tabs חדשים --- */}
+        <Tabs
+          value={activeTab}
+          onChange={(e, newValue) => setActiveTab(newValue)}
+          sx={{ minHeight:42, ".MuiTabs-indicator":{ backgroundColor: palette.primary } }}
+          textColor="inherit"
+          TabIndicatorProps={{ style:{ height:3 } }}
         >
-
-          <button
-            onClick={() => setActiveTab("registered")}
-            style={{ ...tabStyle, ...(activeTab === "registered" ? activeTabStyle : {}) }}
-          >
-            משתמשים רשומים
-          </button>
-          <button
-            onClick={() => setActiveTab("senior")}
-            style={{ ...tabStyle, ...(activeTab === "senior" ? activeTabStyle : {}) }}
-          >
-            חברי מרכז ה-60+ 
-          </button>
+          <Tab
+            label="רשומים"
+            value="registered"
+            sx={{
+              minHeight:42,
+              fontWeight:600,
+              color: activeTab==="registered"?palette.primary:"#666"
+            }}
+          />
+          <Tab
+            label="חברי מרכז 60+"
+            value="senior"
+            sx={{
+              minHeight:42,
+              fontWeight:600,
+              color: activeTab==="senior"?palette.primary:"#666"
+            }}
+          />
+        </Tabs>
 
         </div>
 
@@ -1085,32 +1110,69 @@ async function saveEditedUser(u) {
         {/* Add User Button */}
 
 
-  {/* כפתור הוספה + בחר + מחק נבחרים */}
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <button
-        onClick={toggleSelectMode}
-        style={{ ...actionButtonStyle }}
-      >
-        {selectMode ? "בטל בחירה" : "בחר"}
-      </button>
+  {/* כפתור “הוסף משתמש”  +  “בחר”  +  “מחק נבחרים” */}
+<Box
+  sx={{
+    display: "flex",
+    gap: 1.5,          // רווח בין הכפתורים
+    alignItems: "center",
+    mb: 2              // ↓ רווח מהטבלה
+  }}
+>
+  {/* בחר / בטל בחירה */}
+  <Button
+  variant="outlined"
+  size="small"
+  onClick={toggleSelectMode}
+  sx={{
+    minWidth: 86,
+    /* צבע טקסט + מסגרת בסגול הראשי */
+    color:        palette.primary,
+    borderColor:  palette.primary,
+    /* בזמן ה-hover נשאיר טקסט סגול, רקע שקוף */
+    "&:hover": {
+      borderColor: palette.primary,
+      backgroundColor: "transparent"
+    }
+  }}
+>
+  {selectMode ? "בטל בחירה" : "בחר"}
+</Button>
 
-      {selectMode && (
-        <button
-          onClick={deleteSelected}
-          disabled={selected.size === 0}
-          style={{
-            ...deleteButtonStyle,
-            opacity: selected.size ? 1 : 0.4,
-            cursor: selected.size ? "pointer" : "not-allowed",
-          }}
-        >
-          מחק נבחרים
-        </button>
-      )}
 
-      <button onClick={() => setShowModal(true)}>הוסף משתמש</button>
-    </div>
-    </div>
+  {/* מחק נבחרים (מופיע רק במצב selectMode) */}
+  {selectMode && (
+    <Button
+      variant="outlined"
+      color="error"
+      size="small"
+      disabled={selected.size === 0}
+      onClick={deleteSelected}
+      sx={{ minWidth: 100 }}
+    >
+      מחק נבחרים
+    </Button>
+  )}
+
+  {/* הוסף משתמש */}
+  <Button
+    variant="contained"
+    size="small"
+    onClick={() => setShowModal(true)}
+    sx={{
+      minWidth: 110,
+      px: 2,                      // padding אופקי
+      backgroundColor: palette.primary,
+      boxShadow: "0 2px 4px rgba(0,0,0,.08)",
+      fontWeight: 600,
+      "&:hover": { backgroundColor: palette.primaryHL }
+    }}
+  >
+    הוסף משתמש
+  </Button>
+</Box>
+
+
 
 
 
@@ -1328,7 +1390,11 @@ async function saveEditedUser(u) {
   return (
     <React.Fragment key={ensureUserId(u)}>
       {/* ───── ① שורה ראשית ───── */}
-      <tr>
+       <tr
+          style={{ transition:"background .15s" }}
+          onMouseEnter={e=>e.currentTarget.style.background="#faf8ff"}
+          onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+        >
         {/* Check-box – רק במצב selectMode */}
         {selectMode && (
           <td style={td}>
@@ -1571,23 +1637,28 @@ async function saveEditedUser(u) {
 }
 
 const th = {
-  border: "1px solid #ccc",
-  padding: "8px",
-  backgroundColor: "#f5f5f5",
-  textAlign: "right",    // יישור לימין
+  padding: "10px 12px",
+  backgroundColor: palette.bgHeader,
+  borderBottom: `1px solid ${palette.border}`,
+  color: palette.primaryHL,
+  fontWeight: 600,
+  fontSize: "0.85rem",
+  textAlign: "right",
 };
 
 const td = {
-  border: "1px solid #eee",
-  padding: "8px",
-  textAlign: "right",    // יישור לימין
+  padding: "10px 12px",
+  borderBottom: `1px solid ${palette.border}`,
+  textAlign: "right",
+  fontSize: "0.9rem",
 };
 
-const tabContainerStyle = {
-  display: "inline-flex",
-  borderRadius: "9999px",
-  backgroundColor: "#eee",
-  padding: "4px"
+const containerStyle = {
+  maxWidth: "1400px",
+  margin: "0 auto",
+  padding: "24px",
+  fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+  direction: "rtl"
 };
 
 const tabStyle = {
@@ -1607,17 +1678,28 @@ const activeTabStyle = {
 
 const actionButtonStyle = {
   fontSize: "12px",
-  padding: "4px 8px",
-  borderRadius: "4px",
-  border: "1px solid #007bff",
-  backgroundColor: "white",
-  color: "#007bff",
+  padding: "4px 10px",
+  borderRadius: "6px",
+  border: `1px solid ${palette.primary}`,
+  backgroundColor: "#fff",
+  color: palette.primary,
+  fontWeight: 600,
+  transition: "all .2s",
   cursor: "pointer",
+  "&:hover": {
+    backgroundColor: palette.primary,
+    color: "#fff",
+  },
 };
+
 const deleteButtonStyle = {
   ...actionButtonStyle,
   border: "1px solid #dc3545",
   color: "#dc3545",
+  "&:hover": {
+    backgroundColor: "#dc3545",
+    color: "#fff",
+  },
 };
 
 const plusBtnStyle = {

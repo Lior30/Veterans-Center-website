@@ -133,54 +133,99 @@ useEffect(() => {
   }, [openMyActivities, userProfile]);
 
   useEffect(() => {
-  const loadMessages = async () => {
-    try {
-      const allMessages = await MessageService.listActive();
+    const loadMessages = async () => {
+      try {
+        const allMessages = await MessageService.listActive();
 
-      if (!userProfile) {
-        // משתמש לא מזוהה – רק הודעות כלליות
-        setMessages(allMessages.filter((m) => !m.activityId));
-      } else {
-        const acts = await ActivityService.getUserActivities(userProfile.id);
-        setMyActivities(acts);
-        const actIds = acts.map((a) => a.id);
-        const visibleMessages = allMessages.filter(
-          (m) => !m.activityId || actIds.includes(m.activityId)
-        );
-        setMessages(visibleMessages);
+        if (!userProfile || !userProfile.id) {
+          // משתמש לא מזוהה או אין מזהה – רק הודעות כלליות
+          setMessages(allMessages.filter((m) => !m.activityId));
+        } else {
+          const acts = await ActivityService.getUserActivities(userProfile.id);
+          setMyActivities(acts);
+          const actIds = acts.map((a) => a.id);
+          const visibleMessages = allMessages.filter(
+            (m) => !m.activityId || actIds.includes(m.activityId)
+          );
+          setMessages(visibleMessages);
+        }
+      } catch (err) {
+        console.error("שגיאה בטעינת הודעות:", err);
       }
-    } catch (err) {
-      console.error("שגיאה בטעינת הודעות:", err);
-    }
-  };
+    };
 
-  loadMessages();
-}, [userProfile]);
+    loadMessages();
+  }, [userProfile]);
 
   const scrollToCalendar = () => {
     calendarRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-const scrollToFlyers   = () => flyersRef.current?.scrollIntoView({ behavior: "smooth" });
-const scrollToMessages = () => messagesRef.current?.scrollIntoView({ behavior: "smooth" });
-const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToFlyers   = () => flyersRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToMessages = () => messagesRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "smooth" });
   const openDialog = (type, data) => setDialog({ type, data });
   const closeDialog = () => setDialog({ type: "", data: null });
 
   const confirmCancelRegistration = async () => {
-    if (!cancelDialog.activityId || !userProfile?.phone) return;
-    try {
-      await ActivityService.removeUser(cancelDialog.activityId, {
-        phone: userProfile.phone,
-        name: userProfile.name,
-      });
-      setMyActivities((prev) =>
-        prev.filter((a) => a.id !== cancelDialog.activityId)
-      );
-      setCancelDialog({ open: false, activityId: null });
-    } catch (err) {
-      console.error("Error cancelling registration", err);
+  if (!cancelDialog.activityId || !userProfile?.phone) return;
+
+  try {
+    // 1. הסרה מהמסמך Activity (עפ״י id)
+    await ActivityService.removeUser(cancelDialog.activityId, {
+      phone: userProfile.phone,
+      name: userProfile.name,
+    });
+
+    // 2. מציאת שם הפעילות
+    const act = activities.find((a) => a.id === cancelDialog.activityId);
+    const actName = act?.name;
+
+    // 3. הסרה משדה activities (עפ״י שם)
+    if (actName) {
+      await UserService.removeActivity(userProfile.phone, actName);
     }
-  };
+
+    // 4. עדכון state מקומי
+    setUserProfile((prev) => ({
+      ...prev,
+      activities: prev.activities.filter((n) => n !== actName),
+    }));
+
+    
+    setCancelDialog({ open: false, activityId: null });
+  } catch (err) {
+    console.error("Error cancelling registration", err);
+    alert("אירעה שגיאה בביטול ההרשמה");
+  }
+};
+/** החזרת שם פעילות לפי id; אם id כבר שם – מחזיר אותו כמו שהוא */
+const getActivityName = (idOrName) => {
+  // חיפוש ברשימת הפעילויות שהוטענה ל-state
+  const act = activities.find((a) => a.id === idOrName);
+  return act ? act.name : idOrName;
+};
+
+const handleFillSurvey = (survey) => {
+  const tagRaw = (survey.of_activity || "").trim();   // מה שמגיע מהסקר
+  const tag = getActivityName(tagRaw);                // מתרגם id→name (או משאיר שם)
+
+  // סקר כללי / ללא־שיוך
+  if (!tag || tag === "כללי") {
+    openDialog("survey", survey.id);
+    return;
+  }
+
+  // רשימת שמות הפעילויות של המשתמש
+  const acts = (userProfile?.activities || []).map((s) => s.trim());
+
+  if (acts.includes(tag)) {
+    openDialog("survey", survey.id);                  // מורשה
+  } else {
+    alert(`הסקר מיועד רק למשתתפי הפעילות: ${tag}`);
+  }
+};
+
+
 
   const handleIdentifySuccess = async () => {
     sessionStorage.setItem("justIdentified", "true");
@@ -194,13 +239,15 @@ const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "s
   };
 
  return (
-  <Box sx={{ overflowX: "hidden", backgroundColor: theme.palette.background.default }}>
+  <Box sx={{ overflowX: "hidden", backgroundColor: "#fff" }}>
     {/* Navigation Bar */}
     <LandingNavBar
       onScrollToActivities={scrollToCalendar}
       onScrollToFlyers={scrollToFlyers}
       onScrollToSurveys={scrollToSurveys}
       onScrollToMessages={scrollToMessages}
+        justIdentified={justIdentified}
+
     />
 
   <HeroSection
@@ -241,12 +288,16 @@ const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "s
 
     {/* Surveys */}
     <Box ref={surveysRef}>
-      <SurveySection
-        surveys={surveys}
-        justIdentified={justIdentified}
-        onFillSurvey={(id) => openDialog("survey", id)}
-        onViewAllSurveys={() => openDialog("all-surveys")}
-      />
+ {justIdentified && (
+  <SurveySection
+    surveys={surveys}
+    userProfile={userProfile}
+    justIdentified={justIdentified}
+    onFillSurvey={handleFillSurvey}
+    onViewAllSurveys={() => openDialog("all-surveys")}
+  />
+)}
+
     </Box>
 
     {/* Dialogs & Footer */}
@@ -260,6 +311,7 @@ const scrollToSurveys  = () => surveysRef.current?.scrollIntoView({ behavior: "s
       setOpenMyActivities={setOpenMyActivities}
         flyers={flyers}
       myActivities={myActivities}
+        setUserProfile={setUserProfile} 
       dialog={dialog}
       openDialog={openDialog}
       closeDialog={closeDialog}

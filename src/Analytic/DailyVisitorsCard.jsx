@@ -1,37 +1,45 @@
-// src/components/DailyVisitorsCard.jsx
 import React from 'react';
 
 /**
- * DailyVisitorsCard:
- * Shows today's visitor count in its own card.
+ * DailyVisitsCard
+ * ----------------
+ * מציג את מספר הכניסות של היום.
  *
- * Props:
- * - dailyVisitors: number
+ * @prop {number} count – מספר הכניסות היום
  */
-export default function DailyVisitorsCard({ dailyVisitors }) {
+export default function DailyVisitsCard({ count = 0 }) {
   return (
-    <div style={{
-      background: '#ffffff',
-      borderRadius: 8,
-      padding: '24px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-      textAlign: 'center',
-      maxWidth: 300,
-      margin: '0 auto'
-    }}>
-      <div style={{
-        fontSize: '2.5rem',
-        fontWeight: '700',
-        color: '#312783'
-      }}>
-        {dailyVisitors.toLocaleString()}
+    <div
+      style={{
+        background: '#ffffff',
+        border: '1px solid #e9ecef',
+        borderRadius: 12,
+        paddingBlock: 28,
+        paddingInline: 40,
+        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+        textAlign: 'center',
+        minWidth: 180
+      }}
+    >
+      <div
+        style={{
+          fontSize: 34,
+          fontWeight: 700,
+          color: '#212529',
+          lineHeight: 1
+        }}
+      >
+        {count.toLocaleString()}
       </div>
-      <div style={{
-        fontSize: '1rem',
-        color: '#666666',
-        marginTop: '8px'
-      }}>
-        Visitors Today
+
+      <div
+        style={{
+          marginTop: 8,
+          fontSize: 14,
+          color: '#6c757d'
+        }}
+      >
+        כניסות&nbsp;היום
       </div>
     </div>
   );

@@ -16,7 +16,7 @@ const PrivateRoute = ({ children, requireAdmin = false }) => {
 
   const isAdmin = user.email === import.meta.env.VITE_ADMIN_EMAIL;
   if (requireAdmin && !isAdmin) {
-    return <Navigate to="/not-authorized" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return children;

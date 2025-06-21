@@ -1,7 +1,10 @@
 // src/App.jsx
-import React from "react";
+import React, { useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import "leaflet/dist/leaflet.css";
+
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db, auth } from "./firebase";   
 
 import PrivateRoute from './components/PrivateRoute';
 import NavBar from "./components/NavBar.jsx";
@@ -38,6 +41,14 @@ export default function App({ toggleTheme, mode }) {
   const { pathname } = useLocation();
   const hiddenRoutes = ["/", "/identificationPage"];
   const showNav = !hiddenRoutes.includes(pathname);
+
+    useEffect(() => {
+    addDoc(collection(db, "visits"), {
+      timestamp: serverTimestamp(),          //  חותמת-שרת
+      uid: auth?.currentUser?.uid ?? null,   //  מזהה משתמש (אם יש)
+      path: window.location.pathname         //  הדף הנוכחי
+    }).catch((err) => console.error("VISIT WRITE ERROR:", err));
+  }, []);
 
   return (
     <>

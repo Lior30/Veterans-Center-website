@@ -1,6 +1,7 @@
 // src/components/FlyersSection.jsx
-import React from 'react';
-import Slider from 'react-slick';
+// Responsive‑only tweaks – no logic changes
+import React from "react";
+import Slider from "react-slick";
 import {
   Box,
   Container,
@@ -11,138 +12,139 @@ import {
   Typography,
   useTheme,
   styled,
-  IconButton
-} from '@mui/material';
-import SectionTitle from './SectionTitle';
-import CtaButton from "./CtaButton";
+  IconButton,
+} from "@mui/material";
+import SectionTitle from "./SectionTitle";
+import EventIcon from "@mui/icons-material/Event";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 
-import EventIcon from '@mui/icons-material/Event';
-import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-
-// עזר לפורמט dd\MM\yyyy עם מוביל אפסים
+/* dd\MM\yyyy */
 const formatDateNumeric = (isoDate) => {
   const d = new Date(isoDate);
-  const day   = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const year  = d.getFullYear();
-return `${day}\\${month}\\${year}`;
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${day}\\${month}\\${year}`;
 };
 
-// חיצי ניווט מותאמים
-const PrevArrow = ({ onClick }) => (
-  <IconButton
-    onClick={onClick}
-    sx={{
-      position: 'absolute',
-      top: 8,               // 8px מהחזית העליונה של הסקשן
-      left: -32,            // 32px שמאלה מחוץ לפלייר
-      zIndex: 10,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-      '&:hover': { backgroundColor: 'rgba(0,0,0,0.6)' },
-      color: '#fff',
-      width: 32,
-      height: 32,
-    }}
-  >
+/* ARROWS */
+/* חץ כללי */
+const ArrowBtn = styled(IconButton)(({ theme }) => ({
+  position: "absolute",
+  top: "50%",
+  transform: "translateY(-50%)",
+  zIndex: 10,
+  width: 40,
+  height: 40,
+  borderRadius: "50%",
+  color: "#fff",
+  background: "linear-gradient(135deg,#8e24aa 0%,#6a1b9a 100%)",
+  boxShadow: "0 3px 10px rgba(106,27,154,.4)",
+  "&:hover": { background: "linear-gradient(135deg,#7b1fa2 0%,#4a148c 100%)" },
+  "&::before": {               /* ☚ מבטל את glyph ברירת-המחדל של slick */
+    content: "none",
+  },
+  "&.slick-disabled": {        /* כשהחץ מנוטרל – מסתירים אותו לגמרי */
+    opacity: 0,
+    pointerEvents: "none",
+  },
+  [theme.breakpoints.down("sm")]: {
+    width: 34,
+    height: 34,
+    boxShadow: "0 2px 6px rgba(106,27,154,.35)",
+  },
+}));
+
+/* חצים ימין/שמאל */
+const PrevArrow = ({ className, style, onClick }) => (
+  <ArrowBtn className={className} style={style} onClick={onClick} sx={{ left: -22 }}>
     <ArrowBackIosNewIcon fontSize="small" />
-  </IconButton>
+  </ArrowBtn>
 );
 
-const NextArrow = ({ onClick }) => (
-  <IconButton
-    onClick={onClick}
-    sx={{
-      position: 'absolute',
-      top: 8,
-      right: -32,
-      zIndex: 10,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-      '&:hover': { backgroundColor: 'rgba(0,0,0,0.6)' },
-      color: '#fff',
-      width: 32,
-      height: 32,
-    }}
-  >
+const NextArrow = ({ className, style, onClick }) => (
+  <ArrowBtn className={className} style={style} onClick={onClick} sx={{ right: -22 }}>
     <ArrowForwardIosIcon fontSize="small" />
-  </IconButton>
+  </ArrowBtn>
 );
 
+/* CARD */
 const FlyerCard = styled(Card)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 2,
-  overflow: 'hidden',
+  overflow: "hidden",
   backgroundColor: theme.palette.background.paper,
-  boxShadow: theme.shadows[1],
-  margin: theme.spacing(1),
-  transition: 'transform 0.3s, box-shadow 0.3s',
-  '&:hover': {
-    transform: 'translateY(-4px)',
-    boxShadow: theme.shadows[4],
+  border: `1px solid ${theme.palette.divider}`,
+  boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+  transition: "transform .25s, box-shadow .25s",
+  "&:hover": {
+    transform: "translateY(-6px)",
+    boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
   },
 }));
 
 export default function FlyersSection({ flyers, activities, openDialog }) {
   const theme = useTheme();
+  const md = theme.breakpoints.values.md;
+  const sm = theme.breakpoints.values.sm;
 
   const settings = {
     rtl: true,
     infinite: flyers.length > 4,
-    slidesToShow: 4,
+    slidesToShow: 5,
     slidesToScroll: 1,
     prevArrow: <PrevArrow />,
     nextArrow: <NextArrow />,
     responsive: [
-      { breakpoint: theme.breakpoints.values.md, settings: { slidesToShow: 3 } },
-      { breakpoint: theme.breakpoints.values.sm, settings: { slidesToShow: 1 } },
+      { breakpoint: md, settings: { slidesToShow: 3 } },
+      { breakpoint: sm, settings: { slidesToShow: 2 } },
+      { breakpoint: 480, settings: { slidesToShow: 1 } },
     ],
   };
 
   return (
-    <Box
-      component="section"
-      sx={{
-        py: { xs: 4, sm: 6 },
-        backgroundColor: theme.palette.background.default,
-      }}
-    >
-      <Container maxWidth="lg">
-      
+    <Box component="section" sx={{  background: `linear-gradient(180deg, #ffffff 0%, ${theme.palette.primary.vlight} 100%)`,
+ }}>
+      <Container maxWidth="lg" sx={{  }}>
+        {/* TITLE */}
 
-        {/* העטפת ה־Slider כדי שהחיצים יתייחסו אליה */}
-        <Box sx={{ position: 'relative', mt: 2 }}>
+        <Box sx={{ position: "relative", mt: 2 }}>
           <Slider {...settings}>
-            {flyers.map(f => (
+            {flyers.map((f) => (
               <Box key={f.id} sx={{ px: 1 }}>
                 <FlyerCard>
-                  <CardActionArea onClick={() => openDialog('flyer', f)}>
+                  <CardActionArea onClick={() => openDialog("flyer", f)}>
                     <CardMedia
                       component="img"
                       image={f.fileUrl}
                       alt={f.name}
                       sx={{
-                        width: '100%',
-                        aspectRatio: '4.5/8',
-                        objectFit: 'cover',
+                        width: "100%",
+                        aspectRatio: "4.5/8",
+                        objectFit: "cover",
+                        objectPosition: "top",
+                        [theme.breakpoints.down("sm")]: {
+                          aspectRatio: "3.5/6.5",
+                        },
                       }}
                     />
-                 <CardContent sx={{ p: 2 }}>
-  <Typography variant="h6" noWrap>
-  {
-    activities.find((a) => a.id === f.activityId)?.name
-    || f.name  // fallback לשם הפלייר אם לא נמצאה פעילות
-  }
-</Typography>
-
- <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-  {f.activityDate
-    ? formatDateNumeric(f.activityDate)
-    : "ללא תאריך"}
-</Typography>
-
-
-</CardContent>
-
-
+                    <CardContent sx={{ p: { xs: 1.25, sm: 2 }, textAlign: "center" }}>
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight={600}
+                        noWrap
+                        sx={{ fontSize: { xs: "0.85rem", sm: "0.9rem" } }}
+                      >
+                        {activities.find((a) => a.id === f.activityId)?.name || f.name}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ fontSize: { xs: "0.75rem", sm: "0.8rem" } }}
+                      >
+                        {f.activityDate ? formatDateNumeric(f.activityDate) : "ללא תאריך"}
+                      </Typography>
+                    </CardContent>
                   </CardActionArea>
                 </FlyerCard>
               </Box>

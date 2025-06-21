@@ -1,6 +1,13 @@
 // src/components/LandingNavBar.jsx
+// Desktop: one row · Mobile: two rows (social+logo, nav buttons)
 import React, { useState, useEffect } from "react";
-import { Box, IconButton, Button, useTheme } from "@mui/material";
+import {
+  Box,
+  IconButton,
+  Button,
+  useTheme,
+  useMediaQuery,
+} from "@mui/material";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import PhoneIcon from "@mui/icons-material/Phone";
@@ -12,119 +19,206 @@ export default function LandingNavBar({
   onScrollToMessages,
   onScrollToActivities,
   onScrollToSurveys,
+  justIdentified = false,         // ← prop ברירת-מחדל
 }) {
-  const theme = useTheme();
-  const purple = theme.palette.primary.main;
-  const [isSticky, setIsSticky] = useState(false);
+  const theme    = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const purple   = theme.palette.primary.main;
 
+  /* sticky state */
+  const [isSticky, setIsSticky] = useState(false);
   useEffect(() => {
-    const handleScroll = () => setIsSticky(window.scrollY > 100);
+    const handleScroll = () => setIsSticky(window.scrollY > 80);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const [contact, setContact] = useState({
-      contactPhone: "",
-      contactWhatsapp: "",
-  });
-  
+  /* contact details */
+  const [contact, setContact] = useState({ contactPhone: "", contactWhatsapp: "" });
   useEffect(() => {
-    ContactService.get().then(data => {
+    ContactService.get().then((d) =>
       setContact({
-        contactPhone: data.contactPhone || "",
-        contactWhatsapp: data.contactWhatsapp || "",
-      });
-    });
+        contactPhone: d.contactPhone ?? "",
+        contactWhatsapp: d.contactWhatsapp ?? "",
+      })
+    );
   }, []);
 
-  return (
-    <Box
-      component="nav"
-      dir="ltr"
-      sx={{
-        position: isSticky ? "fixed" : "static",
-        top: 0,
-        left: 0,
-        width: "100%",
-        zIndex: theme.zIndex.appBar,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        background: "#fff",
-        p: 1,
-      }}
-    >
-      {/* שמאל: אייקונים חברתיים */}
-      <Box sx={{ display: "flex", gap: 1 }}>
-        <IconButton
-          component="a"
-          href="https://www.facebook.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          sx={{ color: purple }}
-        >
-          <FacebookIcon />
-        </IconButton>
-        <IconButton
-          component="a"
-          href={`https://wa.me/972${contact.contactWhatsapp}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          sx={{ color: purple }}
-        >
-          <WhatsAppIcon />
-        </IconButton>
-        <IconButton component="a" href={`tel:972${contact.contactPhone}`} sx={{ color: purple }}>
-          <PhoneIcon />
-        </IconButton>
-      </Box>
+  /* nav buttons – “סקרים” רק למזוהים */
+  const navButtons = [
+    ...(justIdentified ? [{ label: "סקרים",     onClick: onScrollToSurveys   }] : []),
+    { label: "לוח שנה",  onClick: onScrollToActivities },
+    { label: "הודעות",   onClick: onScrollToMessages   },
+    { label: "פעילויות", onClick: onScrollToFlyers     },
+  ];
 
-      {/* אמצע: כפתורי ניווט (הסדר הפוך אך לא הורד שום דבר) */}
+  const socialBtnStyle = {
+    color: "#fff",
+    width:  isMobile ? 30 : 36,
+    height: isMobile ? 30 : 36,
+  };
+
+  /* helper: nav buttons component */
+  const NavButtons = () => (
+    <Box sx={{ display: "flex", gap: { xs: 1, sm: 2 } }}>
+      {navButtons.map((btn) => (
+        <Button
+          key={btn.label}
+          onClick={btn.onClick}
+          sx={{
+            position: "relative",
+            color: purple,
+            fontWeight: 600,
+            fontSize: { xs: "0.8rem", sm: "0.9rem" },
+            textTransform: "none",
+            px: { xs: 1.25, sm: 2 },
+            minWidth: 80,
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              bottom: -4,
+              left: 0,
+              width: "100%",
+              height: 3,
+              borderRadius: 2,
+              background: `linear-gradient(90deg,${purple} 0%,${theme.palette.primary.light} 100%)`,
+              transform: "scaleX(0)",
+              transformOrigin: "right",
+              transition: "transform .25s",
+            },
+            "&:hover::after": {
+              transform: "scaleX(1)",
+              transformOrigin: "left",
+            },
+          }}
+        >
+          {btn.label}
+        </Button>
+      ))}
+    </Box>
+  );
+
+  return (
+    <>
       <Box
+        component="nav"
+        dir="ltr"
         sx={{
-          display: "flex",
-          gap: 2,
-          justifyContent: "center",
-          flexGrow: 1,
+          position: isSticky ? "fixed" : "static",
+          top: 0,
+          left: 0,
+          width: "100%",
+          zIndex: theme.zIndex.appBar,
+          backdropFilter: "blur(10px)",
+          background: "rgba(255,255,255,0.85)",
+          boxShadow: isSticky
+            ? "0 4px 12px rgba(0,0,0,.15)"
+            : "0 1px 4px rgba(0,0,0,.08)",
+          transition: "box-shadow .25s, background .25s",
+          px: { xs: 1, sm: 3 },
+          py: { xs: 0.75, sm: 1 },
         }}
       >
-        <Button
-          onClick={onScrollToSurveys}
-          sx={{ color: purple, textTransform: "none" }}
-        >
-          סקרים
-        </Button>
-        <Button
-          onClick={onScrollToActivities}
-          sx={{ color: purple, textTransform: "none" }}
-        >
-          פעילויות
-        </Button>
-        <Button
-          onClick={onScrollToMessages}
-          sx={{ color: purple, textTransform: "none" }}
-        >
-          הודעות
-        </Button>
-        <Button
-          onClick={onScrollToFlyers}
-          sx={{ color: purple, textTransform: "none" }}
-        >
-          פליירים
-        </Button>
+        {/* DESKTOP: single row */}
+        {!isMobile && (
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            {/* social */}
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <IconButton
+                component="a"
+                href="https://www.facebook.com/minhalbk?locale=he_IL"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ ...socialBtnStyle, background: "#3b5998", "&:hover": { opacity: 0.85 } }}
+              >
+                <FacebookIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                component="a"
+                href={`https://wa.me/972${contact.contactWhatsapp}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ ...socialBtnStyle, background: "#25d366", "&:hover": { opacity: 0.85 } }}
+              >
+                <WhatsAppIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                component="a"
+                href={`tel:972${contact.contactPhone}`}
+                sx={{ ...socialBtnStyle, background: "#9575cd", "&:hover": { opacity: 0.85 } }}
+              >
+                <PhoneIcon fontSize="small" />
+              </IconButton>
+            </Box>
+
+            {/* nav buttons center */}
+            <NavButtons />
+
+            {/* logo */}
+            <Box
+              component="img"
+              src="/logo.jpeg"
+              alt="Logo"
+              sx={{ height: 40, cursor: "pointer", borderRadius: 1 }}
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            />
+          </Box>
+        )}
+
+        {/* MOBILE: two rows */}
+        {isMobile && (
+          <>
+            {/* row 1 */}
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <IconButton
+                  component="a"
+                  href="https://www.facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ ...socialBtnStyle, background: "#3b5998", "&:hover": { opacity: 0.85 } }}
+                >
+                  <FacebookIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  component="a"
+                  href={`https://wa.me/972${contact.contactWhatsapp}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ ...socialBtnStyle, background: "#25d366", "&:hover": { opacity: 0.85 } }}
+                >
+                  <WhatsAppIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  component="a"
+                  href={`tel:972${contact.contactPhone}`}
+                  sx={{ ...socialBtnStyle, background: "#9575cd", "&:hover": { opacity: 0.85 } }}
+                >
+                  <PhoneIcon fontSize="small" />
+                </IconButton>
+              </Box>
+
+              <Box
+                component="img"
+                src="/logo.jpeg"
+                alt="Logo"
+                sx={{ height: 34, cursor: "pointer", borderRadius: 1 }}
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              />
+            </Box>
+
+            {/* row 2 */}
+            <Box sx={{ mt: 0.75, display: "flex", justifyContent: "center" }}>
+              <NavButtons />
+            </Box>
+          </>
+        )}
       </Box>
 
-      {/* ימין: לוגו + כפתור נגישות */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <Box
-          component="img"
-          src="/logo.jpeg"
-          alt="Logo"
-          sx={{ height: 40, cursor: "pointer" }}
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        />
+      {/* floating accessibility */}
+      <Box sx={{ position: "fixed", bottom: 20, right: 20, zIndex: theme.zIndex.tooltip }}>
         <AccessibilityWidget />
       </Box>
-    </Box>
+    </>
   );
 }
