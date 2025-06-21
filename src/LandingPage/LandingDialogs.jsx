@@ -140,7 +140,10 @@ export default function LandingDialogs({
           הפעילויות שלי
         </DialogTitle>
 
-        {/* Sync to calendar */}
+        
+
+        <DialogContent>
+          {/* Sync to calendar */}
         {upcomingActs.length > 0 && (
           <SyncCalendarButton
             activities={upcomingActs.map((a) => ({
@@ -152,8 +155,6 @@ export default function LandingDialogs({
             }))}
           />
         )}
-
-        <DialogContent>
           {upcomingActs.map((a) => {
             const loc = a.location;
             const locationStr =
@@ -341,31 +342,43 @@ export default function LandingDialogs({
           פרטי פעילות
         </DialogTitle>
         <DialogContent>
-          {dialog.data ? (
-            <>
-              <Typography variant="h6" gutterBottom fontWeight={700}>
-                {dialog.data.title}
-              </Typography>
-              <Typography>
-                <strong>תאריך:</strong>{" "}
-                {new Date(dialog.data.date).toLocaleDateString("he-IL")}
-              </Typography>
-              <Typography>
-                <strong>שעה:</strong> {dialog.data.startTime || "לא צוינה"}
-              </Typography>
-              {dialog.data.location && (
-                <Typography>
-                  <strong>מיקום:</strong> {dialog.data.location.address}
-                </Typography>
-              )}
-              {dialog.data.description && (
-                <Typography sx={{ mt: 2 }}>{dialog.data.description}</Typography>
-              )}
-            </>
-          ) : (
-            <Typography>לא נמצאו פרטים</Typography>
-          )}
-        </DialogContent>
+  {dialog.data ? (
+    <>
+      {/* כותרת הפעילות */}
+      <Typography variant="h6" gutterBottom fontWeight={700}>
+        {dialog.data.title}
+      </Typography>
+
+      {/* תאריך ושעה */}
+      <Typography>
+        <strong>תאריך:</strong>{" "}
+        {new Date(dialog.data.date).toLocaleDateString("he-IL")}
+      </Typography>
+      <Typography>
+        <strong>שעה:</strong>{" "}
+        {dialog.data.startTime || "לא צוינה"}{" "}
+        {dialog.data.endTime && `– ${dialog.data.endTime}`}
+      </Typography>
+
+     
+      {/* תגים (אם קיימים) */}
+      {dialog.data.tags?.length > 0 && (
+        <Typography>
+          <strong>קטגוריה:</strong> {dialog.data.tags.join(", ")}
+        </Typography>
+      )}
+
+    
+      {/* תיאור חופשי */}
+      {dialog.data.description && (
+        <Typography sx={{ mt: 2 }}>{dialog.data.description}</Typography>
+      )}
+    </>
+  ) : (
+    <Typography>לא נמצאו פרטים</Typography>
+  )}
+</DialogContent>
+
         <DialogActions sx={{ px: 3, pb: 2 }}>
           {userProfile?.phone ? (
             <CtaButton

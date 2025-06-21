@@ -1,4 +1,5 @@
 // src/components/MessagesSection.jsx
+// – Responsive style tweaks + theme colours – //
 import React, { useState, useRef } from "react";
 import {
   Box,
@@ -17,23 +18,24 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import SectionTitle from "./SectionTitle";
 import CtaButton from "./CtaButton";
 
-/* — כרטיס הודעה — */
+/* — MESSAGE CARD — */
 const UpdateCard = styled(Card)(({ theme }) => ({
   position: "relative",
   flex: "0 0 auto",
   width: "var(--msg-card-width)",
-  minHeight: 160,
+  minHeight: 140,                                           // היה 160
   display: "flex",
   flexDirection: "column",
   borderRadius: theme.shape.borderRadius * 2,
   overflow: "hidden",
-  background: "linear-gradient(135deg,#ffffff 0%,#f5f5ff 100%)",
-  boxShadow: "0 3px 10px rgba(0,0,0,.08)",
+  backgroundColor: theme.palette.background.paper,          // שימוש ברקע theme
+  border: `1px solid ${theme.palette.divider}`,
+  boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
   transition: "transform .25s, box-shadow .25s",
   cursor: "pointer",
   "&:hover": {
     transform: "translateY(-4px)",
-    boxShadow: "0 6px 18px rgba(0,0,0,.15)",
+    boxShadow: "0 6px 18px rgba(0,0,0,0.15)",
   },
   "&::before": {
     content: '""',
@@ -47,17 +49,22 @@ const UpdateCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-/* — חיצי גלילה — */
+/* — SCROLL ARROWS — */
 const ScrollButton = styled(IconButton)(({ theme }) => ({
   width: 42,
   height: 42,
   borderRadius: "50%",
   color: "#fff",
-  background: "linear-gradient(135deg,#8e24aa 0%,#6a1b9a 100%)",
+  background: `linear-gradient(135deg,${theme.palette.primary.dark} 0%,${theme.palette.primary.main} 100%)`,
   boxShadow: "0 3px 10px rgba(106,27,154,.35)",
   backdropFilter: "blur(6px)",
   "&:hover": {
-    background: "linear-gradient(135deg,#7b1fa2 0%,#4a148c 100%)",
+    background: `linear-gradient(135deg,${theme.palette.primary.dark} 0%,${theme.palette.primary.light} 100%)`,
+  },
+  [theme.breakpoints.down("sm")]: {
+    width: 34,
+    height: 34,
+    boxShadow: "0 2px 6px rgba(106,27,154,.3)",
   },
 }));
 
@@ -67,61 +74,68 @@ export default function MessagesSection({ messages, openDialog, justIdentified }
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const cardWidth   = isMobile ? 240 : 320;
+  const cardWidth = isMobile ? 240 : 320;
   const scrollDelta = cardWidth + 18;
 
-  const toggleExpanded = (id) =>
-    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
-
-  const scroll = (dx) =>
-    scrollRef.current?.scrollBy({ left: dx, behavior: "smooth" });
+  const toggleExpanded = (id) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  const scroll = (dx) => scrollRef.current?.scrollBy({ left: dx, behavior: "smooth" });
 
   return (
     <Box
       component="section"
       sx={{
         "--msg-card-width": `${cardWidth}px`,
-        py: { xs: 4, sm: 5 },
-        background: "linear-gradient(180deg,#f7f3ff 0%, #efe7ff 100%)",
+        py: { xs: 3, sm: 4 },                                   // פחות גובה
+        backgroundColor: theme.palette.primary.vlight,          // צבע רקע אחיד מה-theme
       }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
         <SectionTitle icon={<ArticleIcon />} title="הודעות" />
 
         <Box sx={{ position: "relative", mt: 3 }}>
-          {/* חץ שמאלה */}
+          {/* LEFT ARROW */}
           <ScrollButton
             onClick={() => scroll(-scrollDelta)}
-            sx={{ position: "absolute", left: -20, top: "50%", transform: "translateY(-50%)" }}
+            sx={{
+              position: "absolute",
+              left: { xs: -14, sm: -20 },
+              top: "50%",
+              transform: "translateY(-50%)",
+            }}
           >
-            <ChevronLeftIcon />
+            <ChevronLeftIcon fontSize="small" />
           </ScrollButton>
 
-          {/* פס הגלילה */}
+          {/* SCROLL TRACK */}
           <Box
             ref={scrollRef}
             sx={{
               display: "flex",
               gap: theme.spacing(2),
               overflowX: "auto",
-              pr: theme.spacing(4),
+              pr: { xs: theme.spacing(3), sm: theme.spacing(4) },
               scrollSnapType: "x mandatory",
               "&::-webkit-scrollbar": { display: "none" },
-              minHeight: 280,
-              alignItems: "center",
+              alignItems: "center",                              // הוסר minHeight
             }}
           >
             {messages.map((m) => {
-              const isOpen   = !!expanded[m.id];
-              const txt      = m.body || "";
-              const cutoff   = 90;
-              const tooLong  = txt.length > cutoff;
+              const isOpen = !!expanded[m.id];
+              const txt = m.body || "";
+              const cutoff = 90;
+              const tooLong = txt.length > cutoff;
               const shownTxt = isOpen ? txt : tooLong ? txt.slice(0, cutoff) + "…" : txt;
 
               return (
-                <UpdateCard key={m.id}>
-                  <CardContent sx={{ p: 2, scrollSnapAlign: "start" }}>
-                    <Typography variant="subtitle1" fontWeight={600} gutterBottom noWrap>
+                <UpdateCard key={m.id} sx={{ scrollSnapAlign: "start" }}>
+                  <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={600}
+                      gutterBottom
+                      noWrap
+                      sx={{ fontSize: { xs: "0.95rem", sm: "1rem" } }}
+                    >
                       {m.title}
                     </Typography>
 
@@ -132,6 +146,7 @@ export default function MessagesSection({ messages, openDialog, justIdentified }
                         whiteSpace: "pre-wrap",
                         wordBreak: "break-word",
                         lineHeight: 1.45,
+                        fontSize: { xs: "0.8rem", sm: "0.875rem" },
                         cursor: tooLong ? "pointer" : "default",
                       }}
                       onClick={() => tooLong && toggleExpanded(m.id)}
@@ -139,10 +154,10 @@ export default function MessagesSection({ messages, openDialog, justIdentified }
                       {shownTxt}
                     </Typography>
 
-                    <Box mt={1.5}>
+                    <Box mt={1.5} sx={{ display: "flex", gap: 1 }}>
                       {tooLong && (
                         <CtaButton
-                          color="tertiary"
+                          color="primary"
                           size="small"
                           onClick={() => toggleExpanded(m.id)}
                         >
@@ -153,7 +168,6 @@ export default function MessagesSection({ messages, openDialog, justIdentified }
                         <CtaButton
                           color="primary"
                           size="small"
-                          sx={{ ml: 1 }}
                           onClick={() => openDialog("message", m.id)}
                         >
                           השב
@@ -166,12 +180,17 @@ export default function MessagesSection({ messages, openDialog, justIdentified }
             })}
           </Box>
 
-          {/* חץ ימינה */}
+          {/* RIGHT ARROW */}
           <ScrollButton
             onClick={() => scroll(scrollDelta)}
-            sx={{ position: "absolute", right: -20, top: "50%", transform: "translateY(-50%)" }}
+            sx={{
+              position: "absolute",
+              right: { xs: -14, sm: -20 },
+              top: "50%",
+              transform: "translateY(-50%)",
+            }}
           >
-            <ChevronRightIcon />
+            <ChevronRightIcon fontSize="small" />
           </ScrollButton>
         </Box>
       </Container>

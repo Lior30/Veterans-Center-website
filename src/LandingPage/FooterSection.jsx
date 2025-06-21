@@ -17,8 +17,8 @@ import ContactService from "../services/ContactService";
 
 /* רקע הפוטר */
 const FooterBox = styled(Box)(({ theme }) => ({
-  backgroundColor: theme.palette.primary.main,
-  color: theme.palette.primary.contrastText,
+  backgroundColor: "#fff",
+  color: "#9B3FAF",
   padding: theme.spacing(6, 0),
   boxShadow: `0 -4px 20px ${theme.palette.mode === "light"
     ? "rgba(0,0,0,0.08)"

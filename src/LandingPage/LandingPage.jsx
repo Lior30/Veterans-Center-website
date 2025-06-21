@@ -239,7 +239,7 @@ const handleFillSurvey = (survey) => {
   };
 
  return (
-  <Box sx={{ overflowX: "hidden", backgroundColor: theme.palette.background.default }}>
+  <Box sx={{ overflowX: "hidden", backgroundColor: "#fff" }}>
     {/* Navigation Bar */}
     <LandingNavBar
       onScrollToActivities={scrollToCalendar}
