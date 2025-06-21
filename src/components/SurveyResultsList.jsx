@@ -1,3 +1,4 @@
+import CtaButton from "../LandingPage/CtaButton";
 // src/components/SurveyResultsList.jsx
 import React, { useState, useEffect } from "react";
 import {
@@ -140,21 +141,21 @@ export default function SurveyResultsList() {
               </div>
 
               <h3>{s.headline}</h3>
-              <button
+              <CtaButton
                 onClick={() => navigate(`/surveys/results/${s.id}`)}
                 style={{ marginRight: 8 }}
               >
                 הצג תשובות
-              </button>
-              <button
+              </CtaButton>
+              <CtaButton
                 onClick={() => navigate(`/surveys/analysis/${s.id}`)}
                 style={{ marginRight: 8 }}
               >
                 ניתוח סקר
-              </button>
-              <button onClick={() => handleDeleteSurvey(s.id)}>
-                מחק סקר
-              </button>
+              </CtaButton>
+              <CtaButton color="error" onClick={() => handleDeleteSurvey(s.id)}>
+              מחק סקר
+              </CtaButton>
             </div>
           );
         })

@@ -1,3 +1,4 @@
+import CtaButton from "../LandingPage/CtaButton";
 import React, { useState, useRef } from "react";
 import BannerService from "../services/BannerService.js"; // העלאה
 
@@ -73,7 +74,7 @@ function BannerUploader({ onUpload }) {
         <input type="file" accept="image/*" onChange={onFileChange} />
       </div>
 
-      <button onClick={handleSubmit} style={{ marginTop: 22 }}>שמור</button>
+      <CtaButton onClick={handleSubmit} style={{ marginTop: 22 }}>שמור</CtaButton>
     </div>
   );
 }
