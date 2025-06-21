@@ -10,16 +10,13 @@ export default function SurveyListContainer() {
   const navigate = useNavigate();
 
   useEffect(() => {
-  async function load() {
-    const snap = await getDocs(collection(db, "surveys"));
-    const surveysData = snap.docs.map((doc) => {
-      const data = doc.data();
-      return { id: doc.id, ...data };
-    });
-    setSurveys(surveysData);
-  }
-  load();
-}, []);
+    async function load() {
+      const snap = await getDocs(collection(db, "surveys"));
+      const surveysData = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setSurveys(surveysData);
+    }
+    load();
+  }, []);
 
   const handleDeleteSurvey = async (surveyId) => {
     const respSnap = await getDocs(collection(db, "surveys", surveyId, "responses"));
@@ -29,14 +26,10 @@ export default function SurveyListContainer() {
     setSurveys(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
   };
 
-  const handleViewResponses = (id) => {
-    navigate(`/surveys/results/${id}`);
-  };
+  const handleViewResponses = (id) => navigate(`/surveys/results/${id}`);
 
-  // Navigate with query param to trigger analysis mode
-  const handleAnalyze = (id) => {
+  const handleAnalyze = (id) =>
     navigate(`/surveys/results/${id}?analysis=true`);
-  };
 
   return (
     <SurveyListDesign
