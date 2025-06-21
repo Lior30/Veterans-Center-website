@@ -138,15 +138,5 @@ export default function NavBar({ toggleTheme, mode }) {
         {/* Spacer to push theme toggle right */}
         <Box sx={{ flexGrow: 1 }} />
 
-        {/* Theme toggle */}
-        <IconButton
-          edge="end"
-          onClick={toggleTheme}
-          sx={{ color: theme.palette.common.white }}
-        >
-          {mode === "dark" ? <Brightness7 /> : <Brightness4 />}
-        </IconButton>
-      </Toolbar>
-    </AppBar>
   );
 }
