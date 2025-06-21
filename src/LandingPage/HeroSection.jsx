@@ -1,5 +1,5 @@
 // src/components/HeroSection.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -8,194 +8,211 @@ import {
   useTheme,
   useMediaQuery,
   Fade,
-} from '@mui/material';
-import { WhatsApp as WhatsAppIcon, Phone as PhoneIcon } from '@mui/icons-material';
-import CtaButton from './CtaButton';
-import BannerService from '../services/BannerService';
+} from "@mui/material";
+import { WhatsApp as WhatsAppIcon, Phone as PhoneIcon } from "@mui/icons-material";
+import CtaButton from "./CtaButton";
+import BannerService from "../services/BannerService";
 import ContactService from "../services/ContactService";
 
 export default function HeroSection({ userProfile, onOpenIdentify, onOpenMyActivities }) {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
+  /* ───── תמונות־רקע מתחלפות ───── */
   const [banners, setBanners] = useState([]);
   const [idx, setIdx] = useState(0);
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     BannerService.getBanners()
-      .then(items => setBanners(items.map(b => b.url)))
-      .catch(err => console.error(err));
+      .then((items) => setBanners(items.map((b) => b.url)))
+      .catch(console.error);
   }, []);
 
   useEffect(() => {
     if (!banners.length) return;
-    const displayDuration = 5000;
-    const fadeDuration = 800;
-    let hideTimeout, showTimeout, interval;
+    const SHOW = 6000,
+      FADE = 900;
+    let t1, t2, loop;
 
     const cycle = () => {
-      hideTimeout = setTimeout(() => {
+      t1 = setTimeout(() => {
         setVisible(false);
-        showTimeout = setTimeout(() => {
-          setIdx(i => (i + 1) % banners.length);
+        t2 = setTimeout(() => {
+          setIdx((i) => (i + 1) % banners.length);
           setVisible(true);
-        }, fadeDuration);
-      }, displayDuration);
+        }, FADE);
+      }, SHOW);
     };
 
     cycle();
-    interval = setInterval(cycle, displayDuration + fadeDuration * 2);
-
+    loop = setInterval(cycle, SHOW + FADE * 2);
     return () => {
-      clearTimeout(hideTimeout);
-      clearTimeout(showTimeout);
-      clearInterval(interval);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearInterval(loop);
     };
   }, [banners]);
 
-  const [contact, setContact] = useState({
-    contactPhone: "",
-    contactWhatsapp: "",
-  });
-
+  /* ───── פרטי קשר ───── */
+  const [contact, setContact] = useState({ contactPhone: "", contactWhatsapp: "" });
   useEffect(() => {
-    ContactService.get().then(data => {
+    ContactService.get().then((d) =>
       setContact({
-        contactPhone: data.contactPhone || "",
-        contactWhatsapp: data.contactWhatsapp || "",
-      });
-    });
+        contactPhone: d.contactPhone ?? "",
+        contactWhatsapp: d.contactWhatsapp ?? "",
+      })
+    );
   }, []);
 
-  const currentBg = banners[idx] || '';
+  const bgUrl = banners[idx] ?? "";
 
+  /* ───── JSX ───── */
   return (
     <Box
       component="section"
       sx={{
-        position: 'relative',
-        width: '100%',
-        backgroundColor: '#F3E5F5',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-        borderRadius: { xs: 0, sm: '20px' },
-        overflow: 'hidden',
-        my: { xs: 2, sm: 4 },
-        mx: { xs: 0, sm: 'auto' },
-        maxWidth: { xs: '100%', sm: '95%', md: '90%' },
-        height: { xs: 250, sm: 250 },
-        display: 'flex',
-        alignItems: 'center',
+        position: "relative",
+        overflow: "hidden",
+        backgroundColor: "#F3E5F5",
+        borderRadius: { xs: 0, sm: 4 },
+        mb: { xs: 3, sm: 5 },
       }}
     >
-      {/* רקע תמונה - חצי שמאל עם פינות עגולות */}
-      <Fade in={visible} timeout={800}>
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '60%',
-            height: '100%',
-            backgroundImage: `url(${currentBg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            borderTopLeftRadius: { sm: '20px' },
-            borderBottomLeftRadius: { sm: '20px' },
-            opacity: visible ? 1 : 0,
-          }}
-        />
-      </Fade>
+      {/* תמונה - צד שמאל 45 %  */}
+     <Fade in={visible} timeout={900}>
+  <Box
+    sx={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "60%",          // תמיד 45 %
+      minHeight: 300,        // גובה מינימלי במובייל
+      height: "100%",
+      backgroundImage: `url(${bgUrl})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      "&::after": {
+        content: '""',
+        position: "absolute",
+        inset: 0,
+        background:
+          "linear-gradient(145deg, rgba(124,77,255,.45) 0%, rgba(255,255,255,0) 40%)",
+      },
+      clipPath: "polygon(0 0, 100% 0, 80% 100%, 0 100%)",
+    }}
+  />
+</Fade>
 
-      {/* מעבר חלק בצבע */}
-      <Box
+
+      {/* תוכן בימין */}
+      <Container
         sx={{
-          position: 'absolute',
-          top: 0,
-          left: '45%',
-          width: '10%',
-          height: '100%',
-          background: 'linear-gradient(to right, transparent, #fff)',
+          position: "relative",
+          zIndex: 1,
+          py: { xs: 5, md: 8 },
+          [theme.breakpoints.up("md")]: { ml: "45%" }, // מפנה מקום לתמונה
         }}
-      />
-
-      {/* רקע ימין */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: '55%',
-          width: '45%',
-          height: '100%',
-          backgroundColor: '#fff',
-        }}
-      />
-
-      {/* תוכן עליון */}
-      <Container sx={{ position: 'relative', zIndex: 1, py: 3 }}>
-        <Grid container spacing={4} alignItems="center">
-          <Grid item xs={12} md={6}>
+      >
+        <Grid container>
+          <Grid item xs={12}>
             <Typography
-              variant={isMobile ? 'h4' : 'h3'}
-              sx={{ color: '#6A0DAD', fontWeight: 700, mb: 2 }}
+              variant={isMobile ? "h4" : "h3"}
+              sx={{ fontWeight: 700, color: "#4b0082", mb: 1 }}
             >
-              מרכז ותיקים בית הכרם
+              מרכז ותיקים – בית הכרם
             </Typography>
 
             {userProfile?.first_name && (
-              <Typography
-                variant={isMobile ? 'h5' : 'h4'}
-                sx={{ color: '#4B0082', fontWeight: 700, mb: 2 }}
-              >
+              <Typography variant="h5" sx={{ color: "#6a1b9a", fontWeight: 600, mb: 1 }}>
                 שלום {userProfile.first_name}!
               </Typography>
             )}
 
             <Typography
               sx={{
-                color: '#4B0082',
+                maxWidth: 520,
+                color: "#4c4c4c",
                 mb: 3,
-                fontSize: isMobile ? '0.9rem' : '1rem',
-                lineHeight: 1.6,
-                maxWidth: 600,
+                fontSize: isMobile ? "0.92rem" : "1rem",
+                lineHeight: 1.7,
               }}
             >
-              ברוכים הבאים למועדון שמביא לכם פעילויות, הרצאות ורווחה בכל יום!
+              ברוכים הבאים למועדון שעושה לכם טוב: פעילויות, הרצאות, מוזיקה
+              ואווירה קהילתית – כל יום, כל השבוע!
             </Typography>
 
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-              {!userProfile?.first_name && (
-                <CtaButton color="primary" onClick={onOpenIdentify}>
-                  הזדהות
-                </CtaButton>
-              )}
-              <CtaButton
-                sx={{ backgroundColor: '#CE93D8', color: 'white', '&:hover': { backgroundColor: '#BA68C8' } }}
-                component="a"
-                href={`https://wa.me/972${contact.contactWhatsapp}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                startIcon={<WhatsAppIcon />}
-              >
-                וואטסאפ
-              </CtaButton>
-              <CtaButton
-                sx={{ backgroundColor: '#E1BEE7', color: 'black', '&:hover': { backgroundColor: '#D1A3D6' } }}
-                component="a"
-                href={`tel:972${contact.contactPhone}`}
-                startIcon={<PhoneIcon />}
-              >
-                התקשר
-              </CtaButton>
-              {userProfile?.id && (
-                <CtaButton
-                  sx={{ backgroundColor: '#AB47BC', color: 'white', '&:hover': { backgroundColor: '#9C27B0' } }}
-                  onClick={onOpenMyActivities}
-                >
-                  הפעילויות שלי
-                </CtaButton>
-              )}
-            </Box>
+            {/* כפתורים */}
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+
+  {/* הזדהות */}
+ {!userProfile?.first_name && (
+  <CtaButton
+    onClick={onOpenIdentify}
+    sx={{
+      background: "linear-gradient(135deg,#7b1fa2 0%,#4a148c 100%)",
+      color: "#fff",
+      "&:hover": {
+        background: "linear-gradient(135deg,#6a1b9a 0%,#380f73 100%)",
+      },
+    }}
+  >
+    הזדהות
+  </CtaButton>
+)}
+
+
+  {/* וואטסאפ */}
+<CtaButton
+  startIcon={<WhatsAppIcon />}
+  href={`https://wa.me/972${contact.contactWhatsapp}`}
+  target="_blank"
+  rel="noopener noreferrer"
+  sx={{
+    /* גרדיינט ירוק – גוון מותג */
+    background: "linear-gradient(135deg,#25d366 0%,#128c7e 100%)",
+    color: "#fff",
+    "&:hover": {
+      background: "linear-gradient(135deg,#20c05b 0%,#0f7d71 100%)",
+    },
+  }}
+>
+  וואטסאפ
+</CtaButton>
+
+
+  {/* התקשר – נשאר אותו גרדיינט לבנדרי */}
+  <CtaButton
+    startIcon={<PhoneIcon />}
+    href={`tel:972${contact.contactPhone}`}
+    sx={{
+      background: "linear-gradient(135deg,#b388ff 0%,#9575cd 100%)",
+      color: "#fff",
+      "&:hover": { background: "linear-gradient(135deg,#a06dff 0%,#8360c7 100%)" },
+    }}
+  >
+    התקשר
+  </CtaButton>
+
+  {/* הפעילויות שלי */}
+{userProfile?.id && (
+  <CtaButton
+    onClick={onOpenMyActivities}
+    sx={{
+      /* סגול כהה → כהה-יותר */
+      background: "linear-gradient(135deg,#7b1fa2 0%,#4a148c 100%)",
+      color: "#fff",
+      "&:hover": {
+        background: "linear-gradient(135deg,#6a1b9a 0%,#380f73 100%)",
+      },
+    }}
+  >
+    הפעילויות שלי
+  </CtaButton>
+)}
+
+</Box>
+
           </Grid>
         </Grid>
       </Container>
