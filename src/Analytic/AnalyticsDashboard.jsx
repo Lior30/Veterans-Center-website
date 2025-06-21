@@ -4,7 +4,7 @@ import { ResponsivePie }   from '@nivo/pie';
 import { ResponsiveBar }   from '@nivo/bar';
 import { ResponsiveLine }  from '@nivo/line';
 import TagsPieChart        from './TagsPieChart';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection,getDocs,  onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from '../firebase'; 
 import ActivitiesTable from './ActivitiesTable';
 import JerusalemMap from './JerusalemMap';
@@ -25,25 +25,36 @@ export default function AnalyticsDashboard() {
   const [surveyBreakdown, setSurveyBreakdown] = useState([]);
 
   useEffect(() => {
-  (async () => {
-    const todayStart   = new Date();  todayStart.setHours(0,0,0,0);
-    const weekAgoStart = new Date();  weekAgoStart.setDate(weekAgoStart.getDate() - 7);
+  const todayStart   = new Date();  todayStart.setHours(0,0,0,0);
+  const weekAgoStart = new Date();  weekAgoStart.setDate(weekAgoStart.getDate() - 7);
 
-    const visitsSnap = await getDocs(collection(db, 'visits'));
+  // מאזין בזמן-אמת
+  const q = query(
+    collection(db, "visits"),
+    orderBy("timestamp", "desc")   // לא חובה אבל נוח
+  );
+
+  const unsubscribe = onSnapshot(q, snap => {
     let today = 0, last7 = 0, prev7 = 0;
 
-    visitsSnap.forEach(doc => {
+    snap.forEach(doc => {
       const ts = doc.data().timestamp.toDate();
-      if (ts >= todayStart) today++;
-      if (ts >= weekAgoStart) last7++;
-      if (ts <  weekAgoStart && ts >= weekAgoStart - 7*24*60*60*1000)
+      if (ts >= todayStart)           today++;
+      if (ts >= weekAgoStart)         last7++;
+      if (ts < weekAgoStart &&
+          ts >= weekAgoStart - 7 * 24 * 60 * 60 * 1000)
         prev7++;
     });
 
     setDailyVisitors(today);
     setWeeklyVisitors(last7);
-    setChangePercent(prev7 ? ((last7 - prev7) / prev7 * 100).toFixed(0) : 0);
-  })();
+    setChangePercent(
+      prev7 ? ((last7 - prev7) / prev7 * 100).toFixed(0) : 0
+    );
+  });
+
+  // ניקוי listener כשעוזבים את הדף
+  return () => unsubscribe();
 }, []);
 
 
@@ -364,5 +375,3 @@ useEffect(() => {
     </div>
   );
 }
-
-
