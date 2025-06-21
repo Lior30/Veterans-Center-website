@@ -1,5 +1,5 @@
 // src/components/LandingDialogs.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import SyncCalendarButton from "../components/SyncCalendarButton";
 import {
   Dialog,
@@ -16,7 +16,6 @@ import {
   Grow,
   styled,
 } from "@mui/material";
-import SectionTitle from "../LandingPage/SectionTitle";
 import ReplyContainer from "../components/ReplyContainer";
 import SurveyDetailContainer from "../components/SurveyDetailContainer";
 import AdminSignIn from "../components/AdminSignIn";
@@ -25,9 +24,7 @@ import CtaButton from "./CtaButton";
 import EventIcon from "@mui/icons-material/Event";
 import ActivityService from "../services/ActivityService";
 
-/* ──────────────────────────────────────────
-   Styled dialog – עיצוב אחיד לכל החלונות
-────────────────────────────────────────── */
+/* ---------- styled helpers ---------- */
 const StyledDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiPaper-root": {
     borderRadius: theme.shape.borderRadius * 2,
@@ -37,32 +34,17 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
     overflowY: "auto",
   },
 }));
-
-/* קלף אחיד למסרים/סקרים */
 const InfoCard = styled(Card)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 2,
-  transition: "box-shadow 0.3s",
-  backgroundColor:
-    theme.palette.mode === "light"
-      ? theme.palette.grey[50]
-      : theme.palette.grey[900],
+  transition: "box-shadow .3s",
+  backgroundColor: theme.palette.mode === "light" ? theme.palette.grey[50] : theme.palette.grey[900],
   "&:hover": { boxShadow: theme.shadows[3] },
 }));
-
-/* תווית מידע שמופיעה לצד שדה (תאריך, שעה…) */
 const Label = (props) => (
-  <Typography
-    variant="subtitle2"
-    fontWeight={600}
-    color="text.primary"
-    sx={{ minWidth: 60 }}
-    {...props}
-  />
+  <Typography variant="subtitle2" fontWeight={600} sx={{ minWidth: 60 }} {...props} />
 );
 
-/* ──────────────────────────────────────────
-   LandingDialogs
-────────────────────────────────────────── */
+/* ---------- component ---------- */
 export default function LandingDialogs({
   infoOpen,
   setInfoOpen,
@@ -80,7 +62,7 @@ export default function LandingDialogs({
   setUserProfile,
   surveys,
   userProfile,
-  justIdentified,
+  justIdentified = false,
   openIdentify,
   setOpenIdentify,
   openAdminSignIn,
@@ -90,21 +72,36 @@ export default function LandingDialogs({
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // helper — איחוד תאריך+שעה ל-Date
+  /* ---------- helper ---------- */
   const toDateTime = (a) => new Date(`${a.date}T${a.startTime || "23:59"}:00`);
 
-  // פעילויות בהן המשתמש רשום
-  const userActs = activities.filter(
-    (a) =>
-      userProfile?.activities?.includes(a.id) ||
-      userProfile?.activities?.includes(a.name)
-  );
-  const upcomingActs = userActs.filter((a) => toDateTime(a) >= new Date());
+  /* ---------- state – up-to-date list every time dialog opens ---------- */
+  const [upcomingActs, setUpcomingActs] = useState([]);
 
+  useEffect(() => {
+    if (!openMyActivities) return;
+
+    async function refresh() {
+      // אם יש לך קריאת API ייעודית – החלף בשורה הבאה
+      // const fresh = await ActivityService.getMyActivities(userProfile.id);
+
+      // ברירת-מחדל: סינון מתוך ‎activities‎ שהגיעו כ-prop
+      const fresh = activities.filter(
+        (a) =>
+          userProfile?.activities?.includes(a.id) ||
+          userProfile?.activities?.includes(a.name)
+      );
+      const future = fresh.filter((a) => toDateTime(a) >= new Date());
+      setUpcomingActs(future);
+    }
+
+    refresh();
+  }, [openMyActivities, activities, userProfile]);
+
+  /* ---------- UI ---------- */
   return (
     <>
-   
-      {/* 2. Cancel registration */}
+      {/* 2. cancel registration */}
       <StyledDialog
         open={cancelDialog.open}
         onClose={() => setCancelDialog({ open: false, activityId: null })}
@@ -117,10 +114,7 @@ export default function LandingDialogs({
           <Typography>האם את/ה בטוח/ה שברצונך לבטל את ההרשמה?</Typography>
         </DialogContent>
         <DialogActions>
-          <CtaButton
-            color="default"
-            onClick={() => setCancelDialog({ open: false, activityId: null })}
-          >
+          <CtaButton color="default" onClick={() => setCancelDialog({ open: false, activityId: null })}>
             ביטול
           </CtaButton>
           <CtaButton color="error" variant="contained" onClick={confirmCancelRegistration}>
@@ -129,7 +123,7 @@ export default function LandingDialogs({
         </DialogActions>
       </StyledDialog>
 
-      {/* 3. My activities */}
+      {/* 3. my activities */}
       <StyledDialog
         open={openMyActivities}
         onClose={() => setOpenMyActivities(false)}
@@ -140,21 +134,18 @@ export default function LandingDialogs({
           הפעילויות שלי
         </DialogTitle>
 
-        
-
         <DialogContent>
-          {/* Sync to calendar */}
-        {upcomingActs.length > 0 && (
-          <SyncCalendarButton
-            activities={upcomingActs.map((a) => ({
-              id: a.id,
-              title: a.name,
-              start: new Date(`${a.date}T${a.startTime || "09:00"}:00`).toISOString(),
-              end: null,
-              notes: a.description || "",
-            }))}
-          />
-        )}
+          {upcomingActs.length > 0 && (
+            <SyncCalendarButton
+              activities={upcomingActs.map((a) => ({
+                id: a.id,
+                title: a.name,
+                start: new Date(`${a.date}T${a.startTime || "09:00"}:00`).toISOString(),
+                notes: a.description || "",
+              }))}
+            />
+          )}
+
           {upcomingActs.map((a) => {
             const loc = a.location;
             const locationStr =
@@ -173,14 +164,11 @@ export default function LandingDialogs({
                   borderRadius: 2,
                   boxShadow: 1,
                   backgroundColor:
-                    theme.palette.mode === "light"
-                      ? theme.palette.grey[50]
-                      : theme.palette.grey[900],
+                    theme.palette.mode === "light" ? theme.palette.grey[50] : theme.palette.grey[900],
                   display: "flex",
                   gap: 2,
                 }}
               >
-                {/* פלייר */}
                 {flyers?.some((f) => f.activityId === a.id) && (
                   <Box
                     onClick={() =>
@@ -209,13 +197,7 @@ export default function LandingDialogs({
                   </Box>
                 )}
 
-                {/* פרטי פעילות */}
-                <Box
-                  flex={1}
-                  display="flex"
-                  flexDirection="column"
-                  justifyContent="space-between"
-                >
+                <Box flex={1} display="flex" flexDirection="column" justifyContent="space-between">
                   <Typography variant="h6" fontWeight={700} gutterBottom>
                     {a.name}
                   </Typography>
@@ -243,14 +225,11 @@ export default function LandingDialogs({
                     </Box>
                   )}
 
-                  {/* כפתורים */}
                   <Box display="flex" justifyContent="flex-end" gap={1} mt={1}>
                     {locationStr && (
                       <CtaButton
                         component="a"
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                          locationStr
-                        )}`}
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationStr)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         color="secondary"
@@ -272,12 +251,15 @@ export default function LandingDialogs({
             );
           })}
         </DialogContent>
+
         <DialogActions>
           <CtaButton color="primary.light" onClick={() => setOpenMyActivities(false)}>
             סגור
           </CtaButton>
         </DialogActions>
       </StyledDialog>
+
+
 
       {/* 4. All messages */}
       <StyledDialog
@@ -406,53 +388,70 @@ export default function LandingDialogs({
         </DialogActions>
       </StyledDialog>
 
-      {/* 6. Register confirmation */}
-      <StyledDialog
-        open={dialog.type === "register"}
-        onClose={closeDialog}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
-          הרשמה לפעילות
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            {userProfile?.first_name}, האם את/ה בטוח/ה שברצונך להירשם לפעילות{" "}
-            <strong>
-              {activities.find((a) => a.id === dialog.data)?.name || ""}
-            </strong>
-            ?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <CtaButton color="default" onClick={closeDialog}>
-            לא
-          </CtaButton>
-          <CtaButton
-            color="primary"
-            onClick={async () => {
-              const activityId = dialog.data;
-              try {
-                const result = await ActivityService.registerUser(activityId, {
-                  name: userProfile.name || userProfile.first_name,
-                  phone: userProfile.phone,
-                });
-                alert(result.message);
-                if (result.success) {
-                  closeDialog();
-                  window.location.reload();
-                }
-              } catch (err) {
-                console.error(err);
-                alert("שגיאה בהרשמה, נסה/י שוב");
-              }
-            }}
-          >
-            כן, הירשם/י
-          </CtaButton>
-        </DialogActions>
-      </StyledDialog>
+     {/* 6. Register confirmation */}
+<StyledDialog
+  open={dialog.type === "register"}
+  onClose={closeDialog}
+  fullWidth
+  maxWidth="xs"
+>
+  <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
+    הרשמה לפעילות
+  </DialogTitle>
+
+  <DialogContent>
+    <Typography>
+      {userProfile?.first_name}, האם את/ה בטוח/ה שברצונך להירשם לפעילות{" "}
+      <strong>{activities.find((a) => a.id === dialog.data)?.name || ""}</strong>?
+    </Typography>
+  </DialogContent>
+
+  <DialogActions>
+    <CtaButton color="default" onClick={closeDialog}>
+      לא
+    </CtaButton>
+
+    <CtaButton
+      color="primary"
+      onClick={async () => {
+        const activityId = dialog.data;
+
+        try {
+          const result = await ActivityService.registerUser(activityId, {
+            name: userProfile.name || userProfile.first_name,
+            phone: userProfile.phone,
+          });
+
+          alert(result.message);
+
+          if (result.success) {
+            /* ✱ 1. מעדכנים את הפרופיל בזיכרון */
+            setUserProfile((prev) => ({
+              ...prev,
+              activities: [...(prev.activities || []), activityId],
+            }));
+
+            /* ✱ 2. סוגרים את הדיאלוג */
+            closeDialog();
+
+            /* ✱ 3. אם חלון -MyActivities- פתוח – נסגור ונפתח מחדש
+                   כדי שה-useEffect יריץ ריענון מה-DB               */
+            if (openMyActivities) {
+              setOpenMyActivities(false);
+              // נותן ל-React טיק אחד לסגור ואז פותח שוב
+              setTimeout(() => setOpenMyActivities(true), 0);
+            }
+          }
+        } catch (err) {
+          console.error(err);
+          alert("שגיאה בהרשמה, נסה/י שוב");
+        }
+      }}
+    >
+      כן, הירשם/י
+    </CtaButton>
+  </DialogActions>
+</StyledDialog>
 
       {/* 7. Flyer info */}
       <StyledDialog

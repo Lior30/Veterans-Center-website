@@ -1,5 +1,5 @@
 // src/components/LandingNavBar.jsx
-// Desktop: all in one row · Mobile: two‑row (social+logo, nav buttons)
+// Desktop: one row · Mobile: two rows (social+logo, nav buttons)
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -19,10 +19,11 @@ export default function LandingNavBar({
   onScrollToMessages,
   onScrollToActivities,
   onScrollToSurveys,
+  justIdentified = false,         // ← prop ברירת-מחדל
 }) {
-  const theme = useTheme();
+  const theme    = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const purple = theme.palette.primary.main;
+  const purple   = theme.palette.primary.main;
 
   /* sticky state */
   const [isSticky, setIsSticky] = useState(false);
@@ -43,20 +44,21 @@ export default function LandingNavBar({
     );
   }, []);
 
+  /* nav buttons – “סקרים” רק למזוהים */
   const navButtons = [
-    { label: "סקרים", onClick: onScrollToSurveys },
-    { label: "לוח שנה", onClick: onScrollToActivities },
-    { label: "הודעות", onClick: onScrollToMessages },
-    { label: "פעילויות", onClick: onScrollToFlyers },
+    ...(justIdentified ? [{ label: "סקרים",     onClick: onScrollToSurveys   }] : []),
+    { label: "לוח שנה",  onClick: onScrollToActivities },
+    { label: "הודעות",   onClick: onScrollToMessages   },
+    { label: "פעילויות", onClick: onScrollToFlyers     },
   ];
 
   const socialBtnStyle = {
     color: "#fff",
-    width: isMobile ? 30 : 36,
+    width:  isMobile ? 30 : 36,
     height: isMobile ? 30 : 36,
   };
 
-  /* helper: nav button component */
+  /* helper: nav buttons component */
   const NavButtons = () => (
     <Box sx={{ display: "flex", gap: { xs: 1, sm: 2 } }}>
       {navButtons.map((btn) => (
@@ -124,7 +126,7 @@ export default function LandingNavBar({
             <Box sx={{ display: "flex", gap: 1 }}>
               <IconButton
                 component="a"
-                href="https://www.facebook.com"
+                href="https://www.facebook.com/minhalbk?locale=he_IL"
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{ ...socialBtnStyle, background: "#3b5998", "&:hover": { opacity: 0.85 } }}

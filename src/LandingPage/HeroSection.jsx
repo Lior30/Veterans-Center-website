@@ -88,7 +88,7 @@ export default function HeroSection({ userProfile, onOpenIdentify, onOpenMyActiv
             top: 0,
             left: 0,
             width: { xs: "100%", md: "60%" },
-            height: { xs: 240, sm: 300, md: "100%" },
+            height: { xs: 240, sm: 350, md: "100%" },
             backgroundImage: `url(${bgUrl})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
