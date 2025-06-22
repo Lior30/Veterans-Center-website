@@ -417,7 +417,7 @@ export default function LandingDialogs({
 
     <CtaButton
       color="primary"
-      onClick={async () => {
+onClick={async () => {
   const activityId = dialog.data;
 
   try {
@@ -426,43 +426,59 @@ export default function LandingDialogs({
       phone: userProfile.phone,
     });
 
-    // Replace alert() with senior-friendly message
     setMessage({
       open: true,
       text: result.message,
       type: result.success ? 'success' : 'error',
-      title: result.title
+      title: result.title || (result.success ? "הרשמה הושלמה" : "שגיאה בהרשמה"),
     });
 
     if (result.success) {
-      /* ✱ 1. מעדכנים את הפרופיל בזיכרון */
       setUserProfile((prev) => ({
         ...prev,
         activities: [...(prev.activities || []), activityId],
       }));
 
-      /* ✱ 2. סוגרים את הדיאלוג */
       closeDialog();
 
-      /* ✱ 3. אם חלון -MyActivities- פתוח – נסגור ונפתח מחדש
-             כדי שה-useEffect יריץ ריענון מה-DB               */
       if (openMyActivities) {
         setOpenMyActivities(false);
-        // נותן ל-React טיק אחד לסגור ואז פותח שוב
         setTimeout(() => setOpenMyActivities(true), 0);
       }
     }
   } catch (err) {
     console.error(err);
-    // Replace alert() with senior-friendly error message
+
+    // ✅ טיפול במשתמש שכבר רשום
+    if (err.message === "alreadyRegistered") {
+      setMessage({
+        open: true,
+        text: "את/ה כבר רשום/ה לפעילות זו.",
+        type: "success",
+        title: "כבר רשום",
+      });
+
+      closeDialog();
+
+      if (openMyActivities) {
+        setOpenMyActivities(false);
+        setTimeout(() => setOpenMyActivities(true), 0);
+      }
+
+      return;
+    }
+
+    // ❌ שגיאה כללית
     setMessage({
       open: true,
       text: "אירעה שגיאה במהלך ההרשמה. אנא נסה שוב",
-      type: 'error',
-      title: "שגיאה בהרשמה"
+      type: "error",
+      title: "שגיאה בהרשמה",
     });
   }
 }}
+
+
     >
       כן, הירשם/י
     </CtaButton>
