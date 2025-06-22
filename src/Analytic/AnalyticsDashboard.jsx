@@ -4,7 +4,7 @@ import { ResponsivePie }   from '@nivo/pie';
 import { ResponsiveBar }   from '@nivo/bar';
 import { ResponsiveLine }  from '@nivo/line';
 import TagsPieChart        from './TagsPieChart';
-import { collection,getDocs,  onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection,getDocs, getDoc, doc,  onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from '../firebase'; 
 import ActivitiesTable from './ActivitiesTable';
 import JerusalemMap from './JerusalemMap';
@@ -133,53 +133,49 @@ useEffect(() => {
   })();
 }, []);
 
-useEffect(() => {
-  (async () => {
-    // 1. שליפת כל הפעילויות
-    const actSnap = await getDocs(collection(db, 'activities'));
-    const participantsByAct = {};
-    const titleByAct        = {};
-    actSnap.forEach(doc => {
-      const d = doc.data();
-      titleByAct[doc.id] = d.title || d.name || doc.id;
-      participantsByAct[doc.id] = Array.isArray(d.participants)
-        ? d.participants.length
-        : 0;
-    });
+  useEffect(() => {
+    (async () => {
+      // 1. שליפת כל הסקרים
+      const surveysSnap = await getDocs(collection(db, 'surveys'));
+      const detailsArr = [];
+      let totalAnswered = 0;
+      let totalCapacity = 0;
 
-    // 2. שליפת כל התגובות לסקר
-    const ansSnap = await getDocs(collection(db, 'surveyResponses'));
-    const answeredByAct = {};
-    ansSnap.forEach(doc => {
-      const { activityId } = doc.data();
-      if (!activityId) return;
-      answeredByAct[activityId] = (answeredByAct[activityId] || 0) + 1;
-    });
+      for (const surveyDoc of surveysSnap.docs) {
+        const surveyData = surveyDoc.data();
+        const activityId = surveyData.of_activity;
+        if (!activityId) continue;
 
-    // 3. סכימה גלובלית ל־donut המרכזי
-    let answered = 0, could = 0;
-    Object.entries(participantsByAct).forEach(([id, count]) => {
-      answered += answeredByAct[id] || 0;
-      could    += count;
-    });
-    setSurveyBreakdown([
-      { id: 'ענו', value: answered, color: '#7e64e0' },
-      { id: 'לא ענו', value: could - answered, color: '#3de2da' }
-    ]);
+        // 2. ספירת תשובות מתוך תת-קולקשן "responses"
+        const answersSnap = await getDocs(
+          collection(db, 'surveys', surveyDoc.id, 'responses')
+        );
+        const answeredCount = answersSnap.size;
 
-    // 4. בונים את מערך הבר האופקי
-    const details = Object.entries(participantsByAct).map(
-      ([id, reg]) => ({
-        title:      titleByAct[id],
-        registered: reg,
-        answered:   answeredByAct[id] || 0
-      })
-    );
-    setSurveyDetails(details);
+        // 3. קבלת המכסה (capacity) של הפעילות
+        const actDoc = await getDoc(doc(db, 'activities', activityId));
+        const capacity = actDoc.exists()
+          ? actDoc.data().capacity || 0
+          : 0;
 
-  })();         // <-- זה סוגר את ה-IIFE (async)
-}, []);        // <-- זה סוגר את ה-useEffect
+        detailsArr.push({
+          title:      surveyData.headline,
+          registered: capacity,
+          answered:   answeredCount
+        });
 
+        totalAnswered += answeredCount;
+        totalCapacity += capacity;
+      }
+
+      // 4. עדכון ה-state של הפרטים ושל הדונאט
+      setSurveyDetails(detailsArr);
+      setSurveyBreakdown([
+        { id: 'ענו',     value: totalAnswered,               color: '#7e64e0' },
+        { id: 'לא ענו', value: totalCapacity - totalAnswered, color: '#3de1da' }
+      ]);
+    })();
+  }, []);
 
 
   useEffect(() => {
