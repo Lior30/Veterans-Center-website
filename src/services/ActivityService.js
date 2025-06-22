@@ -77,7 +77,7 @@ export default class ActivityService {
 
   /** ⚡ save (create or update) – with sanitisation */
   static async save(activity) {
-    // clone – never mutate caller’s object
+    // clone – never mutate caller's object
     const data = { ...activity };
 
     /* ---------- normalise optional numeric fields ---------- */
@@ -161,7 +161,12 @@ static async registerUser(activityId, user) {
 
       // ✅ בדיקה אם הפעילות דורשת חבר מועדון 60+
       if (data.registrationCondition === 'member60' && !userData.is_club_60) {
-        return { success: false, reason: "CONDITION_NOT_MET", message: "פעילות זו מיועדת לחברי מרכז 60+ בלבד" };
+        return { 
+          success: false, 
+          reason: "CONDITION_NOT_MET", 
+          message: "פעילות זו מיועדת לחברי מרכז 60+ בלבד",
+          title: "הרשמה לא אושרה"
+        };
       }
 
       const capacity = data.capacity ?? 0;
@@ -189,7 +194,12 @@ static async registerUser(activityId, user) {
       }
       // Capacity check
       if (capacity && participants.length >= capacity) {
-        return { success: false, reason: "FULL", message: "הפעילות מלאה" };
+        return { 
+          success: false, 
+          reason: "FULL", 
+          message: "אין עוד מקומות פנויים בפעילות זו", 
+          title: "הפעילות מלאה"
+        };
       }
       // מוסיפים משתתף חדש
       const newParticipant = {
@@ -207,13 +217,21 @@ static async registerUser(activityId, user) {
         activities_date: arrayUnion(new Date().toISOString()),
       });
 
-      return { success: true, reason: "OK", message: "נרשמת בהצלחה 🎉" };
+      return { 
+        success: true, 
+        reason: "OK", 
+        message: "נרשמת לפעילות בהצלחה!", 
+        title: "הרשמה הושלמה בהצלחה"
+      };
     });
     
-    console.log("ActivityService.registerUser: SUCCESS for phone:", normalizedPhone, "activityId:", activityId);
-    return result ?? { success: false, reason: "ERROR", message: "שגיאה לא צפויה בהרשמה" };
+    return result ?? { 
+      success: false, 
+      reason: "ERROR", 
+      message: "אירעה שגיאה במהלך ההרשמה. אנא נסה שוב", 
+      title: "שגיאה בהרשמה"
+    };
   } catch (err) {
-    console.error("ActivityService.registerUser: Transaction failed:", err);
     throw err;
   }
 }

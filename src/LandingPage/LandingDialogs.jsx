@@ -15,7 +15,9 @@ import {
   useTheme,
   Grow,
   styled,
+  Button,
 } from "@mui/material";
+import { CheckCircle, Error } from '@mui/icons-material';
 import ReplyContainer from "../components/ReplyContainer";
 import SurveyDetailContainer from "../components/SurveyDetailContainer";
 import AdminSignIn from "../components/AdminSignIn";
@@ -71,6 +73,8 @@ export default function LandingDialogs({
 }) {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const [message, setMessage] = useState({ open: false, text: '', type: 'success', title: '' });
 
   /* ---------- helper ---------- */
   const toDateTime = (a) => new Date(`${a.date}T${a.startTime || "23:59"}:00`);
@@ -389,22 +393,22 @@ export default function LandingDialogs({
       </StyledDialog>
 
      {/* 6. Register confirmation */}
-<StyledDialog
-  open={dialog.type === "register"}
-  onClose={closeDialog}
-  fullWidth
-  maxWidth="xs"
->
-  <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
-    הרשמה לפעילות
-  </DialogTitle>
+      <StyledDialog
+        open={dialog.type === "register"}
+        onClose={closeDialog}
+        fullWidth
+        maxWidth="xs"
+      >
+      <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
+        הרשמה לפעילות
+      </DialogTitle>
 
-  <DialogContent>
-    <Typography>
-      {userProfile?.first_name}, האם את/ה בטוח/ה שברצונך להירשם לפעילות{" "}
-      <strong>{activities.find((a) => a.id === dialog.data)?.name || ""}</strong>?
-    </Typography>
-  </DialogContent>
+      <DialogContent>
+        <Typography>
+          {userProfile?.first_name}, האם את/ה בטוח/ה שברצונך להירשם לפעילות{" "}
+          <strong>{activities.find((a) => a.id === dialog.data)?.name || ""}</strong>?
+        </Typography>
+      </DialogContent>
 
   <DialogActions>
     <CtaButton color="default" onClick={closeDialog}>
@@ -414,39 +418,51 @@ export default function LandingDialogs({
     <CtaButton
       color="primary"
       onClick={async () => {
-        const activityId = dialog.data;
+  const activityId = dialog.data;
 
-        try {
-          const result = await ActivityService.registerUser(activityId, {
-            name: userProfile.name || userProfile.first_name,
-            phone: userProfile.phone,
-          });
+  try {
+    const result = await ActivityService.registerUser(activityId, {
+      name: userProfile.name || userProfile.first_name,
+      phone: userProfile.phone,
+    });
 
-          alert(result.message);
+    // Replace alert() with senior-friendly message
+    setMessage({
+      open: true,
+      text: result.message,
+      type: result.success ? 'success' : 'error',
+      title: result.title
+    });
 
-          if (result.success) {
-            /* ✱ 1. מעדכנים את הפרופיל בזיכרון */
-            setUserProfile((prev) => ({
-              ...prev,
-              activities: [...(prev.activities || []), activityId],
-            }));
+    if (result.success) {
+      /* ✱ 1. מעדכנים את הפרופיל בזיכרון */
+      setUserProfile((prev) => ({
+        ...prev,
+        activities: [...(prev.activities || []), activityId],
+      }));
 
-            /* ✱ 2. סוגרים את הדיאלוג */
-            closeDialog();
+      /* ✱ 2. סוגרים את הדיאלוג */
+      closeDialog();
 
-            /* ✱ 3. אם חלון -MyActivities- פתוח – נסגור ונפתח מחדש
-                   כדי שה-useEffect יריץ ריענון מה-DB               */
-            if (openMyActivities) {
-              setOpenMyActivities(false);
-              // נותן ל-React טיק אחד לסגור ואז פותח שוב
-              setTimeout(() => setOpenMyActivities(true), 0);
-            }
-          }
-        } catch (err) {
-          console.error(err);
-          alert("שגיאה בהרשמה, נסה/י שוב");
-        }
-      }}
+      /* ✱ 3. אם חלון -MyActivities- פתוח – נסגור ונפתח מחדש
+             כדי שה-useEffect יריץ ריענון מה-DB               */
+      if (openMyActivities) {
+        setOpenMyActivities(false);
+        // נותן ל-React טיק אחד לסגור ואז פותח שוב
+        setTimeout(() => setOpenMyActivities(true), 0);
+      }
+    }
+  } catch (err) {
+    console.error(err);
+    // Replace alert() with senior-friendly error message
+    setMessage({
+      open: true,
+      text: "אירעה שגיאה במהלך ההרשמה. אנא נסה שוב",
+      type: 'error',
+      title: "שגיאה בהרשמה"
+    });
+  }
+}}
     >
       כן, הירשם/י
     </CtaButton>
@@ -637,6 +653,77 @@ export default function LandingDialogs({
           </CtaButton>
         </DialogActions>
       </StyledDialog>
+
+      <Dialog
+        open={message.open}
+        // Only close when user clicks the button
+        onClose={(e, reason) => {
+          if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+            setMessage(prev => ({ ...prev, open: false }));
+          }
+        }}
+        maxWidth="xs"
+        PaperProps={{
+          sx: {
+            p: 2,
+            textAlign: 'center',
+            borderRadius: 1,
+            // Vibrant border using main palette colors
+            border: theme => `3px solid ${theme.palette[message.type === 'success' ? 'success' : 'error'].main}`,
+            boxShadow: 2
+          }
+        }}
+      >
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            {message.type === 'success' ? (
+              <CheckCircle sx={{ fontSize: 64, color: 'success.main', mb: 1 }} />
+            ) : (
+              <Error sx={{ fontSize: 64, color: 'error.main', mb: 1 }} />
+            )}
+          </Box>
+          <Typography
+            variant="h5"                // increased heading size
+            sx={{
+              fontWeight: 600,
+              mb: 1,
+              color: message.type === 'success' ? 'success.main' : 'error.main'
+            }}
+          >
+            {message.title}
+          </Typography>
+          <Typography
+            variant="body1"             // increased body size
+            sx={{
+              fontSize: '1.8rem',         // explicitly larger font
+              lineHeight: 1.6,
+              color: 'text.primary'
+            }}
+          >
+            {message.text}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 1 }}>
+          <Button
+            onClick={() => setMessage(prev => ({ ...prev, open: false }))}
+            variant="contained"
+            size="medium"
+            sx={{
+              fontSize: '1.2rem',          // larger button font
+              py: 1,
+              px: 4,                       // slightly more horizontal padding
+              // Use main colors for strong effect
+              bgcolor: message.type === 'success' ? 'success.main' : 'error.main',
+              color: 'common.white',
+              '&:hover': {
+                bgcolor: message.type === 'success' ? 'success.dark' : 'error.dark'
+              }
+            }}
+          >
+            הבנתי
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
