@@ -75,7 +75,7 @@ export function getDesignTheme(mode = "light") {
 
     /* ---------- Typography ---------- */
     typography: {
-      fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif",
+fontFamily: "'Rubik', 'Arial', sans-serif",
       h1: { fontWeight: 600, fontSize: "clamp(2.6rem, 6vw, 3.2rem)", lineHeight: 1.15 },
       h2: { fontWeight: 600, fontSize: "clamp(2.1rem, 5vw, 2.7rem)", lineHeight: 1.2 },
       h3: { fontWeight: 500, fontSize: "clamp(1.7rem, 4vw, 2.2rem)", lineHeight: 1.25 },
