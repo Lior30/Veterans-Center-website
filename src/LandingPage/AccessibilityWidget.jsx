@@ -20,7 +20,7 @@ export default function AccessibilityWidget() {
   const theme = useTheme();
   const purple = theme.palette.primary.main;
 
-  /* ─────────── styled helpers ─────────── */
+  /*styled helpers */
   const FloatingBtn = styled(IconButton)(({ theme }) => ({
     backgroundColor: "#fff",
     color: purple,
@@ -59,7 +59,7 @@ export default function AccessibilityWidget() {
     "&:hover": { borderColor: purple, backgroundColor: purple + "10" },
   });
 
-  /* ─────────── state ─────────── */
+  /*state*/
   const [open, setOpen] = useState(false);
   const [keyboardNav, setKeyboardNav] = useState(
     () => JSON.parse(localStorage.getItem("access_keyboardNav")) || false
@@ -90,7 +90,7 @@ export default function AccessibilityWidget() {
   );
   const speechUtterance = useRef(null);
 
-  /* ─────────── DOM updates & persistence ─────────── */
+  /*DOM updates & persistence*/
   useEffect(() => {
     document.documentElement.style.fontSize = `${fontSize}px`;
     localStorage.setItem("access_fontSize", fontSize);
@@ -147,19 +147,18 @@ export default function AccessibilityWidget() {
     localStorage.setItem("access_letterSpacing", letterSpacing);
   }, [letterSpacing]);
 
-  /* ─────────── skip-link helper ─────────── */
+  /*  skip-link helper  */
   const skipToContent = () => {
-    // יעד ברירת מחדל – element עם id="main-content" ואם לא קיים ננסה ספציפי ללוח.
     const target =
       document.getElementById("main-content") ||
       document.getElementById("calendar-view");
     if (target) {
-      target.setAttribute("tabindex", "-1"); // מוודא שניתן לקבל פוקוס
+      target.setAttribute("tabindex", "-1"); 
       target.focus({ preventScroll: false });
     }
   };
 
-  /* ─────────── screen-reading helpers ─────────── */
+  /*screen-reading helpers */
   const startReading = () => {
     if (speechUtterance.current) return;
     const text =
@@ -180,7 +179,7 @@ export default function AccessibilityWidget() {
     speechUtterance.current = null;
   };
 
-  /* ─────────── keyboard shortcuts ─────────── */
+  /*keyboard shortcuts*/
   useEffect(() => {
     const onKeyDown = (e) => {
       if (!keyboardNav) return;
@@ -191,10 +190,10 @@ export default function AccessibilityWidget() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [keyboardNav]);
 
-  /* ─────────── render ─────────── */
+  /* render*/
   return (
     <>
-      {/* כפתור צף */}
+      {/* float button*/}
       <Box
         sx={{
           position: "fixed",
@@ -208,7 +207,7 @@ export default function AccessibilityWidget() {
         </FloatingBtn>
       </Box>
 
-      {/* Drawer נגישות */}
+      {/* acceciblty Drawer*/}
       <Drawer
         anchor="right"
         open={open}
@@ -216,7 +215,7 @@ export default function AccessibilityWidget() {
         ModalProps={{ keepMounted: true }}
       >
         <DrawerContent>
-  {/* סרגל כותרת עם כפתור סגירה */}
+  {/* ruler with close option*/}
   <Box display="flex" alignItems="center" justifyContent="space-between">
     <Typography variant="h6">נגישות</Typography>
 
@@ -242,7 +241,7 @@ export default function AccessibilityWidget() {
             דלג לתוכן העיקרי
           </Button>
 
-          {/* גודל גופן */}
+          {/*font size*/}
           <SectionCaption variant="subtitle2">גודל גופן</SectionCaption>
           <Stack direction="row" spacing={1} alignItems="center">
             <Button
@@ -268,7 +267,7 @@ export default function AccessibilityWidget() {
             </Button>
           </Stack>
 
-          {/* ריווח שורות */}
+          {/*line placement*/}
           <SectionCaption variant="subtitle2">ריווח שורות</SectionCaption>
           <Stack direction="row" spacing={1} alignItems="center">
             <Button
@@ -290,7 +289,7 @@ export default function AccessibilityWidget() {
             </Button>
           </Stack>
 
-          {/* ריווח אותיות */}
+          {/* cherecters */}
           <SectionCaption variant="subtitle2">ריווח אותיות</SectionCaption>
           <Stack direction="row" spacing={1} alignItems="center">
             <Button
@@ -322,7 +321,7 @@ export default function AccessibilityWidget() {
 
           <Divider />
 
-          {/* מתגים */}
+          {/* switches*/}
           <FormControlLabel
             control={
               <Switch
@@ -380,7 +379,7 @@ export default function AccessibilityWidget() {
 
           <Divider />
 
-          {/* קריינות */}
+          {/* odio help*/}
           <Stack direction="row" spacing={1}>
             <AccentBtn variant="outlined" onClick={startReading}>
               הפעל קריינות
