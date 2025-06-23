@@ -48,8 +48,9 @@ export default function LandingNavBar({
   const navButtons = [
     ...(justIdentified ? [{ label: "סקרים",     onClick: onScrollToSurveys   }] : []),
     { label: "לוח שנה",  onClick: onScrollToActivities },
+     { label: "פעילויות", onClick: onScrollToFlyers     },
     { label: "הודעות",   onClick: onScrollToMessages   },
-    { label: "פעילויות", onClick: onScrollToFlyers     },
+   
   ];
 
   const socialBtnStyle = {

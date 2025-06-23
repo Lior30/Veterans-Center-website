@@ -256,12 +256,8 @@ const handleFillSurvey = (survey) => {
   onOpenMyActivities={() => setOpenMyActivities(true)}
 />
 
-    {/* Flyers */}
-    <Box ref={flyersRef}>
-<FlyersSection flyers={flyers} activities={activities} openDialog={openDialog} />
-    </Box>
 
-   {/* Messages */}
+ {/* Messages */}
 <Box ref={messagesRef}>
   <MessagesSection
     messages={messages}
@@ -269,6 +265,13 @@ const handleFillSurvey = (survey) => {
     openDialog={openDialog}
   />
 </Box>
+
+    {/* Flyers */}
+    <Box ref={flyersRef}>
+<FlyersSection flyers={flyers} activities={activities} openDialog={openDialog} />
+    </Box>
+
+  
     {/* Calendar (Activities) */}
 {/* Calendar (Activities) */}
 <Box

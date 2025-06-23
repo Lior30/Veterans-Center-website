@@ -25,7 +25,8 @@ const formatDateNumeric = (isoDate) => {
   const day = String(d.getDate()).padStart(2, "0");
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const year = d.getFullYear();
-  return `${day}\\${month}\\${year}`;
+return `${day}/${month}/${year}`;
+
 };
 
 /* ARROWS */
@@ -111,7 +112,7 @@ export default function FlyersSection({ flyers, activities, openDialog }) {
         <Box sx={{ position: "relative", mt: 2 }}>
           <Slider {...settings}>
             {flyers.map((f) => (
-              <Box key={f.id} sx={{ px: 1 }}>
+              <Box key={f.id} sx={{ px: 3 }}>
                 <FlyerCard>
                   <CardActionArea onClick={() => openDialog("flyer", f)}>
                     <CardMedia
@@ -129,14 +130,30 @@ export default function FlyersSection({ flyers, activities, openDialog }) {
                       }}
                     />
                     <CardContent sx={{ p: { xs: 1.25, sm: 2 }, textAlign: "center" }}>
-                      <Typography
-                        variant="subtitle2"
-                        fontWeight={600}
-                        noWrap
-                        sx={{ fontSize: { xs: "0.85rem", sm: "0.9rem" } }}
-                      >
-                        {activities.find((a) => a.id === f.activityId)?.name || f.name}
-                      </Typography>
+                      <Box display="flex" justifyContent="center" alignItems="center" gap={1}>
+  <Typography
+    variant="subtitle2"
+    fontWeight={600}
+    noWrap
+    sx={{ fontSize: { xs: "0.85rem", sm: "0.9rem" } }}
+  >
+    {activities.find((a) => a.id === f.activityId)?.name || f.name}
+  </Typography>
+
+  {/* אייקון מועדון 60+ אם רלוונטי */}
+  {activities.find((a) => a.id === f.activityId)?.registrationCondition === "member60" && (
+    <Box
+      component="img"
+      src="/assets/Club60.png"
+      alt="מועדון 60+"
+      sx={{
+        width: 30,
+        height: 30,
+      }}
+    />
+  )}
+</Box>
+
                       <Typography
                         variant="caption"
                         color="text.secondary"

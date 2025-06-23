@@ -238,8 +238,7 @@ export default function AccessibilityWidget() {
             sx={{ borderRadius: 2 }}
             onClick={skipToContent}
           >
-            דלג לתוכן העיקרי
-          </Button>
+דלג ללוח הפעילויות          </Button>
 
           {/*font size*/}
           <SectionCaption variant="subtitle2">גודל גופן</SectionCaption>
