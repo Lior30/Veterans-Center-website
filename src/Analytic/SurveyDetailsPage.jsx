@@ -1,16 +1,17 @@
-import React from 'react';
-import { ResponsiveBar } from '@nivo/bar';
-import { useNavigate, useLocation } from 'react-router-dom';
+// src/components/SurveyDetailsPage.jsx
+import React from 'react'
+import { ResponsiveBar } from '@nivo/bar'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 export default function SurveyDetailsPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const surveys = location.state?.surveyDetails || [];
+  const navigate = useNavigate()
+  const location = useLocation()
+  const surveys = location.state?.surveyDetails || []
 
   return (
     <div style={{ padding: 24, minHeight: '100vh', background: '#f8f9fa' }}>
-      {/* כפתור חזרה – עכשיו אחרי padding עליון ועם מרווח תחתון */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+      {/* כפתור חזרה */}
+      <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 16 }}>
         <button
           onClick={() => navigate(-1)}
           style={{
@@ -19,14 +20,13 @@ export default function SurveyDetailsPage() {
             color: '#fff',
             border: 'none',
             borderRadius: '4px',
-            cursor: 'pointer'
+            cursor: 'pointer',
           }}
         >
           ← חזרה
         </button>
       </div>
 
-      {/* כותרת ראשית */}
       <h1 style={{ fontSize: 24, fontWeight: 700, color: '#212529', marginBottom: 24 }}>
         פירוט היענות לסקרים
       </h1>
@@ -34,75 +34,99 @@ export default function SurveyDetailsPage() {
       {surveys.length === 0 ? (
         <p style={{ color: '#666' }}>אין נתונים להצגה בסקרים.</p>
       ) : (
-        surveys.map((survey, index) => {
-          const answered = survey.answered || 0;
-          const notAnswered = (survey.registered || 0) - answered;
-          // נתונים לפירוש גרף – שני ברים בלבד
+        surveys.map((survey, idx) => {
+          const answered   = survey.answered   || 0
+          const registered = survey.registered || 0
+          const remaining  = Math.max(registered - answered, 0)
+
+          // נתונים עם שני קטעים: קטע answered (סגול) וקטע remaining (אפור)
           const data = [
-            { metric: 'ענו', value: answered },
-            { metric: 'לא ענו', value: notAnswered }
-          ];
+            {
+              metric: 'ענו',
+              answered,
+              remaining,
+            },
+          ]
+
+          // ticks מ־0 עד registered כולל
+          const ticks = Array.from({ length: registered + 1 }, (_, i) => i)
 
           return (
             <div
-              key={index}
+              key={survey.id || idx}
               style={{
                 background: '#fff',
                 border: '1px solid #ddd',
-                borderRadius: '8px',
+                borderRadius: 8,
                 padding: '16px',
                 marginBottom: '20px',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+                boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
               }}
             >
-              {/* כותרת משנה: שם הסקר + שם הפעילות בסוגריים */}
+              {/* כותרת: סקר + פעילות */}
               <h2 style={{ fontSize: 18, fontWeight: 600, margin: '0 0 8px' }}>
-                {survey.headline || 'סקר ללא שם'}{' '}
+                {survey.name}
                 <span style={{ fontSize: 14, fontWeight: 400, color: '#555' }}>
-                  ({survey.activityName || survey.of_activity || 'ללא פעילות'})
+                  {' '}({survey.activityName})
                 </span>
               </h2>
 
-              {/* הגרף – בר אנכי עם תוויות שלמות */}
-              <div style={{ height: 200 }}>
+              <div style={{ height: 80 }}>
                 <ResponsiveBar
                   data={data}
-                  keys={['value']}
+                  keys={['answered', 'remaining']}    // שימו לב: remaining תחילה כדי שתצבעו רק answered
                   indexBy="metric"
-                  margin={{ top: 20, right: 40, bottom: 30, left: 60 }}
-                  padding={0.5}
-                  layout="vertical"
-                  // צבע לפי אינדקס: ראשון סגול, שני צהוב
-                  colors={['#7e64e0', '#ffd400']}
-                  colorBy="index"
-                  // תצוגת ערכים ללא עשרונים
-                  valueFormat=".0f"
-                  enableLabel={true}
-                  label={(d) => d.value}
+                  layout="horizontal"
+                  groupMode="stacked"
+                  margin={{ top: 10, right: 20, bottom: 30, left: 80 }}
+                  padding={0.3}
+                  borderRadius={3}
+                  // צבעים לפי id של המקטע
+                  colors={({ id }) => (id === 'answered' ? '#7e64e0' : '#e0e0e0')}
+                  colorBy="id"
+
+                  // תחום X מלא מ־0 עד registered
+                  xScale={{ type: 'linear', min: 0, max: registered, reverse: true }}
+                  
+
+                  // תוויות רק על answered
+                  enableLabel
+                  label={({ id, value }) => (id === 'answered' ? value : '')}
+                  valueFormat=">-.0f"
                   labelTextColor="#212529"
-                  // ציר Y עם סיומת
+
+                  // כבה רשת
+                  enableGridX={false}
+                  enableGridY={false}
+
+                  // מציג שמות ב־axisLeft
                   axisLeft={{
                     tickSize: 0,
-                    tickPadding: 6,
+                    tickPadding: 8,
                     tickRotation: 0,
-                    legend: 'מספר אנשים',
-                    legendPosition: 'middle',
-                    legendOffset: -40
                   }}
+
+                  // ציר תחתון מ־0 עד registered
                   axisBottom={{
                     tickSize: 0,
-                    tickPadding: 6,
-                    tickRotation: 0
+                    tickPadding: 8,
+                    tickRotation: 0,
+                    legend: 'מספר נרשמים',
+                    legendPosition: 'middle',
+                    legendOffset: 25,
+                    tickValues: ticks,
+                    tickFormat: v => v,
                   }}
-                  axisRight={null}
                   axisTop={null}
-                  animate={true}
+                  axisRight={null}
+
+                  animate
                 />
               </div>
             </div>
-          );
+          )
         })
       )}
     </div>
-  );
+  )
 }

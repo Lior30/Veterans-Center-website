@@ -14,11 +14,12 @@ export default function DailyVisitsCard({ count = 0 }) {
         background: '#ffffff',
         border: '1px solid #e9ecef',
         borderRadius: 12,
-        paddingBlock: 28,
-        paddingInline: 40,
         boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
         textAlign: 'center',
-        minWidth: 180
+        padding: '28px 40px',
+        paddingBottom: 55,
+        width: '100%',
+        minHeight: 120
       }}
     >
       <div

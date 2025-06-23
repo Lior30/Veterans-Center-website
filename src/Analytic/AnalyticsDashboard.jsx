@@ -92,7 +92,10 @@ useEffect(() => {
     const snap = await getDocs(collection(db, 'activities'));
 
     /* ---- RAW activities (כפי שהן) ---- */
-    const raw = snap.docs.map(d => d.data());
+    const raw = snap.docs.map(d => ({
+      id: d.id,        // ← חשוב מאוד: בלי זה act.id יהיה undefined
+      ...d.data()
+    }));
     setAllActivities(raw);                     // <-- חדש
 
     /* ---- Tag statistics ---- */
@@ -134,74 +137,54 @@ useEffect(() => {
 }, []);
 
   useEffect(() => {
+    // מחכה לטעינת כל הפעילויות כדי שנדע כמה נרשמו באמת
+    if (!allActivities.length) return;
+
     (async () => {
-      // 1. שליפת כל הסקרים
-      const surveysSnap = await getDocs(collection(db, 'surveys'));
-      const detailsArr = [];
-      let totalAnswered = 0;
-      let totalCapacity = 0;
+    const surveysSnap   = await getDocs(collection(db, 'surveys'));
+    let totalAnswered   = 0;
+    let totalRegistered = 0;
+    const detailsArr    = [];
 
       for (const surveyDoc of surveysSnap.docs) {
-        const surveyData = surveyDoc.data();
-        const activityId = surveyData.of_activity;
+        const surveyData   = surveyDoc.data();
+        const activityId   = surveyData.of_activity;
         if (!activityId) continue;
 
-        // 2. ספירת תשובות מתוך תת-קולקשן "responses"
-        const answersSnap = await getDocs(
+        // 1. ספירת תשובות בסקר
+        const answersSnap   = await getDocs(
           collection(db, 'surveys', surveyDoc.id, 'responses')
         );
         const answeredCount = answersSnap.size;
 
-        // 3. קבלת המכסה (capacity) של הפעילות
-        const actDoc = await getDoc(doc(db, 'activities', activityId));
-        const capacity = actDoc.exists()
-          ? actDoc.data().capacity || 0
+        // 2. מציאת כמות נרשמים (participants) מתוך allActivities
+        const act = allActivities.find(a => a.id === activityId);
+        if (!act) continue;
+
+        const registeredCount = Array.isArray(act.participants)
+          ? act.participants.length
           : 0;
 
-        detailsArr.push({
-          title:      surveyData.headline,
-          registered: capacity,
-          answered:   answeredCount
-        });
+        totalAnswered   += answeredCount;
+        totalRegistered += registeredCount;
 
-        totalAnswered += answeredCount;
-        totalCapacity += capacity;
+        detailsArr.push({
+          id            : surveyDoc.id,
+          name          : surveyData.headline,
+          activityName  : act.name   || '',
+          registered    : registeredCount,
+          answered      : answeredCount,
+          notAnswered   : registeredCount - answeredCount
+        });
       }
 
-      // 4. עדכון ה-state של הפרטים ושל הדונאט
       setSurveyDetails(detailsArr);
       setSurveyBreakdown([
         { id: 'ענו',     value: totalAnswered,               color: '#7e64e0' },
-        { id: 'לא ענו', value: totalCapacity - totalAnswered, color: '#3de1da' }
+        { id: 'לא ענו', value: Math.max(totalRegistered - totalAnswered, 0),       color: '#3de1da' }
       ]);
     })();
-  }, []);
-
-
-  useEffect(() => {
-  (async () => {
-    const snap = await getDocs(collection(db, 'activities'));
-
-    /* ---- RAW activities (כפי שהן) ---- */
-    const raw = snap.docs.map(d => d.data());
-    setAllActivities(raw);                     // <-- חדש
-
-    /* ---- Tag statistics ---- */
-    const rows = raw.flatMap(d => {
-      const participants = Array.isArray(d.participants)
-        ? d.participants.length
-        : 0;
-      const capacity = d.capacity ?? 0;
-
-      return (d.tags ?? []).map(tag => ({
-        tag,
-        participants,
-        capacity,
-      }));
-    });
-    setTagStats(rows);
-  })();
-}, []);
+  }, [allActivities]);
 
 
 
@@ -344,18 +327,21 @@ useEffect(() => {
     >
       {/* === שורת KPI-ים (לצד זה) === */}
       
-      <div style={{ display: 'flex', gap: 16 }}>
-        <DailyVisitsCard  count={dailyVisitors} />
-        <WeeklyVisitsCard count={weeklyVisitors}
-                          deltaPct={changePercent} />
-      </div>
+     <div style={{ display: 'flex', gap: 16 }}>
+    <div style={{ flex: 1 }}>
+      <DailyVisitsCard  count={dailyVisitors} />
+    </div>
+    <div style={{ flex: 1 }}>
+      <WeeklyVisitsCard count={weeklyVisitors} deltaPct={changePercent} />
+    </div>
+  </div>
 
           {/* דונאט: סוגי משתמשים */}
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(2,200px)',  // 2 עמודות קבועות
-              gap: 40,
+              gap: 50,
               justifyContent: 'right',                // יישור אופקי
               marginTop: 8 
             }}
@@ -368,31 +354,26 @@ useEffect(() => {
             />
 
           {/* דונאט: היענות לסקרים */}
-          <div style={{ position: 'relative' }}>
-            <DonutChart
-              title="היענות לסקרים"
-              data={surveyBreakdown}
-              size={180}
-              colors={['#7e64e0', '#3de1da']}
-            />
-
-           {/* <Link to="/survey-details" state={{ surveyDetails }}>
-            <button
-              style={{
-                padding: '4px 6px',
-                fontSize: '12px',
-                border: 'none',
-                background: '#7e64e0',
-                color: '#fff',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              ←
+        <DonutChart
+          title="היענות לסקרים"
+          data={surveyBreakdown}
+          size={180}
+          colors={['#7e64e0', '#3de1da']}
+        >
+          <Link to="/survey-details" state={{ surveyDetails }} style={{ textDecoration: 'none' }}>
+            <button style={{
+              padding: '6px 12px',
+              background: '#7e64e0',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '12px'
+            }}>
+              פירוט סקרים
             </button>
-          </Link> */}
-
-            </div>
+          </Link>
+        </DonutChart>
         </div>
         </div>
 
@@ -411,7 +392,7 @@ useEffect(() => {
           }}>
             פיזור גאוגרפי של המשתמשים
           </h3>
-          <JerusalemMap locations={locations} />
+          <JerusalemMap locations={locations}/>
         </div>
 
         {/* ─────────────────────── שאר הווידג׳טים מתחת ─────────────────────── */}
@@ -445,7 +426,7 @@ useEffect(() => {
 
         {/* Line Chart – registrations by hour/day */}
         <div style={{ ...cardStyle, gridColumn: 1, gridRow: 1  }}>
-          <h3 /* … */>הרשמות לפי שעה ויום</h3>
+          <h3 /* … */> הרשמות לפי שעה ויום בשבוע שעבר</h3>
           <RegistrationsLineChart activities={allActivities} />
         </div>
       </div>
