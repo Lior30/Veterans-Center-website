@@ -8,7 +8,7 @@ import { ResponsivePie } from '@nivo/pie';
  * @param data    [{ id, value, color }]
  * @param size    קוטר (px)
  */
-export default function DonutChart({ title, data, size = 180 }) {
+export default function DonutChart({ title, data, size = 200, children }) {
   return (
     <div
       style={{
@@ -61,24 +61,42 @@ export default function DonutChart({ title, data, size = 180 }) {
         />
       </div>
 
-      {/* ───────── מקרא ───────── */}
-
-
+      {/* ───────── כפתור + מקרא בשורה אחת ───────── */}
       <div style={{
-        marginTop : 12,
-        display   : 'flex',
-        flexDirection: 'column',
-        gap       : 4
+        marginTop: 12,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%'
       }}>
-        {data.map(d => (
-          <div key={d.id} style={{ display:'flex', alignItems:'center', gap:6 }}>
-            <span style={{
-              width:12, height:12, borderRadius:'50%', background:d.color
-            }}/>
-            <span style={{ fontSize:13, color:'#495057' }}>{d.id}</span>
+
+        {/* המקרא בצד ימין */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 4
+        }}>
+          {data.map(d => (
+            <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{
+                width: 12,
+                height: 12,
+                borderRadius: '50%',
+                background: d.color
+              }}/>
+              <span style={{ fontSize: 13, color: '#495057' }}>{d.id}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* הכפתור בצד שמאל */}
+        {children && (
+          <div>
+            {children}
           </div>
-        ))}
+        )}
+
       </div>
-    </div>
+          </div>
   );
 }
