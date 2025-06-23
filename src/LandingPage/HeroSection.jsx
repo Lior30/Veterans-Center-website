@@ -19,7 +19,7 @@ export default function HeroSection({ userProfile, onOpenIdentify, onOpenMyActiv
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  /* ───── rotating banners ───── */
+  /*rotating banners */
   const [banners, setBanners] = useState([]);
   const [idx, setIdx] = useState(0);
   const [visible, setVisible] = useState(true);
@@ -55,7 +55,7 @@ export default function HeroSection({ userProfile, onOpenIdentify, onOpenMyActiv
     };
   }, [banners]);
 
-  /* ───── contact details ───── */
+  /*contact details*/
   const [contact, setContact] = useState({ contactPhone: "", contactWhatsapp: "" });
   useEffect(() => {
     ContactService.get().then((d) =>
@@ -68,7 +68,7 @@ export default function HeroSection({ userProfile, onOpenIdentify, onOpenMyActiv
 
   const bgUrl = banners[idx] ?? "";
 
-  /* ───── JSX ───── */
+  /*JSX*/
   return (
     <Box
       component="section"

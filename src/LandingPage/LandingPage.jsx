@@ -75,13 +75,13 @@ const surveysRef    = useRef();
 useEffect(() => {
   let allActivities = [];
 
-  // קבלת פעילויות באופן מנוי רציף
+  // getting activities from service
   const activitiesUnsub = ActivityService.subscribe((list) => {
     allActivities = list;
     setActivities(list);
   });
 
-  // קבלת פליירים באופן מנוי רציף
+  // getting flyers from service
   const flyersUnsub = FlyerService.subscribe((flyersData) => {
     const now = new Date();
     const activitiesById = Object.fromEntries(allActivities.map((a) => [a.id, a]));
@@ -138,7 +138,7 @@ useEffect(() => {
         const allMessages = await MessageService.listActive();
 
         if (!userProfile || !userProfile.id) {
-          // משתמש לא מזוהה או אין מזהה – רק הודעות כלליות
+          // user not identified, show all messages without activity filter
           setMessages(allMessages.filter((m) => !m.activityId));
         } else {
           const acts = await ActivityService.getUserActivities(userProfile.id);
@@ -170,22 +170,22 @@ useEffect(() => {
   if (!cancelDialog.activityId || !userProfile?.phone) return;
 
   try {
-    // 1. הסרה מהמסמך Activity (עפ״י id)
+    // 1. download activity from service
     await ActivityService.removeUser(cancelDialog.activityId, {
       phone: userProfile.phone,
       name: userProfile.name,
     });
 
-    // 2. מציאת שם הפעילות
+    // 2. activity name
     const act = activities.find((a) => a.id === cancelDialog.activityId);
     const actName = act?.name;
 
-    // 3. הסרה משדה activities (עפ״י שם)
+    // 3. takedown from user profile
     if (actName) {
       await UserService.removeActivity(userProfile.phone, actName);
     }
 
-    // 4. עדכון state מקומי
+    // 4. update local state
     setUserProfile((prev) => ({
       ...prev,
       activities: prev.activities.filter((n) => n !== actName),
@@ -198,24 +198,24 @@ useEffect(() => {
     alert("אירעה שגיאה בביטול ההרשמה");
   }
 };
-/** החזרת שם פעילות לפי id; אם id כבר שם – מחזיר אותו כמו שהוא */
+/** reterns by name and not id */
 const getActivityName = (idOrName) => {
-  // חיפוש ברשימת הפעילויות שהוטענה ל-state
+  //search by id and return name
   const act = activities.find((a) => a.id === idOrName);
   return act ? act.name : idOrName;
 };
 
 const handleFillSurvey = (survey) => {
-  const tagRaw = (survey.of_activity || "").trim();   // מה שמגיע מהסקר
-  const tag = getActivityName(tagRaw);                // מתרגם id→name (או משאיר שם)
+  const tagRaw = (survey.of_activity || "").trim();   // what we get from the survey
+  const tag = getActivityName(tagRaw);                // transform to name
 
-  // סקר כללי / ללא־שיוך
+  // general survey, no tag
   if (!tag || tag === "כללי") {
     openDialog("survey", survey.id);
     return;
   }
 
-  // רשימת שמות הפעילויות של המשתמש
+  // list of activities in user profile
   const acts = (userProfile?.activities || []).map((s) => s.trim());
 
   if (acts.includes(tag)) {
@@ -272,8 +272,8 @@ const handleFillSurvey = (survey) => {
     {/* Calendar (Activities) */}
 {/* Calendar (Activities) */}
 <Box
-  id="calendar-view"    // ← ה-ID שאליו נדלג
-  tabIndex={-1}         // ← כדי שניתן יהיה להתמקד בו עם focus()
+  id="calendar-view"    
+  tabIndex={-1}         
   ref={calendarRef}
 >
   <CalendarPreview

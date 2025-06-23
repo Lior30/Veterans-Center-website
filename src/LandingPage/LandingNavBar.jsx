@@ -19,7 +19,7 @@ export default function LandingNavBar({
   onScrollToMessages,
   onScrollToActivities,
   onScrollToSurveys,
-  justIdentified = false,         // ← prop ברירת-מחדל
+  justIdentified = false,         
 }) {
   const theme    = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -44,7 +44,7 @@ export default function LandingNavBar({
     );
   }, []);
 
-  /* nav buttons – “סקרים” רק למזוהים */
+  /* navigation buttons */
   const navButtons = [
     ...(justIdentified ? [{ label: "סקרים",     onClick: onScrollToSurveys   }] : []),
     { label: "לוח שנה",  onClick: onScrollToActivities },

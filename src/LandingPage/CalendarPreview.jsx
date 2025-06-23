@@ -207,12 +207,12 @@ export default function CalendarPreview({
               border:       "none !important",
               borderRadius: 0,
               margin: "3px 0",    
-              height: "auto !important"           // ריווח בין אירועים
+              height: "auto !important"          
             },
 
            "& .fc-timegrid-event": {
-  position: "relative !important",  // ⟵ העיקר!
-  zIndex: 5,                        // מעל קווי הטבלה
+  position: "relative !important",  
+  zIndex: 5,                        
   height: "auto !important",
   border: "none !important",
   borderRadius: "8px",
@@ -273,7 +273,7 @@ export default function CalendarPreview({
               slotDuration="01:00:00"
               slotLabelInterval="01:00"
               eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
-displayEventEnd={false}          // (תכונה מובנית ב-FullCalendar ≥ v6)
+displayEventEnd={false}          
 
               slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
 
@@ -284,7 +284,7 @@ displayEventEnd={false}          // (תכונה מובנית ב-FullCalendar ≥
                 const frame = info.el.querySelector(".fc-event-main");
                 if (!title || !frame) return;
 
-                // כווץ פונט עד שהכותרת נכנסת
+                // font size adjustment
                 let fs = parseFloat(getComputedStyle(title).fontSize);
                 const fits = () =>
                   title.scrollHeight <= frame.clientHeight &&
@@ -297,7 +297,7 @@ displayEventEnd={false}          // (תכונה מובנית ב-FullCalendar ≥
               }}
 
              eventContent={(renderInfo) => {
-const startOnly = renderInfo.timeText;   // כבר נקי
+const startOnly = renderInfo.timeText;   
   return (
     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
       <Typography
@@ -327,9 +327,7 @@ const startOnly = renderInfo.timeText;   // כבר נקי
   );
 }
 
-/* -------------------------------------------------- */
-/* עזרונים קטנים לשמירה על קוד נקי                   */
-/* -------------------------------------------------- */
+/* helpers */
 
 function ToggleButton({ title, icon, label, active, onClick }) {
   const theme = useTheme();

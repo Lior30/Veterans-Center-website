@@ -1,8 +1,8 @@
 import { styled, Button } from "@mui/material";
 
-/*  כפתור Call-To-Action מעוצב  */
+/*  button Call-To-Action  */
 const CtaButton = styled(Button)(({ theme, color = "primary" }) => {
-  /* בוחרים צבע-בסיס מתוך הפלטה  */
+  /* choose color */
   const pal      = theme.palette[color] || theme.palette.primary;
   const main     = pal.main;
   const dark     = pal.dark  || theme.palette[color]?.dark  || main;
@@ -17,25 +17,25 @@ const CtaButton = styled(Button)(({ theme, color = "primary" }) => {
     padding: theme.spacing(1.4, 3.5),
     color: theme.palette.getContrastText(main),
 
-    /* ─── רקע גרדיינט וצל ─── */
+    /* shadow */
     background: `linear-gradient(135deg, ${light} 0%, ${main} 50%, ${dark} 100%)`,
     boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
     transition: "transform .2s, box-shadow .25s, opacity .25s",
 
-    /* ─── אייקון (rtl) ─── */
+    /* icon*/
     "& .MuiButton-startIcon, & .MuiButton-endIcon": {
       marginLeft: theme.spacing(1),
       marginRight: 0,
     },
 
-    /* ─── Hover ─── */
+    /* Hover */
     "&:hover": {
       transform: "translateY(-3px)",
       boxShadow: "0 8px 22px rgba(0,0,0,0.25)",
       background: `linear-gradient(135deg, ${light} 0%, ${main} 30%, ${dark} 80%)`,
     },
 
-    /* ─── Active (לחיצה) ─── */
+    /* Active (press) */
     "&:active": {
       transform: "translateY(0)",
       boxShadow: "0 4px 12px rgba(0,0,0,0.2) inset",

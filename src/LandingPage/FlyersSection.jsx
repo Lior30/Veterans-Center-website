@@ -29,7 +29,7 @@ const formatDateNumeric = (isoDate) => {
 };
 
 /* ARROWS */
-/* חץ כללי */
+
 const ArrowBtn = styled(IconButton)(({ theme }) => ({
   position: "absolute",
   top: "50%",
@@ -42,10 +42,10 @@ const ArrowBtn = styled(IconButton)(({ theme }) => ({
   background: "linear-gradient(135deg,#8e24aa 0%,#6a1b9a 100%)",
   boxShadow: "0 3px 10px rgba(106,27,154,.4)",
   "&:hover": { background: "linear-gradient(135deg,#7b1fa2 0%,#4a148c 100%)" },
-  "&::before": {               /* ☚ מבטל את glyph ברירת-המחדל של slick */
+  "&::before": {               
     content: "none",
   },
-  "&.slick-disabled": {        /* כשהחץ מנוטרל – מסתירים אותו לגמרי */
+  "&.slick-disabled": {        // when disabled 
     opacity: 0,
     pointerEvents: "none",
   },
@@ -56,7 +56,7 @@ const ArrowBtn = styled(IconButton)(({ theme }) => ({
   },
 }));
 
-/* חצים ימין/שמאל */
+/* ARROWS LEFT&RIGHT*/
 const PrevArrow = ({ className, style, onClick }) => (
   <ArrowBtn className={className} style={style} onClick={onClick} sx={{ left: -22 }}>
     <ArrowBackIosNewIcon fontSize="small" />

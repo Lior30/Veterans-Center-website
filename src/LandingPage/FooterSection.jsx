@@ -15,7 +15,7 @@ import MailIcon from "@mui/icons-material/Mail";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import ContactService from "../services/ContactService";
 
-/* רקע הפוטר */
+/* backround for flyer*/
 const FooterBox = styled(Box)(({ theme }) => ({
   backgroundColor: "#fff",
   color: "#9B3FAF",
@@ -25,7 +25,7 @@ const FooterBox = styled(Box)(({ theme }) => ({
     : "rgba(0,0,0,0.5)"}`
 }));
 
-/* כותרת מקטע */
+/* headline*/
 const SectionTitle = styled(Typography)(({ theme }) => ({
   fontWeight: 700,
   marginBottom: theme.spacing(1.5),
@@ -33,7 +33,7 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
   [theme.breakpoints.down("sm")]: { fontSize: "1.1rem" },
 }));
 
-/* אייקון + תוכן */
+/* icon+content*/
 const InfoLine = ({ icon: Icon, children }) => (
   <Box display="flex" alignItems="center" mb={1}>
     <Icon sx={{ ml: 1, fontSize: 20 }} />
@@ -41,7 +41,7 @@ const InfoLine = ({ icon: Icon, children }) => (
   </Box>
 );
 
-/* כפתור־קישור */
+/* button+link*/
 const LinkButton = (props) => {
   const theme = useTheme();
   return (
@@ -87,7 +87,7 @@ export default function FooterSection({
           textAlign={{ xs: "center", md: "right" }}
           justifyContent="space-between"
         >
-          {/* מרכז ותיקים */}
+          {/* senior center*/}
           <Grid item xs={12} md={4}>
             <Box
               display="flex"
@@ -103,7 +103,7 @@ export default function FooterSection({
             <LinkButton onClick={onScrollTop}>לראש האתר</LinkButton>
           </Grid>
 
-          {/* צור קשר */}
+          {/* getintact*/}
           <Grid item xs={12} md={4}>
             <SectionTitle component="h6">צור קשר</SectionTitle>
 
@@ -129,7 +129,7 @@ export default function FooterSection({
             </InfoLine>
           </Grid>
 
-          {/* כניסות */}
+          {/* enterys*/}
           <Grid item xs={12} md={4}>
             <SectionTitle component="h6">כניסות</SectionTitle>
             <Box mb={1}>
