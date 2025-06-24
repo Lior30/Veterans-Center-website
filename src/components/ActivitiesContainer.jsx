@@ -16,7 +16,7 @@ const initialForm = {
   capacity: "",
   flyerId: "",
   recurring: false,
-  weekdays: [],     // 0=Sun … 6=Sat
+  weekdays: [],     
   participants: [],
   registrationCondition: "",
   tags: [],

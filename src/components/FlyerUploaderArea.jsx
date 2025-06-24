@@ -88,7 +88,7 @@ export default function FlyerUploaderArea({ onUpload }) {
       </Typography>
 
       <Stack spacing={isMobile ? 2 : 3}>
-        {/* שם הפלייר */}
+        {/*flyer name*/}
         <TextField
           label="שם הפלייר"
           variant="outlined"
@@ -97,7 +97,7 @@ export default function FlyerUploaderArea({ onUpload }) {
           onChange={(e) => setName(e.target.value)}
         />
 
-        {/* בחירת פעילות */}
+        {/* choose ac*/}
         <FormControl fullWidth>
           <InputLabel id="activity-select-label">בחרי פעילות</InputLabel>
           <Select
@@ -117,7 +117,7 @@ export default function FlyerUploaderArea({ onUpload }) {
           </Select>
         </FormControl>
 
-        {/* תאריכי הצגה */}
+        {/* dates*/}
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
           <TextField
             label="הצג החל מ־"
@@ -168,7 +168,7 @@ export default function FlyerUploaderArea({ onUpload }) {
           <input type="file" accept="image/*,application/pdf" onChange={handleFileChange} />
         </Box>
 
-        {/* כפתור שמירה */}
+        {/*  save button*/}
         <CtaButton
           onClick={handleSubmit}
           disabled={!name.trim() || !file || !activityId}

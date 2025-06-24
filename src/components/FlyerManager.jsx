@@ -1,4 +1,4 @@
-// =========  FlyerManager.jsx  =========
+//FlyerManager.jsx
 import React, { useState, useEffect, useRef } from "react";
 import FlyerUploader from "./FlyerUploaderArea.jsx";
 import FlyerService from "../services/FlyerService.js";
@@ -7,10 +7,10 @@ export default function FlyerManager() {
   const [flyers, setFlyers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  /* זוכר מאיזה אינדקס גוררים */
+  /*remember the index*/
   const dragIndexRef = useRef(null);
 
-  /* ───── טעינה ראשונית ───── */
+  /*first load */
   useEffect(() => {
     (async () => {
       const list = await FlyerService.getFlyers();
@@ -19,7 +19,7 @@ export default function FlyerManager() {
     })();
   }, []);
 
-  /* ───── Drag & Drop ───── */
+  /*Drag & Drop*/
   const handleDragStart = (_, idx) => (dragIndexRef.current = idx);
 
   const handleDragOver = (e) => e.preventDefault();
@@ -29,20 +29,20 @@ export default function FlyerManager() {
     if (dragIdx === null || dragIdx === hoverIdx) return;
 
     const updated = [...flyers];
-    // החלפה במערך
+    // switצching the two flyers in the array
     [updated[dragIdx], updated[hoverIdx]] = [
       updated[hoverIdx],
       updated[dragIdx],
     ];
-    // עדכון order בשניהם
+    // and updating their order
     updated[dragIdx].order = dragIdx;
     updated[hoverIdx].order = hoverIdx;
 
-    // UI מיידי
+    // UI update
     setFlyers(updated);
     dragIndexRef.current = hoverIdx;
 
-    // ושמירה ב-DB
+    //  saving the new order to the server
     try {
       await FlyerService.swapOrder(
         { id: updated[dragIdx].id, order: dragIdx },
@@ -50,30 +50,30 @@ export default function FlyerManager() {
       );
     } catch (err) {
       alert("שמירת הסדר נכשלה: " + err.code);
-      // משחזר כדי לא להישאר לא-מסונכרן
+      // if saving fails, revert the UI change
       const fresh = await FlyerService.getFlyers();
       setFlyers(fresh);
       dragIndexRef.current = null;
     }
   };
 
-  /* ───── מחיקה ───── */
+  /*delete */
   const handleDelete = async (flyer) => {
     if (!window.confirm(`למחוק את "${flyer.name}"?`)) return;
 
     try {
       await FlyerService.deleteFlyer(flyer);
-      // רענון הרשימה אחרי מחיקה
+      //remove from UI
       setFlyers(await FlyerService.getFlyers());
     } catch (err) {
       alert("המחיקה נכשלה: " + err.code);
     }
   };
 
-  /* ───── רענון אחרי העלאה ───── */
+  /* refresh*/
   const refreshList = async () => setFlyers(await FlyerService.getFlyers());
 
-  /* ───── UI ───── */
+  /*UI */
   return (
     <div
       dir="rtl"
@@ -81,10 +81,10 @@ export default function FlyerManager() {
     >
       <h2 style={{ textAlign: "center", marginBottom: 32 }}>ניהול פלייארים</h2>
 
-      {/* אזור העלאה */}
+      {/* upload area*/}
       <FlyerUploader onUpload={refreshList} />
 
-      {/* רשימה */}
+      {/* list*/}
       <div style={{ marginTop: 40 }}>
         <h3 style={{ marginBottom: 12 }}>פלייארים קיימים:</h3>
         {loading ? (
@@ -132,7 +132,7 @@ export default function FlyerManager() {
                   {flyer.name}
                 </p>
 
-                {/* כפתור מחיקה */}
+                {/* delete button*/}
                 <button
                   onClick={() => handleDelete(flyer)}
                   style={{

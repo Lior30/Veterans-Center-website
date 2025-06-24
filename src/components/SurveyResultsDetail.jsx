@@ -10,7 +10,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { db } from "../firebase.js";
 
 export default function SurveyResultsDetail() {
-  const { id } = useParams();           // survey ID
+  const { id } = useParams();           
   const navigate = useNavigate();
   const [survey, setSurvey] = useState(null);
   const [responses, setResponses] = useState([]);

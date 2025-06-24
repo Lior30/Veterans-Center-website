@@ -1,5 +1,5 @@
 <Grid container spacing={3} sx={{ py: 4 }}>
-  {[ /* הודעות, פעילויות, סקרים, לוח שנה */ ].map((mod, i) => (
+  {[ /* everything*/ ].map((mod, i) => (
     <Grid item xs={12} sm={6} md={3} key={i}>
       <Card
         onClick={mod.onClick}

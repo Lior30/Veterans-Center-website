@@ -25,12 +25,12 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 
 export default function MessageRepliesContainer() {
-  const { id } = useParams();                 // ID של ההודעה
+  const { id } = useParams();                 
   const [message, setMessage] = useState(null);
   const [replies, setReplies] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ——————————— load message plus replies ———————————
+  //load message plus replies
   useEffect(() => {
     async function load() {
     
@@ -52,14 +52,14 @@ export default function MessageRepliesContainer() {
     load();
   }, [id]);
 
-  // ——————————— delete reply ———————————
+  //delete reply 
   async function handleDelete(replyId) {
     const yes = window.confirm("למחוק את התגובה לצמיתות?");
     if (!yes) return;
 
     try {
       await deleteDoc(doc(db, "messages", id, "replies", replyId));
-      // הסרה מה-state כדי לעדכן מסך מיידית
+      // update local state
       setReplies((prev) => prev.filter((r) => r.id !== replyId));
     } catch (err) {
       console.error("Failed to delete reply:", err);
@@ -67,7 +67,7 @@ export default function MessageRepliesContainer() {
     }
   }
 
-  // ——————————— render ———————————
+  //render 
   if (loading) {
     return (
       <Container sx={{ py: 4 }}>

@@ -1,4 +1,4 @@
-// =========  src/components/MessageListContainer.jsx  =========
+//src/components/MessageListContainer.jsx
 import React, { useState, useEffect, useRef } from "react";
 import {
   collection,
@@ -31,7 +31,7 @@ import { db } from "../firebase";
 import { Link } from "react-router-dom";
 
 /* ────────────────  Helpers  ──────────────── */
-// תאריך קריא בעברית
+// hebrew date formatting
 const formatTimestamp = (ts) => {
   if (!ts) return "";
   if (typeof ts === "string") return new Date(ts).toLocaleDateString("he-IL");
@@ -41,7 +41,7 @@ const formatTimestamp = (ts) => {
   return new Date(ts).toLocaleDateString("he-IL");
 };
 
-// תאריך במבנה YYYY-MM-DD לשדות input[type=date]
+// type=date conversion for input fields
 const toInputDate = (ts) => {
   if (!ts) return "";
   let d;
@@ -52,7 +52,7 @@ const toInputDate = (ts) => {
   else d = new Date(ts);
   return d.toISOString().slice(0, 10);
 };
-/* ──────────────────────────────────────────── */
+
 
 export default function MessageListContainer() {
   const [messages, setMessages]           = useState([]);
@@ -61,14 +61,14 @@ export default function MessageListContainer() {
   const [editTitle, setEditTitle]         = useState("");
   const [editBody, setEditBody]           = useState("");
   const [editActivity, setEditActivity]   = useState("");
-  const [editStartDate, setEditStartDate] = useState(""); // YYYY-MM-DD
-  const [editEndDate, setEditEndDate]     = useState(""); // YYYY-MM-DD
+  const [editStartDate, setEditStartDate] = useState(""); 
+  const [editEndDate, setEditEndDate]     = useState(""); 
   const dragIndexRef = useRef(null);
 
-  // אפשרויות לדוגמה
+  // options for activity selection
   const activityOptions = ["פעילות א'", "פעילות ב'", "פעילות ג'"];
 
-  /* ─── Load messages & normalize order ─── */
+  /* Load messages & normalize order */
   useEffect(() => {
     async function load() {
       const snap = await getDocs(collection(db, "messages"));
@@ -83,13 +83,13 @@ export default function MessageListContainer() {
         return {
           id: d.id,
           ...data,
-          // המרות תאריך כבר עכשיו
+          // date normalization
           startDate: data.startDate,
           endDate  : data.endDate,
         };
       });
 
-      // השלמת order חסרים
+      // orer normalization
       msgs.forEach((m) => {
         if (typeof m.order !== "number") {
           maxOrder += 1;
@@ -106,7 +106,7 @@ export default function MessageListContainer() {
     load();
   }, []);
 
-  /* ─── Swap helpers ─── */
+  /*Swap helpers */
   async function swapByIndex(i1, i2) {
     if (i1 < 0 || i2 < 0 || i1 >= messages.length || i2 >= messages.length)
       return;
@@ -131,7 +131,7 @@ export default function MessageListContainer() {
   }
   const move = (idx, dir) => swapByIndex(idx, idx + dir);
 
-  /* ─── Drag handlers ─── */
+  /*Drag handlers*/
   const handleDragStart = (idx) => () => (dragIndexRef.current = idx);
   const handleDragOver = (e) => e.preventDefault();
   const handleDrop = (targetIdx) => async (e) => {
@@ -142,14 +142,14 @@ export default function MessageListContainer() {
     await swapByIndex(src, targetIdx);
   };
 
-  /* ─── Delete ─── */
+  /*Delete */
   const handleDelete = async (id) => {
     if (!window.confirm("מחק את ההודעה הזו?")) return;
     await deleteDoc(doc(db, "messages", id));
     setMessages((prev) => prev.filter((m) => m.id !== id));
   };
 
-  /* ─── Begin editing ─── */
+  /*Begin editing*/
   const startEditing = (m) => {
     setEditingId(m.id);
     setEditTitle(m.title || "");
@@ -160,7 +160,7 @@ export default function MessageListContainer() {
   };
   const cancelEditing = () => setEditingId(null);
 
-  /* ─── Save edits ─── */
+  /*Save edits*/
   const saveEditing = async () => {
     const ref = doc(db, "messages", editingId);
     await updateDoc(ref, {
@@ -194,7 +194,7 @@ export default function MessageListContainer() {
     setEditingId(null);
   };
 
-  /* ─── Render ─── */
+  /*Render*/
   if (loading) return <Typography align="center">טוען...</Typography>;
 
   return (
@@ -281,7 +281,7 @@ export default function MessageListContainer() {
               </Stack>
             </Stack>
           ) : (
-            /* ─── DISPLAY MODE ─── */
+            /* DISPLAY MODE*/
             <Stack direction="row" justifyContent="space-between" spacing={2}>
               <Stack>
                 <Typography variant="h6">{m.title}</Typography>

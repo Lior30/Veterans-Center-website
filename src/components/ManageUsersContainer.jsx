@@ -51,7 +51,7 @@ export default function ManageUsersContainer() {
       console.error
     );
 
-    // 2) Messages → נכנס ל־users
+    // 2) Survey Responses
     const unsubMsgs = onSnapshot(
       collection(db, "messages"),
       snap => {
@@ -85,25 +85,23 @@ export default function ManageUsersContainer() {
     );
 
 
-    // 5) Users (הכללי, כולל אלו שנוספו בפעולות 2+3)
+    // 3) Users (Survey Responses)
     const unsubUsers = onSnapshot(
       collection(db, "users"),
       snap => setManual(snap.docs.map(d => normalizeUser(d.data()))),
       console.error
     );
 
-    // **הנה ה־cleanup המתוקן**:
+    
     return () => {
       unsubRegs();
       unsubMsgs();
-      // unsubSurveyResponses();
-      // unsubReplies();
       unsubUsers();
     };
   }, []);
-  /* ──────────────────────────────────────────────────────────────── */
+  
 
-  // חיבור כל המקורות בלי כפילויות (key = phone)
+  // key: "phone" is used to deduplicate users
   const allMap = [...regs, ...surveys, ...replies, ...manual]
     .filter(u => u.phone)
     .reduce((acc, u) => {
@@ -114,7 +112,7 @@ export default function ManageUsersContainer() {
       return acc;
     }, {});
   const allUsers = Object.values(allMap);
-  /* ──────────────────────────────────────────────────────────────── */
+  
 
   const inAct = new Set(regs   .map(u => u.phone));
   const inSur = new Set(surveys.map(u => u.phone));
@@ -133,7 +131,7 @@ export default function ManageUsersContainer() {
       default:         return true;
     }
   });
-  /* ──────────────────────────────────────────────────────────────── */
+  
 
   return (
     <ManageUsersDesign

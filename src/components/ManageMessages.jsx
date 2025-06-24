@@ -1,4 +1,4 @@
-// =========  src/components/ManageMessages.jsx  =========
+//src/components/ManageMessages.jsx 
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Container, Box, Button, Typography } from "@mui/material";
@@ -10,7 +10,7 @@ export default function ManageMessages() {
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
-      {/* כותרת + כפתור “יצירת הודעה חדשה” */}
+      {/* "new message" */}
       <Box
         sx={{
           display: "flex",
@@ -29,7 +29,7 @@ export default function ManageMessages() {
         </Button>
       </Box>
 
-      {/* הרשימה עצמה */}
+      {/* the list*/}
       <MessageListContainer />
     </Container>
   );
