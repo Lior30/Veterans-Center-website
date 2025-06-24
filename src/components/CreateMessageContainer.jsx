@@ -1,4 +1,4 @@
-// =========  src/components/CreateMessageContainer.jsx  =========
+//src/components/CreateMessageContainer.jsx
 import { useState, useEffect } from "react";
 import CreateMessageDesign   from "./CreateMessageDesign.jsx";
 import MessageService        from "../services/MessageService.js";
@@ -12,24 +12,24 @@ export default function CreateMessageContainer() {
     title     : "",
     body      : "",
     activityId: "",
-    startDate : "",   // yyyy-mm-dd
+    startDate : "",   
     endDate   : "",
   });
 
   const [errors,  setErrors]  = useState({});
   const [success, setSuccess] = useState(false);
 
-  /* ─── מאזין חי לפעילויות (במקום list()) ─── */
+  
   useEffect(() => {
     const unsub = ActivityService.subscribe(setActivities);
     return () => unsub();   // cleanup בהחלפת דף
   }, []);
 
-  /* ─── שינויי טופס ─── */
+  
   const onChange = (e) =>
     setValues({ ...values, [e.target.name]: e.target.value });
 
-  /* ─── שליחה ─── */
+  
   const onSubmit = async () => {
     const errs = {};
     if (!values.title.trim()) errs.title = "יש להזין כותרת";

@@ -17,7 +17,7 @@ export default function CreateSurveyContainer() {
 
   const [expiresAt, setExpiresAt] = useState(() => {
   const now = new Date();
-  now.setSeconds(0, 0); // clear seconds and ms
+  now.setSeconds(0, 0); 
 
   const pad = (n) => n.toString().padStart(2, "0");
 
@@ -115,7 +115,7 @@ export default function CreateSurveyContainer() {
       return;
     }
 
-    // Build the payload – if “כללי”, set activityId=כללי
+
     const payload = {
   headline: title,
   questions,

@@ -66,7 +66,7 @@ export default function CreateMessageDesign({
           </Select>
         </FormControl>
 
-        {/* תאריכים */}
+        {/* dates*/}
         <TextField
           label="הצג החל מ־"
           name="startDate"

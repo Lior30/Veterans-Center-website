@@ -65,8 +65,8 @@ export default function IdentifyPage({ onSuccess }) {
         throw new Error('User not found in database and removed from auth');
       }
       else {
-        sessionStorage.setItem("userPhone", trimmed);       // ✅ שמירת טלפון
-        sessionStorage.setItem("justIdentified", "true");   // ✅ הוספנו את זה!
+        sessionStorage.setItem("userPhone", trimmed);       
+        sessionStorage.setItem("justIdentified", "true");   
       }
 
       setLoading(false);

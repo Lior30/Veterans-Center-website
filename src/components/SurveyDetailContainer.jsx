@@ -177,7 +177,7 @@ const handleChange = (qid, value) => {
     await saveSurveyResponse(id, {
       answers,
       submittedAt: new Date().toISOString(),
-      survey: survey.headline, // name of the survey
+      survey: survey.headline, 
       survey_date: arrayUnion(new Date().toISOString()),
     });
     try {

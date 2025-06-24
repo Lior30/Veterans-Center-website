@@ -16,21 +16,21 @@ import MessageService from "../services/MessageService.js";
 import ReplyContainer from "./ReplyContainer.jsx";
 
 /**
- * לוח הודעות ציבורי עם גרירה-ושחרור לשינוי סדר.
+ * PublicMessageBoardContainer component displays a list of public messages
  */
 export default function PublicMessageBoardContainer() {
   const [messages, setMessages] = useState([]);
   const [selectedMsg, setSelectedMsg] = useState(null);
-  const dragIndexRef = useRef(null); // כדי לזכור מי נגרר
+  const dragIndexRef = useRef(null); 
 
-  /* ─── טעינת ההודעות ─── */
+  /* load messages*/
   useEffect(() => {
     MessageService.listActive()
       .then((ms) => setMessages(ms.filter((m) => !m.activityId)))
       .catch(console.error);
   }, []);
 
-  /* ─── Handlers לגרירה ─── */
+  /*  Handlers for drag */
   const handleDragStart = (idx) => () => {
     dragIndexRef.current = idx;
   };
@@ -51,7 +51,7 @@ export default function PublicMessageBoardContainer() {
         { id: msgB.id, order: msgB.order }
       );
 
-      // עדכון מקומי מהיר
+      // fast update UI
       const updated = [...messages];
       updated[srcIdx] = msgB;
       updated[targetIdx] = msgA;
@@ -63,7 +63,7 @@ export default function PublicMessageBoardContainer() {
     }
   };
 
-  /* ─── UI ─── */
+  /*UI*/
   return (
     <>
       <Box>
@@ -132,7 +132,7 @@ export default function PublicMessageBoardContainer() {
         ))}
       </Box>
 
-      {/* דיאלוג השבה */}
+      {/* response dialoge*/}
       <Dialog
         open={Boolean(selectedMsg)}
         onClose={() => setSelectedMsg(null)}

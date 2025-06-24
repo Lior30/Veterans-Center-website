@@ -8,6 +8,7 @@ import {
   CardActionArea,
   CardContent,
   Typography,
+  Button,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
@@ -21,6 +22,7 @@ import GroupIcon        from "@mui/icons-material/Group";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
 import BarChartIcon     from "@mui/icons-material/BarChart";
 import ContactMailIcon  from "@mui/icons-material/ContactMail";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 
 import MessageService from "../services/MessageService";
 
@@ -46,20 +48,20 @@ export default function Home() {
     { label: "פרטי קשר",         icon: <ContactMailIcon  fontSize="large" />, to: "/contact-details"  },
   ];
 
-  const rows = [
-    adminItems.slice(0, 4),
-    adminItems.slice(4, 8),
-  ];
+  const rows = [adminItems.slice(0, 4), adminItems.slice(4, 8)];
 
   return (
     <Box
       sx={{
-        backgroundColor: theme.palette.mode === "light" ? "#faf9ff" : theme.palette.background.default,
-        pt: 0,                  // כאן
-        pb: { xs: 4, md: 6 },   // וכאן
+        backgroundColor:
+          theme.palette.mode === "light"
+            ? "#faf9ff"
+            : theme.palette.background.default,
+        pt: 0,
+        pb: { xs: 4, md: 6 },
       }}
     >
-      {/* פס עליון עם גרדיאנט + כותרת עם קו */}
+      {/* Top strip with gradient background + title + back button */}
       <Box
         sx={{
           background: `linear-gradient(135deg, ${theme.palette.primary.vlight} 0%, ${theme.palette.secondary.light} 100%)`,
@@ -70,31 +72,44 @@ export default function Home() {
         }}
       >
         <Container maxWidth="md">
-          <Typography
-            variant={isMobile ? "h4" : "h3"}
-            align="center"
-            sx={{
-              fontWeight: 700,
-              color: theme.palette.primary.dark,
-              position: "relative",
-              "&::after": {
-                content: '""',
-                display: "block",
-                width: 80,
-                height: 4,
-                borderRadius: 2,
-                background: theme.palette.primary.main,
-                mx: "auto",
-                mt: 1,
-              },
-            }}
-          >
-            דף ניהול מרכז ותיקים
-          </Typography>
+          {/* Title and back button */}
+          <Box display="flex" alignItems="center" justifyContent="space-between">
+            <Typography
+              variant={isMobile ? "h4" : "h3"}
+              sx={{
+                fontWeight: 700,
+                color: theme.palette.primary.dark,
+                position: "relative",
+                "&::after": {
+                  content: '""',
+                  display: "block",
+                  width: 80,
+                  height: 4,
+                  borderRadius: 2,
+                  background: theme.palette.primary.main,
+                  mt: 1,
+                },
+              }}
+            >
+              דף ניהול מרכז ותיקים
+            </Typography>
+
+            {/* ✨ Back-to-landing-page button */}
+            <Button
+              variant="outlined"
+              color="secondary"
+              component={RouterLink}
+              to="/"              // Update if your landing route is different
+              startIcon={<ArrowBackIosNewIcon />}
+              sx={{ fontWeight: 600 }}
+            >
+              לדף הנחיתה
+            </Button>
+          </Box>
         </Container>
       </Box>
 
-      {/* שתי שורות של 4 כרטיסים כל אחת */}
+      {/* Two rows of 4 cards each */}
       <Container maxWidth="lg" sx={{ pb: { xs: 6, md: 8 } }}>
         {rows.map((rowItems, rowIndex) => (
           <Grid
@@ -104,7 +119,7 @@ export default function Home() {
             key={rowIndex}
             sx={{ mb: rowIndex === 0 ? 4 : 0 }}
           >
-            {rowItems.map(it => (
+            {rowItems.map((it) => (
               <Grid item xs={12} sm={6} md={3} key={it.label}>
                 <Card
                   sx={{

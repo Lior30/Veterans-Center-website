@@ -234,7 +234,7 @@ export default function ContactDetailsAdmin() {
                   )}
                 </Box>
                 <Typography
-                  variant="h5"                // increased heading size
+                  variant="h5"                
                   sx={{
                     fontWeight: 600,
                     mb: 1,
@@ -244,9 +244,9 @@ export default function ContactDetailsAdmin() {
                   {message.title}
                 </Typography>
                 <Typography
-                  variant="body1"             // increased body size
+                  variant="body1"             
                   sx={{
-                    fontSize: '1.8rem',         // explicitly larger font
+                    fontSize: '1.8rem',         
                     lineHeight: 1.6,
                     color: 'text.primary'
                   }}
@@ -260,10 +260,10 @@ export default function ContactDetailsAdmin() {
                   variant="contained"
                   size="medium"
                   sx={{
-                    fontSize: '1.2rem',          // larger button font
+                    fontSize: '1.2rem',          
                     py: 1,
-                    px: 4,                       // slightly more horizontal padding
-                    // Use main colors for strong effect
+                    px: 4,                       
+                    
                     bgcolor: message.type === 'success' ? 'success.main' : 'error.main',
                     color: 'common.white',
                     '&:hover': {

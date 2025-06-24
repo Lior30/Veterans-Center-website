@@ -15,9 +15,7 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-//
-// BannerUploader: the upload form
-//
+
 function BannerUploader({ onUpload }) {
   const [title, setTitle] = useState("");
   const [file, setFile] = useState(null);
@@ -155,9 +153,7 @@ function BannerUploader({ onUpload }) {
   );
 }
 
-//
-// HomepageImagesDesign: the existing banners grid
-//
+
 export default function HomepageImagesDesign({
   banners,
   onUpload,

@@ -44,7 +44,7 @@ export default function CreateSurveyDesign({
       {/* *** UPDATED LABEL TEXT *** */}
       <div style={{ margin: "20px 0" }}>
         <label>
-          <strong>קשר סקר ל:</strong> {/* was "הסקר קשור ל:" */}
+          <strong>קשר סקר ל:</strong> {/*survey "was"" */}
           <select
             value={activityId}
             onChange={onActivityChange}

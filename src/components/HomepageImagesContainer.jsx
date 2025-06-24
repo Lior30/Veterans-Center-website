@@ -18,7 +18,7 @@ export default function HomepageImagesContainer() {
   const [banners, setBanners] = useState([]);
   const dragIndexRef = useRef(null);
 
-  /* ───── טעינה ראשונית ───── */
+  /* first load */
   useEffect(() => {
     load();
   }, []);
@@ -44,7 +44,7 @@ export default function HomepageImagesContainer() {
     );
   };
 
-  /* ───── Drag & Drop ───── */
+  /* Drag & Drop */
   const handleDragStart = (_, idx) => {
     dragIndexRef.current = idx;
   };
@@ -70,7 +70,7 @@ export default function HomepageImagesContainer() {
     }
   };
 
-  /* ───── שינוי משך הצגה ───── */
+  /* change */
   const handleDurationChange = (id, val) =>
     setBanners((prev) =>
       prev.map((b) => (b.id === id ? { ...b, durationSec: val } : b))
@@ -84,7 +84,7 @@ export default function HomepageImagesContainer() {
     }
   };
 
-  /* ───── העלאה / מחיקה ───── */
+  /* upload/delete */
   const reload = () => load();
   const handleDelete = async (banner) => {
     if (!window.confirm(`למחוק את "${banner.title}"?`)) return;
@@ -100,7 +100,7 @@ export default function HomepageImagesContainer() {
       }}
     >
       <Container maxWidth="lg">
-        {/* כותרת עליונה */}
+        {/* headline*/}
         <Typography
           variant={isMobile ? "h5" : "h4"}
           align="center"
@@ -125,7 +125,7 @@ export default function HomepageImagesContainer() {
           ניהול תמונות אווירה
         </Typography>
 
-        {/* העיצוב הראשי של הרשימה */}
+        {/* list design*/}
         <Stack spacing={4}>
           <HomepageImagesDesign
             banners={banners}

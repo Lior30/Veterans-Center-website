@@ -1,4 +1,4 @@
-// =========  src/components/MessageOrderManager.jsx  =========
+//src/components/MessageOrderManager.jsx
 import React, { useEffect, useState } from "react";
 import {
   Container,
@@ -15,7 +15,7 @@ export default function MessageOrderManager() {
   const [loading, setLoading]   = useState(true);
   const [messages, setMessages] = useState([]);
 
-  /* --- שליפה ראשונית --- */
+  
   useEffect(() => {
     MessageService.list().then((ms) => {
       ms.sort((a, b) => a.order - b.order);
@@ -24,25 +24,25 @@ export default function MessageOrderManager() {
     });
   }, []);
 
-  /* --- גרירה --- */
+
   const onDragEnd = async (result) => {
     if (!result.destination) return;
     const srcIdx = result.source.index;
     const dstIdx = result.destination.index;
     if (srcIdx === dstIdx) return;
 
-    // עדכון מקומי
+    // local update order
     const newMsgs = Array.from(messages);
     const [moved] = newMsgs.splice(srcIdx, 1);
     newMsgs.splice(dstIdx, 0, moved);
 
-    // עדכון order בשני הפריטים בלבד
+    // update order in the backend
     await MessageService.swapOrder(
       { id: newMsgs[srcIdx].id, order: srcIdx },
       { id: newMsgs[dstIdx].id, order: dstIdx }
     );
 
-    // שמור את הסדר החדש ב-state
+    // save new order
     setMessages(
       newMsgs.map((m, i) => ({
         ...m,
