@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { MapContainer, TileLayer, CircleMarker, useMapEvents } from 'react-leaflet'
 
-// פונקציה לעיבוד נתוני המשתמשים והמרתם למיקומים במפה
+// function to process user data and group by address
 async function processUserData(userData) {
-  // קבוצה המיקומים לפי כתובת
+  // group users by address
   const locationGroups = {}
   
   userData.forEach(user => {
@@ -23,7 +23,7 @@ async function processUserData(userData) {
   
   const totalUsers = userData.length
   
-  // המרה למבנה הנדרש למפה
+  // the structure for the final locations
   const locations = []
   for (const location of Object.values(locationGroups)) {
     const coords = await getCoordinatesForAddress(location.name)
@@ -40,9 +40,9 @@ async function processUserData(userData) {
   return locations
 }
 
-// חיפוש קואורדينטות באמצעות Nominatim API (בחינם)
+// Nominatim API 
 async function getCoordinatesForAddress(address) {
-  // קודם נבדוק במיקומים הידועים
+  
   const knownLocations = {
     'מלחה': [31.7234, 35.1956],
     'בית הכרם': [31.7859, 35.1964],
@@ -74,7 +74,7 @@ async function getCoordinatesForAddress(address) {
     return knownLocations[address]
   }
   
-  // אם לא נמצא, ננסה לחפש באמצעות API
+  // looks for API
   try {
     const searchQuery = `${address}, ירושלים, ישראל`
     const response = await fetch(
@@ -92,7 +92,7 @@ async function getCoordinatesForAddress(address) {
   return null
 }
 
-// דוגמה למידע משתמשים
+// data for example usage
 const sampleUserData = [
   { address: 'מלחה', first_name: 'בדיקה', last_name: 'אפס', phone: '0500534560' },
   { address: 'בית הכרם', first_name: 'יוסי', last_name: 'כהן', phone: '0501234567' },

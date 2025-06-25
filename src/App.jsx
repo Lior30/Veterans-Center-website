@@ -46,9 +46,9 @@ export default function App({ toggleTheme, mode }) {
 
     useEffect(() => {
     addDoc(collection(db, "visits"), {
-      timestamp: serverTimestamp(),          //  חותמת-שרת
-      uid: auth?.currentUser?.uid ?? null,   //  מזהה משתמש (אם יש)
-      path: window.location.pathname         //  הדף הנוכחי
+      timestamp: serverTimestamp(),          //  server timestamp
+      uid: auth?.currentUser?.uid ?? null,   //  user ID (if logged in)
+      path: window.location.pathname         //  current page
     }).catch((err) => console.error("VISIT WRITE ERROR:", err));
   }, []);
 

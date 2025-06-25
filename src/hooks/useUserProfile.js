@@ -23,7 +23,7 @@ export default function useUserProfile() {
   useEffect(() => {
     loadProfile();
 
-    // מאזין לשינויים ב-localStorage (למשל התחברות / התנתקות)
+    // listen for changes in localStorage
     window.addEventListener("storage", loadProfile);
     return () => window.removeEventListener("storage", loadProfile);
   }, []);

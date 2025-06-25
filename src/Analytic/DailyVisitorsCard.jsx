@@ -3,9 +3,9 @@ import React from 'react';
 /**
  * DailyVisitsCard
  * ----------------
- * מציג את מספר הכניסות של היום.
+ * Displays the number of visits today.
  *
- * @prop {number} count – מספר הכניסות היום
+ * @prop {number} count – Number of visits today
  */
 export default function DailyVisitsCard({ count = 0 }) {
   return (
@@ -40,7 +40,7 @@ export default function DailyVisitsCard({ count = 0 }) {
           color: '#6c757d'
         }}
       >
-        כניסות&nbsp;היום
+        Today's&nbsp;Visits
       </div>
     </div>
   );

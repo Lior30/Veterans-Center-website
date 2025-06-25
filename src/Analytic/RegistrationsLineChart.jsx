@@ -13,8 +13,8 @@ import { ResponsiveLine } from '@nivo/line';
  */
 export default function RegistrationsLineChart({ activities = [] }) {
   /* ─────────── constants ─────────── */
-  const HOURS = [...Array(14).keys()].map(h => h + 8); // 08-21
-  const WEEKDAYS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']; // Hebrew names
+  const HOURS = [...Array(14).keys()].map(h => h + 8); 
+  const WEEKDAYS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']; 
 
   /* ─────────── aggregate once ─────────── */
    const { data, maxY } = useMemo(() => {
@@ -25,7 +25,7 @@ export default function RegistrationsLineChart({ activities = [] }) {
 
     activities.forEach(act => {
       const date   = new Date(act.date);
-      const dayIdx = date.getDay();              // 0-6 ישירות ל-א׳-ש׳
+      const dayIdx = date.getDay();              
       const hr     = parseInt((act.startTime || '00').slice(0, 2), 10);
 
       if (hr >= 8 && hr <= 21) {
@@ -50,7 +50,7 @@ export default function RegistrationsLineChart({ activities = [] }) {
 
         const max = Math.max(
       ...series.flatMap(s => s.data.map(p => p.y))
-    );                                                      // ★
+    );                                                      
 
     console.log('table', table);
     console.log(activities);
@@ -59,7 +59,7 @@ export default function RegistrationsLineChart({ activities = [] }) {
 
 
 
-  /* ─────────── fallback ─────────── */
+  /*fallback */
   const total = data.reduce(
     (s, serie) => s + serie.data.reduce((t, p) => t + p.y, 0),
     0
@@ -71,18 +71,18 @@ export default function RegistrationsLineChart({ activities = [] }) {
       </p>
     );
 
-  /* ─────────── purple palette (light→dark) ─────────── */
+  /*purple palette (light→dark) */
     const COLORS = [
-    '#4e2fa7',  // ש׳  (סגול כהה)
-    '#d7c4ff', // ו׳  (סגול בהיר)
-    '#3de2da', // ב׳
-    '#00b7ff', // ה׳
-    '#ffe87e', // ג׳
-    '#ff9d02', // ד׳
-    '#8c564b', // חום-אדמדם
+    '#4e2fa7',  
+    '#d7c4ff', 
+    '#3de2da', 
+    '#00b7ff', 
+    '#ffe87e', 
+    '#ff9d02', 
+    '#8c564b', 
     ];
 
-  /* ─────────── render ─────────── */
+  /*render */
   return (
     <div style={{ height: 320 }}>
       <ResponsiveLine

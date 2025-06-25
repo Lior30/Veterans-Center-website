@@ -14,7 +14,7 @@ import DailyVisitsCard  from './DailyVisitorsCard';
 import WeeklyVisitsCard from './WeeklyVisitsCard';
 import { Link } from 'react-router-dom';
 
-/* ───────────────────────────── דשבורד ───────────────────────────── */
+/* dashboard */
 export default function AnalyticsDashboard() {
   const [locations, setLocations] = useState([]); 
   const [allActivities, setAllActivities] = useState([]);
@@ -29,21 +29,21 @@ export default function AnalyticsDashboard() {
 useEffect(() => {
   const now = new Date();
 
-  // מתי השבוע התחיל (שבת בחצות)
+  
   const weekStart = new Date(now);
   weekStart.setDate(weekStart.getDate() - now.getDay());
   weekStart.setHours(0, 0, 0, 0);
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);
 
-  // מתי שבוע שעבר התחיל
+  
   const prevWeekStart = new Date(weekStart);
   prevWeekStart.setDate(prevWeekStart.getDate() - 7);
 
-  // מתי השבוע הזה עד עכשיו (עד היום והשעה הנוכחיים)
+  
   const thisWeekEnd = new Date(now);
 
-  // מתי שבוע שעבר עד אותו זמן
+  
   const lastWeekEnd = new Date(prevWeekStart);
   lastWeekEnd.setDate(lastWeekEnd.getDate() + now.getDay());
   lastWeekEnd.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
@@ -78,7 +78,7 @@ useEffect(() => {
     setChangePercent(
       lastWeekCount
             ? Math.round((thisWeekCount - lastWeekCount) / lastWeekCount * 100)
-            : 100  // אם שבוע שעבר היה 0, אז הכל זה גידול של 100%
+            : 100  
     );
   });
 
@@ -91,14 +91,14 @@ useEffect(() => {
   (async () => {
     const snap = await getDocs(collection(db, 'activities'));
 
-    /* ---- RAW activities (כפי שהן) ---- */
+    /*RAW activities*/
     const raw = snap.docs.map(d => ({
-      id: d.id,        // ← חשוב מאוד: בלי זה act.id יהיה undefined
+      id: d.id,        
       ...d.data()
     }));
-    setAllActivities(raw);                     // <-- חדש
+    setAllActivities(raw);                     
 
-    /* ---- Tag statistics ---- */
+    /* Tag statistics  */
     const rows = raw.flatMap(d => {
       const participants = Array.isArray(d.participants)
         ? d.participants.length
@@ -128,7 +128,7 @@ useEffect(() => {
       if (u.is_club_60)    senior     += 1;
     });
 
-           // משתמשים – סגול (#7e64e0) מול צהוב (#ffd400)
+           
     setUsersBreakdown([
       { id: 'משתמשים רשומים', value: registered, color: '#7e64e0' },
       { id: 'חברי מרכז 60+',   value: senior,     color: ' #ffe87e' }
@@ -137,7 +137,7 @@ useEffect(() => {
 }, []);
 
   useEffect(() => {
-    // מחכה לטעינת כל הפעילויות כדי שנדע כמה נרשמו באמת
+    
     if (!allActivities.length) return;
 
     (async () => {
@@ -151,13 +151,13 @@ useEffect(() => {
         const activityId   = surveyData.of_activity;
         if (!activityId) continue;
 
-        // 1. ספירת תשובות בסקר
+        
         const answersSnap   = await getDocs(
           collection(db, 'surveys', surveyDoc.id, 'responses')
         );
         const answeredCount = answersSnap.size;
 
-        // 2. מציאת כמות נרשמים (participants) מתוך allActivities
+        
         const act = allActivities.find(a => a.id === activityId);
         if (!act) continue;
 
@@ -189,17 +189,16 @@ useEffect(() => {
 
 
   useEffect(() => {
-  /* ➊ שליפת כל המשתמשים */
+  
   (async () => {
     const snap = await getDocs(collection(db, 'users'));
     const raw   = snap.docs.map(d => d.data().address || 'לא ידוע');
 
-    /* ➋ ספירת מופעים לפי כתובת */
+    
     const freq = {};
     raw.forEach(addr => { freq[addr] = (freq[addr] || 0) + 1; });
 
-    /* ➌ Geocoding – כתובת → קואורדינטה
-          (שימוש ב-Nominatim OpenStreetMap)             */
+    
     const geocode = async address => {
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address + ', Jerusalem, Israel')}`;
       const res = await fetch(url);
@@ -207,10 +206,10 @@ useEffect(() => {
       if (json.length) {
         return [parseFloat(json[0].lat), parseFloat(json[0].lon)];
       }
-      return null;   // אם לא נמצא
+      return null;   
     };
 
-    /* ➍ מקבילים את כל הבקשות */
+    
     const entries = await Promise.all(
       Object.entries(freq).map(async ([name, count]) => {
         const coords = await geocode(name);
@@ -220,7 +219,7 @@ useEffect(() => {
 
     const filtered = entries.filter(Boolean);
 
-    /* ➎ חישוב אחוז מכלל-המשתמשים */
+
     const total = raw.length || 1;
     const withPct = filtered.map(l => ({
       ...l,
@@ -233,7 +232,7 @@ useEffect(() => {
 
 
 
-  /* סגנון כרטיס בסיסי */
+  /* base card stle*/
   const cardStyle = {
     backgroundColor: '#ffffff',
     border: '1px solid #e9ecef',
@@ -249,7 +248,7 @@ useEffect(() => {
     { name: 'מנחם בגין',  count: 27, coords: [31.775, 35.195] }
   ];
 
-  /* ───────────────────────────── JSX ───────────────────────────── */
+  /*JSX */
   return (
     <div style={{
       backgroundColor: '#f8f9fa',
@@ -257,7 +256,7 @@ useEffect(() => {
       padding: '24px',
       fontFamily: 'system-ui, -apple-system, sans-serif'
     }}>
-      {/* ==== Header ==== */}
+      {/*Header*/}
       <div style={{
         marginBottom: '24px',
         display: 'flex',
@@ -276,7 +275,7 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* ==== Main Grid (שורה עליונה) ==== */}
+      {/*Main Grid*/}
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr 1fr', // Pie | KPIs | Map
@@ -285,7 +284,7 @@ useEffect(() => {
         gap: '20px'
       }}>
        
-       {/* ── Pie Chart – רשומות לפי תגית ── */}
+       {/*Pie Chart*/}
       <div style={{ ...cardStyle, gridColumn: 3, gridRow: 1 }}>
         <h3 style={{
           fontSize: 16, fontWeight: 600, color: '#495057',
@@ -315,7 +314,7 @@ useEffect(() => {
         <TagsPieChart activities={tagStats} />
       </div>
 
-        {/* ── שני KPI (אמצע) ── */}
+        {/*KPI 2*/}
       <div
       style={{
         gridColumn: 2,                 // הטור המרכזי
@@ -325,7 +324,7 @@ useEffect(() => {
         gap: 16
       }}
     >
-      {/* === שורת KPI-ים (לצד זה) === */}
+      {/*KPI*/}
       
      <div style={{ display: 'flex', gap: 16 }}>
     <div style={{ flex: 1 }}>
@@ -336,13 +335,13 @@ useEffect(() => {
     </div>
   </div>
 
-          {/* דונאט: סוגי משתמשים */}
+          {/* users type*/}
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(2,200px)',  // 2 עמודות קבועות
+              gridTemplateColumns: 'repeat(2,200px)',  
               gap: 50,
-              justifyContent: 'right',                // יישור אופקי
+              justifyContent: 'right',                
               marginTop: 8 
             }}
           >
@@ -353,7 +352,7 @@ useEffect(() => {
               colors={['#7e64e0', '#ffe87e']}
             />
 
-          {/* דונאט: היענות לסקרים */}
+          {/* answer to survey*/}
         <DonutChart
           title="היענות לסקרים"
           data={surveyBreakdown}
@@ -380,7 +379,7 @@ useEffect(() => {
 
 
 
-        {/* ── Map (ימין, משתרע לשתי שורות) ── */}
+        {/*Map*/}
        <div style={{ ...cardStyle, gridArea: '2 / 1 / 4 / 2' }}>
           <h3 style={{
             fontSize: '16px',
@@ -395,13 +394,13 @@ useEffect(() => {
           <JerusalemMap locations={locations}/>
         </div>
 
-        {/* ─────────────────────── שאר הווידג׳טים מתחת ─────────────────────── */}
-        {/* Activities Table (כרטיס אחד בלבד בתוך ה-grid) */}
+        {/* rest of the stuff*/}
+        {/* Activities Table */}
         <div
         style={{
           ...cardStyle,
           gridColumn: '2 / span 2',
-          gridRow:    2,          /* שורה שנייה */
+          gridRow:    2,          
           display: 'flex',
           flexDirection: 'column'
         }}
@@ -417,7 +416,7 @@ useEffect(() => {
               פעילויות עם ביקוש נמוך בשבוע הקרוב
           </h3>
 
-          {/* הטבלה –  תתפוס את כל הגובה שנותר  */}
+          {/* table size */}
           <div style={{ width:'100%', overflowX:'auto', flex:1 }}>
             <ActivitiesTable />
           </div>
