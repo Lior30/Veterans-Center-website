@@ -28,9 +28,9 @@ export default function usePublicHolidays() {
           (data.items || [])
             .filter((item) => item.category === "holiday")
             .map((item) => ({
-              date: item.date, // כדי שיהיה h.date
+              date: item.date, 
               title: item.hebrew || item.title,
-              name: item.hebrew || item.title, // למקרה שתקראי ל־h.name
+              name: item.hebrew || item.title, 
             }))
         );
         setHolidays(combined);

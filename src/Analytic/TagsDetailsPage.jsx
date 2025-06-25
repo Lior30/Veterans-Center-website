@@ -27,13 +27,13 @@ export default function TagsDetailsPage() {
       });
       setByTag(grouped);
 
-      // בחר כברירת מחדל את התגית הראשונה (אם קיימת)
+      // Set the first tag as active by default
       const first = Object.keys(grouped)[0];
       if (first) setActiveTag(first);
     })();
   }, []);
 
-  // כל התגיות ומערך הפעילויות עבור הטאב הנבחר
+  // If no tags are available, show a message
   const tags       = Object.keys(byTag);
   const activities = activeTag ? byTag[activeTag] : [];
 
@@ -53,7 +53,7 @@ export default function TagsDetailsPage() {
 
       <h1 style={{ margin: '16px 0 24px' }}>פרטי תגיות</h1>
 
-      {/* ───────────── טאב בר ───────────── */}
+      {/* tabbar */}
       <div style={{
         display: 'flex',
         gap: 16,
@@ -83,7 +83,7 @@ export default function TagsDetailsPage() {
         ))}
       </div>
 
-      {/* ───────────── תצוגת פעילויות של הטאב הנבחר ───────────── */}
+      {/* acriveties for chosen */}
       {activeTag && (
         <section style={{ marginBottom: 40 }}>
           <h2 style={{ fontSize: 20, color: '#495057', marginBottom: 16 }}>

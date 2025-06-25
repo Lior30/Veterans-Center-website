@@ -29,8 +29,8 @@ export function getDesignTheme(mode = "light") {
   const lilac = {
     100: "#F0E6FA",
     300: "#D8C6F0",
-    500: "#BFA5D2",   // secondary main
-    600: "#9678A6",   // tone for warning/info replacement
+    500: "#BFA5D2",   
+    600: "#9678A6",   
   };
 
   const surface     = dark ? "#20182A" : "#FFFFFF";
@@ -46,9 +46,9 @@ export function getDesignTheme(mode = "light") {
         light: logo[300],
         main:  logo[500],
         dark:  logo[600],
-        /** very‑light tint for subtle backgrounds */
+        
         vlight: logo[50],
-        /** legacy colour used for calendar boxes */
+        
         lightblue: "#E0FFFF",
         contrastText: logo.contrastText,
       },
@@ -59,10 +59,10 @@ export function getDesignTheme(mode = "light") {
         contrastText: "#FFFFFF",
       },
 
-      /* ---------- Status colours tuned to muted purples ---------- */
-      info:    { main: lilac[500], contrastText: "#FFFFFF" },   // היה כחול → לילך רך
-      warning: { main: lilac[600], contrastText: "#FFFFFF" },   // היה צהוב → לילך עמוק
-      error:   { main: "#D77A94", contrastText: "#FFFFFF" },   // מעט ורוד‑סגלגל
+      /* Status colours tuned to muted purples  */
+      info:    { main: lilac[500], contrastText: "#FFFFFF" },   
+      warning: { main: lilac[600], contrastText: "#FFFFFF" },   
+      error:   { main: "#D77A94", contrastText: "#FFFFFF" },   
       success: { main: "#7CBF9E", contrastText: "#FFFFFF" },
 
       background: { default: background, paper: surface },
@@ -73,7 +73,7 @@ export function getDesignTheme(mode = "light") {
       custom: { outline, surfaceVariant: dark ? "#29223C" : "#F0EDF8" },
     },
 
-    /* ---------- Typography ---------- */
+    /* Typography  */
     typography: {
 fontFamily: "'Rubik', 'Arial', sans-serif",
       h1: { fontWeight: 600, fontSize: "clamp(2.6rem, 6vw, 3.2rem)", lineHeight: 1.15 },
@@ -87,14 +87,14 @@ fontFamily: "'Rubik', 'Arial', sans-serif",
       button:{ fontWeight: 600, textTransform: "none" },
     },
 
-    /* ---------- Shape & Shadows ---------- */
+    /* Shape & Shadows  */
     shape: { borderRadius: 8 },
 
     shadows: Array.from({ length: 25 }, (_, i) =>
       i === 0 ? "none" : `0 ${i * 0.3}px ${(i + 1)}px rgba(0,0,0,0.${Math.min(10 + i, 28) / 100})`
     ),
 
-    /* ---------- Components ---------- */
+    /*  Components  */
     components: {
       MuiCssBaseline: { styleOverrides: { body: { backgroundColor: background } } },
 

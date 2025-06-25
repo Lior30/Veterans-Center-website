@@ -1,28 +1,28 @@
 // src/components/TagsPieChart.jsx
 import React, { useMemo } from 'react';
-import { ResponsivePie }   from '@nivo/pie';
+import { ResponsivePie } from '@nivo/pie';
 import TagsDetailsPage from './TagsDetailsPage';
 
-/* ───────────── צבעים קבועים (עד 10) ───────────── */
+/*Base colors (up to 10)  */
 const BASE_COLORS = [
-  '#7e64e0', // סגול
-  '#3de2da', // טורקיז
-  '#ffe87e', // צהוב-פסטל
-  '#ff9d02', // כתום
-  '#00b7ff', // תכלת
-  '#d7c4ff', // סגול-בהיר
-  '#4e2fa7', // סגול-כהה
-  '#8c564b', // חום-אדמדם
-  '#e377c2', // ורוד
-  '#17becf'  // כחול-ירקרק
+  '#7e64e0', // purple
+  '#3de2da', // turquoise
+  '#ffe87e', // pastel yellow
+  '#ff9d02', // orange
+  '#00b7ff', // light blue
+  '#d7c4ff', // light purple
+  '#4e2fa7', // dark purple
+  '#8c564b', // reddish brown
+  '#e377c2', // pink
+  '#17becf'  // teal blue
 ];
 
-/* ── מחולל צבעים נוספים שלא דומים ל-BASE_COLORS ── */
+/* Generator for extra colors dissimilar to BASE_COLORS  */
 function createColorPicker(base = BASE_COLORS) {
   const usedHue = base.map(hexToHue);
 
   return function pick() {
-    let h    = 0;
+    let h = 0;
     let tries = 0;
     do {
       h = Math.floor(Math.random() * 360);
@@ -52,18 +52,18 @@ function hexToHue(hex) {
   return h * 60;
 }
 
-/* ────────────────── קומפוננטת העוגה ────────────────── */
+/* Pie chart component */
 export default function TagsPieChart({ activities = [] }) {
 
-  /* יוצר פעם אחת מחולל-צבעים, לא בכל רינדור */
+  /* Create color picker once, not on every render */
   const pickExtraColor = useMemo(
     () => createColorPicker(BASE_COLORS),
     []
   );
 
-  /* ---------- עיבוד נתונים ---------- */
+  /* Data processing */
   const pieData = useMemo(() => {
-    /* ➊ צבירת משתתפים-וקיבולת לפי תגית */
+    /* ➊ Aggregate participants and capacity per tag */
     const byTag = {};
     activities.forEach(
       ({ tag, participants = 0, capacity = 0 }) => {
@@ -73,41 +73,41 @@ export default function TagsPieChart({ activities = [] }) {
       }
     );
 
-    /* ➋ יחס ניצול גולמי */
+    /* ➋ Raw usage ratio */
     const raw = Object.entries(byTag).map(([tag, { p, c }]) => ({
       tag,
-      ratio: c ? p / c : 0            // בין 0-1
+      ratio: c ? p / c : 0
     }));
 
-    /* ➌ נרמול לסכום 100% */
+    /* ➌ Normalize to 100% total */
     const total = raw.reduce((s, d) => s + d.ratio, 0) || 1;
 
-    /* ➍ מיון + הצמדת צבע */
+    /* ➍ Sort + assign color */
     return raw
-      .sort((a, b) => b.ratio - a.ratio)              // גדול → קטן
+      .sort((a, b) => b.ratio - a.ratio) 
       .map(({ tag, ratio }, idx) => ({
         id   : tag,
         label: tag,
-        value: (ratio / total) * 100,                // אחוזים
+        value: (ratio / total) * 100,  
         color: BASE_COLORS[idx] ?? pickExtraColor()
       }));
   }, [activities, pickExtraColor]);
 
   if (!pieData.length) {
-    return <p style={{ textAlign: 'center' }}>אין נתונים להצגה</p>;
+    return <p style={{ textAlign: 'center' }}>No data to display</p>;
   }
 
-  /* ---------- UI ---------- */
+  /* UI  */
   return (
     <div
       style={{
         height: 300,
         display: 'flex',
         columnGap: 24,
-        direction: 'ltr'      // סרגל גלילה מימין בלג'נד
+        direction: 'ltr' 
       }}
     >
-      {/* ── Pie ── */}
+      {/* Pie chart */}
       <div style={{ flex: 1 }}>
         <ResponsivePie
           data={pieData}
@@ -119,7 +119,7 @@ export default function TagsPieChart({ activities = [] }) {
           enableArcLabels={false}
           enableSliceLabels={false}
           enableArcLinkLabels={false}
-          animate={false}               // אין “קפיצה” בהובר
+          animate={false} 
           borderWidth={1}
           borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
           tooltip={({ datum }) => (
@@ -131,7 +131,7 @@ export default function TagsPieChart({ activities = [] }) {
         />
       </div>
 
-      {/* ── Legend ── */}
+      {/*Legend */}
       <div
         style={{
           width: 140,
@@ -141,7 +141,7 @@ export default function TagsPieChart({ activities = [] }) {
           flexDirection: 'column',
           gap: 8,
           paddingInlineEnd: 4,
-          paddingTop: 16    // כדי שלא יידבק למעלה
+          paddingTop: 16 
         }}
       >
         {pieData.map(item => (

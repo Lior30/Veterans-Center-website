@@ -3,10 +3,10 @@ import React from 'react';
 /**
  * WeeklyVisitsCard
  * -----------------
- * מציג את מספר הכניסות בשבוע האחרון + שינוי
+ * This component displays the number of visits in the last week
  *
- * @prop {number} count    – סך הכניסות בשבוע
- * @prop {number} deltaPct – אחוז שינוי ביחס לשבוע קודם
+ * @prop {number} count    
+ * @prop {number} deltaPct 
  */
 export default function WeeklyVisitsCard({ count = 0, deltaPct = 0 }) {
   const isUp   = deltaPct >= 0;

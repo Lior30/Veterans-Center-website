@@ -3,15 +3,15 @@ import React, { memo } from 'react';
 import { ResponsivePie } from '@nivo/pie';
 
 /**
- * DonutChart מהיר ופשוט
- * @param title   כותרת הטבעת
+ * DonutChart – simple and fast
+ * @param title   The title of the chart
  * @param data    [{ id, value, color }]
- * @param size    קוטר (px)
+ * @param size    Diameter (in px)
  */
 const DonutChart = memo(function DonutChart({ title, data, size = 200, children }) {
-  // אם אין נתונים - הצג placeholder מיד
+  // If no data – show placeholder immediately
   const displayData = data && data.length > 0 ? data : [
-    { id: 'טוען...', value: 100, color: '#e9ecef' }
+    { id: 'Loading...', value: 100, color: '#e9ecef' }
   ];
 
   return (
@@ -30,7 +30,7 @@ const DonutChart = memo(function DonutChart({ title, data, size = 200, children 
       }}
     >
 
-      {/* ───────── כותרת ───────── */}
+      {/* ───────── Title ───────── */}
       <div style={{
         fontWeight: 600,
         fontSize  : 16,
@@ -41,7 +41,7 @@ const DonutChart = memo(function DonutChart({ title, data, size = 200, children 
         {title}
       </div>
 
-      {/* ───────── הטבעת ───────── */}
+      {/* ───────── Donut Chart ───────── */}
       <div style={{ width: size, height: size }}>
         <ResponsivePie
           data={displayData}
@@ -60,7 +60,7 @@ const DonutChart = memo(function DonutChart({ title, data, size = 200, children 
         />
       </div>
 
-      {/* ───────── כפתור + מקרא בשורה אחת ───────── */}
+      {/* ───────── Legend and optional button in one row ───────── */}
       <div style={{
         marginTop: 12,
         display: 'flex',
@@ -69,7 +69,7 @@ const DonutChart = memo(function DonutChart({ title, data, size = 200, children 
         width: '100%'
       }}>
 
-        {/* המקרא בצד ימין */}
+        {/* Legend on the right side */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
@@ -92,13 +92,12 @@ const DonutChart = memo(function DonutChart({ title, data, size = 200, children 
           ))}
         </div>
 
-        {/* הכפתור בצד שמאל */}
+        {/* Optional button (children) on the left side */}
         {children && (
           <div>
             {children}
           </div>
         )}
-
       </div>
     </div>
   );
