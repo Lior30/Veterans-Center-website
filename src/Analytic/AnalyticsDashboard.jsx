@@ -291,7 +291,7 @@ useEffect(() => {
           fontSize: 16, fontWeight: 600, color: '#495057',
           marginBottom: 16, textAlign: 'center'
         }}>
-          הרשמות לפי תגית
+           הרשמות לפי תגיות בחודש האחרון
         </h3>
          <div style={{
           display: 'flex',
@@ -426,7 +426,7 @@ useEffect(() => {
 
         {/* Line Chart – registrations by hour/day */}
         <div style={{ ...cardStyle, gridColumn: 1, gridRow: 1  }}>
-          <h3 /* … */> הרשמות לפי שעה ויום בשבוע שעבר</h3>
+          <h3 /* … */> הרשמות לפי שעה ויום בחודש האחרון</h3>
           <RegistrationsLineChart activities={allActivities} />
         </div>
       </div>

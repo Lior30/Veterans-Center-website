@@ -1,14 +1,19 @@
 // src/components/DonutChart.jsx
-import React from 'react';
+import React, { memo } from 'react';
 import { ResponsivePie } from '@nivo/pie';
 
 /**
- * DonutChart
+ * DonutChart מהיר ופשוט
  * @param title   כותרת הטבעת
  * @param data    [{ id, value, color }]
  * @param size    קוטר (px)
  */
-export default function DonutChart({ title, data, size = 200, children }) {
+const DonutChart = memo(function DonutChart({ title, data, size = 200, children }) {
+  // אם אין נתונים - הצג placeholder מיד
+  const displayData = data && data.length > 0 ? data : [
+    { id: 'טוען...', value: 100, color: '#e9ecef' }
+  ];
+
   return (
     <div
       style={{
@@ -18,7 +23,6 @@ export default function DonutChart({ title, data, size = 200, children }) {
         boxShadow    : '0 2px 12px rgba(0,0,0,.08)',
         padding      : 20,
         width        : 220,
-        //  title + donut + legend
         height       : size + 90,
         display      : 'flex',
         flexDirection: 'column',
@@ -40,7 +44,7 @@ export default function DonutChart({ title, data, size = 200, children }) {
       {/* ───────── הטבעת ───────── */}
       <div style={{ width: size, height: size }}>
         <ResponsivePie
-          data={data}
+          data={displayData}
           colors={d => d.data.color}
           margin={{ top: 6, right: 6, bottom: 6, left: 6 }}
           innerRadius={0.65}
@@ -48,16 +52,11 @@ export default function DonutChart({ title, data, size = 200, children }) {
           cornerRadius={3}
           enableArcLabels={false}
           enableArcLinkLabels={false}
-          borderWidth={1}
-          borderColor={{ from: 'color', modifiers: [['darker', 0.3]] }}
+          borderWidth={0}
           animate={false}
-            layers={[
-            'arcs',
-            'arcLabels',
-            'arcLinkLabels',
-            'legends'
-          ]}
-          style={{ pointerEvents: 'none' }}
+          isInteractive={false}
+          layers={['arcs']}
+          renderWrapper={false}
         />
       </div>
 
@@ -76,8 +75,12 @@ export default function DonutChart({ title, data, size = 200, children }) {
           flexDirection: 'column',
           gap: 4
         }}>
-          {data.map(d => (
-            <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {displayData.map((d, index) => (
+            <div key={`${d.id}-${index}`} style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 6 
+            }}>
               <span style={{
                 width: 12,
                 height: 12,
@@ -97,6 +100,8 @@ export default function DonutChart({ title, data, size = 200, children }) {
         )}
 
       </div>
-          </div>
+    </div>
   );
-}
+});
+
+export default DonutChart;
