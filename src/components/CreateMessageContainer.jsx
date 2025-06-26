@@ -22,7 +22,7 @@ export default function CreateMessageContainer() {
   
   useEffect(() => {
     const unsub = ActivityService.subscribe(setActivities);
-    return () => unsub();   // cleanup בהחלפת דף
+    return () => unsub();   // cleanup 
   }, []);
 
   

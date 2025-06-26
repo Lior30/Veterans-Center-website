@@ -14,7 +14,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { getDocs } from "firebase/firestore"; // אם לא קיים למעלה
+import { getDocs } from "firebase/firestore"; 
 import FlyerService from "./FlyerService";
 
 export default class ActivityService {
@@ -23,7 +23,7 @@ export default class ActivityService {
   static colRef = collection(db, ActivityService.COL);
 
 
-  /** ➖ delete מסמך שלם */
+  /** ➖ delete full  doc*/
   static async delete(id) {
   try {
     const flyers = await FlyerService.getFlyers();
@@ -39,7 +39,7 @@ export default class ActivityService {
   }
 }
 
-  /* ──────────────────────────── Realtime stream ──────────────────────────── */
+  /* Realtime stream  */
   static subscribe(callback) {
     return onSnapshot(
       ActivityService.colRef,
@@ -63,7 +63,7 @@ export default class ActivityService {
     );
   }
 
-  /* ───────────────────────────── CRUD helpers ───────────────────────────── */
+  /* CRUD helpers */
 
   /** ➕ create */
   static add(data) {
@@ -80,14 +80,14 @@ export default class ActivityService {
     // clone – never mutate caller's object
     const data = { ...activity };
 
-    /* ---------- normalise optional numeric fields ---------- */
+    /*normalise optional numeric fields*/
     if (data.capacity === "" || data.capacity === null) {
       delete data.capacity;
     } else if (data.capacity !== undefined) {
       data.capacity = Number(data.capacity);
     }
 
-    /* ---------- drop empty arrays / fields ---------- */
+    /*drop empty arrays / fields*/
     if (!data.recurring) delete data.weekdays;
     if (!Array.isArray(data.weekdays) || data.weekdays.length === 0)
       delete data.weekdays;
@@ -97,7 +97,7 @@ export default class ActivityService {
     // ensure participants exists as array (default empty)
     if (!Array.isArray(data.participants)) data.participants = [];
 
-    /* ---------- strip id before sending ---------- */
+    /*strip id before sending */
     const { id, ...payload } = data;
 
     return id
@@ -111,28 +111,28 @@ export default class ActivityService {
     return snap.exists() ? { id: snap.id, ...snap.data() } : null;
   }
 
-  /* ──────────────────────── Registration helpers ──────────────────────── */
+  /*  Registration helpers*/
 
 /**
  * ➕ user registers (transaction = capacity safe), ועדכון גם של מסמך המשתמש
  * @param {string} activityId
- * @param {{name: string, phone: string}} user  - שדה phone הוא הערך כפי ששמור ב-userProfile (עדיף סטרינג של ספרות בלבד)
+ * @param {{name: string, phone: string}} user  
  */
 static async registerUser(activityId, user) {
-  // בדיקות מקדימות
+  
   if (!activityId) {
     throw new Error("MISSING_ACTIVITY_ID");
   }
   if (!user || !user.phone) {
     throw new Error("USER_NO_PHONE");
   }
-  // Normalize phone: סטרינג של ספרות בלבד
+  // Normalize phone
   const normalizedPhone = String(user.phone).replace(/\D/g, "");
   if (!normalizedPhone) {
     throw new Error("USER_PHONE_INVALID");
   }
 
-  // מציאת מסמך המשתמש בקולקשן 'users' לפי phone
+  
   const usersCol = collection(db, "users");
   const userQuery = query(usersCol, where("phone", "==", normalizedPhone));
   console.log("ActivityService.registerUser: query user by phone:", normalizedPhone);
@@ -145,7 +145,7 @@ static async registerUser(activityId, user) {
 
   const activityRef = doc(db, ActivityService.COL, activityId);
 
-  // מבצעים טרנזקציה: בודקים קיבולת ונרשמים לפעילות + מעדכנים מסמך המשתמש
+  // check if possible to register
   try {
 
     const result =await runTransaction(db, async (tx) => {
@@ -159,7 +159,7 @@ static async registerUser(activityId, user) {
       const userSnapTx = await tx.get(userRef);
       const userData = userSnapTx.data();
 
-      // ✅ בדיקה אם הפעילות דורשת חבר מועדון 60+
+      // check for 60+
       if (data.registrationCondition === 'member60' && !userData.is_club_60) {
         return { 
           success: false, 
@@ -173,7 +173,7 @@ static async registerUser(activityId, user) {
       const rawParticipants = Array.isArray(data.participants)
         ? data.participants
         : [];
-      // Normalize participants array: כל פריט או סטרינג או אובייקט
+      // Normalize participants array
       const participants = rawParticipants
         .map((p) => {
           if (typeof p === "string") {
@@ -185,7 +185,7 @@ static async registerUser(activityId, user) {
             };
           }
         })
-        .filter((p) => p.phone); // השמט entry ללא phone חוקי
+        .filter((p) => p.phone); 
 
       // Already-registered?
       if (participants.some((p) => p.phone === normalizedPhone)) {
@@ -201,7 +201,7 @@ static async registerUser(activityId, user) {
           title: "הפעילות מלאה"
         };
       }
-      // מוסיפים משתתף חדש
+      // new user page
       const newParticipant = {
         name: user.name || "",
         phone: normalizedPhone,
@@ -209,7 +209,7 @@ static async registerUser(activityId, user) {
       const updatedParticipants = [...participants, newParticipant];
       tx.update(activityRef, { participants: updatedParticipants });
 
-      // עדכון מסמך המשתמש:
+      // update user document
       const activityName = data.name || data.title || activityId;
       console.log("ActivityService.registerUser: adding activity to user:", activityName);
       tx.update(userRef, {
@@ -258,7 +258,7 @@ static async registerUser(activityId, user) {
     });
   }
 
-/** מחזיר את כל הפעילויות שהמשתמש רשום אליהן לפי מספר טלפון */
+/** reterns activeties */
 static async getUserActivities(phone) {
   const digits = phone.replace(/\D/g, "");
   const snap = await getDocs(ActivityService.colRef);
@@ -269,12 +269,12 @@ static async getUserActivities(phone) {
     const participants = data.participants || [];
 
       if (participants.some((p) => p.phone === digits)) {
-        // כאן אתם מוודאים ש-data.time קיים
+        // make sure to return only relevant fields
         results.push({
           id: docSnap.id,
           name: data.name,
           date: data.date,
-          time: data.starttime,            // <-- דאגו שזה שם
+          time: data.starttime,            
           location: data.location,
           description: data.description,
         });

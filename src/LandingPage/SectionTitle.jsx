@@ -19,7 +19,7 @@ export default function SectionTitle({ icon, title }) {
           color: theme.palette.primary.main,
           filter: "drop-shadow(0 2px 4px rgba(0,0,0,.15))",
         },
-        /* קו דקורטיבי מתחת לכותרת */
+        /* decorative line*/
         "&::after": {
           content: '""',
           position: "absolute",

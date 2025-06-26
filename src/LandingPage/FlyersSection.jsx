@@ -140,7 +140,7 @@ export default function FlyersSection({ flyers, activities, openDialog }) {
     {activities.find((a) => a.id === f.activityId)?.name || f.name}
   </Typography>
 
-  {/* אייקון מועדון 60+ אם רלוונטי */}
+  {/* icon for 60+*/}
   {activities.find((a) => a.id === f.activityId)?.registrationCondition === "member60" && (
     <Box
       component="img"

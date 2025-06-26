@@ -61,7 +61,7 @@ const WEEKDAYS = [
   { label: "ש׳", value: 0 },
 ];
 
-// מאפשר להוסיף פריטי freeSolo
+//freeSolo
 const filter = createFilterOptions();
 
 export default function ActivitiesDesign({
@@ -105,7 +105,7 @@ export default function ActivitiesDesign({
 
   const [removeTagDialogOpen, setRemoveTagDialogOpen] = useState(false);
 
-  // פונקציה לטיפול בהוספת תגית חדשה
+  // function to add a new tag
   const handleAddTag = () => {
     const tag = newTagValue.trim();
     if (tag && !allTags.includes(tag)) {
@@ -115,12 +115,12 @@ export default function ActivitiesDesign({
     setNewTagDialogOpen(false);
   };
 
-  // פונקציה להסרת תגית
+  // function to remove a tag
   const handleRemoveTag = (tagToRemove) => {
-    // (א) הסר מ־allTags
+    
     setAllTags((prev) => prev.filter((t) => t !== tagToRemove));
 
-    // (ב) הסר את התגית הזו מכל הפעילויות ששייכות אליה
+    
     activities.forEach((act) => {
       if (Array.isArray(act.tags) && act.tags.includes(tagToRemove)) {
         const newTags = act.tags.filter((tg) => tg !== tagToRemove);
@@ -133,11 +133,11 @@ export default function ActivitiesDesign({
   const [users, setUsers] = useState({});
   const [registrantsFilter, setRegistrantsFilter] = useState("");
   const [addressQuery, setAddressQuery] = useState("");
-  // ==== ל-Recenter של המפה ====
+  // render map center and zoom
   const [mapCenter, setMapCenter] = useState([31.7683, 35.2137]);
   const [mapZoom, setMapZoom]     = useState(13);
 
-  // מפה + GeoSearch בטופס הפעילות
+  // map reference and GeoSearch provider
   const mapRef = useRef(null);
   const geoProvider = new OpenStreetMapProvider();
   useEffect(() => {
@@ -153,7 +153,7 @@ export default function ActivitiesDesign({
     map.addControl(control);
     map.on("geosearch/showlocation", ({ location }) => {
       const { x: lng, y: lat, label: address } = location;
-      // עדכון שדה location בטופס
+      // update local state with the new address
       onFormChange((f) => ({ ...f, location: { address, lat, lng } }));
     });
     return () => {
@@ -162,7 +162,7 @@ export default function ActivitiesDesign({
     };
   }, [geoProvider, onFormChange]);
 
-  // סינון המשתתפים לפי שדה החיפוש
+  // search for participants based on the filter
 const filteredParticipants = (selAct?.participants || []).filter((p) => {
   const label = (users[p.phone] || p.phone).toLowerCase();
   return label.includes(registrantsFilter.trim().toLowerCase());
@@ -184,17 +184,17 @@ const filteredParticipants = (selAct?.participants || []).filter((p) => {
   }, [selAct]);
 
 const kickParticipant = async (phone) => {
-  // מוצא את האובייקט המלא לפי טלפון
+  // finds out the participant by phone
   const participant = selAct.participants.find((p) => p.phone === phone);
   if (!participant) return;
 
-  // עדכון ב־Firestore: הסרת המשתמש ממערך participants
+  // remove the participant from the activity in Firestore
   const actRef = doc(db, "activities", selAct.id);
   await updateDoc(actRef, {
     participants: arrayRemove(participant)
   });
 
-  // עדכון מצב מקומי כדי לרענן את התצוגה
+  // update local state to remove the participant
   setSelAct((prev) =>
     prev
       ? {
@@ -210,11 +210,11 @@ const togglePaid = async (phone) => {
   if (!participant) return;
   const updated = { ...participant, paid: !participant.paid };
   const actRef = doc(db, "activities", selAct.id);
-  // הסרה של האובייקט הישן
+  
   await updateDoc(actRef, { participants: arrayRemove(participant) });
-  // הוספה של האובייקט המעודכן עם paid משודרג
+  
   await updateDoc(actRef, { participants: arrayUnion(updated) });
-  // עדכון מצב מקומי
+  
   setSelAct((prev) =>
     prev
       ? {
@@ -228,7 +228,7 @@ const togglePaid = async (phone) => {
 };
 
 
-  // מסנכרן פעילויות לפי תגית, ולפי מחרוזת החיפוש בשדה שם
+  // sync all tags with local state
   const filteredList = useMemo(() => {
     return activities
       .filter((a) => a.id)
@@ -309,7 +309,7 @@ const togglePaid = async (phone) => {
   minWidth: 200,
   headerAlign: "center",
   align: "right",
-  // <-- הוספה של class ייחודי
+  
   cellClassName: "multi-line-cell",
 },
 
@@ -416,7 +416,7 @@ const togglePaid = async (phone) => {
           </Button>
 
           
-   {/* ==== כפתורים לשם הוספה/הסרה של תגיות ברשימה ==== */}
+   {/* add or remove tag*/}
    <Box
      sx={{
        display: "flex",
@@ -441,7 +441,7 @@ const togglePaid = async (phone) => {
    </Box>
 
 
-          {/* שדה חיפוש */}
+          {/* search field */}
           <TextField
             placeholder="חפש לפי שם הפעילות"
             value={searchQuery}
@@ -460,9 +460,9 @@ const togglePaid = async (phone) => {
               pageSize={10}
               rowsPerPageOptions={[5, 10]}
               getRowId={(r) => r.id ?? r.tempId}
-                // 1. גובה שורה אוטומטי
+                
               getRowHeight={() => 'auto'}
-              // 2. כדי שגם המכולה עצמה תתאים את הגובה הכולל
+              
               autoHeight
               sx={{
               '& .MuiDataGrid-cell': {
@@ -491,12 +491,12 @@ const togglePaid = async (phone) => {
 
       {tab === 1 && (
         <Box sx={{ mt: 2, textAlign: "right" }}>
-          {/* עטיפה חדשה ל־ToggleButtonGroup + כפתורים "הוסף תגית" ו-"הסר תגית" */}
+          {/* buttons for adding/removing tags */}
           <Box
   sx={{
     display: "flex",
     alignItems: "center",
-    gap: 1,     // מרווח אופקי בין התגיות לכפתורים
+    gap: 1,     
     mb: 2,
   }}
 >
@@ -513,7 +513,7 @@ const togglePaid = async (phone) => {
     ))}
   </ToggleButtonGroup>
 
-  {/* הכפתורים עכשיו ישר אחרי ה־ToggleButtonGroup, באותה שורה */}
+  {/* toggle buttons for adding/removing tags */}
   <Button
     variant="outlined"
     onClick={() => setNewTagDialogOpen(true)}
@@ -553,7 +553,7 @@ const togglePaid = async (phone) => {
       <Dialog
         open={dialogOpen}
         onClose={() => {
-          // איפוס שדה חיפוש ומפה
+          // reset search field and map
           setAddressQuery("");
           setMapCenter([31.7683, 35.2137]);
           setMapZoom(13);
@@ -605,7 +605,7 @@ const togglePaid = async (phone) => {
   filterOptions={(options, params) => {
     const filtered = filter(options, params);
     const { inputValue } = params;
-    // אם יש קלט חדש, מציעים אותו כאובייקט
+    // new input turns into a new option
     if (inputValue !== "") {
       filtered.push({
         inputValue,
@@ -615,25 +615,25 @@ const togglePaid = async (phone) => {
     return filtered;
   }}
   getOptionLabel={(option) => {
-    // מחרוזת רגילה
+    
     if (typeof option === "string") {
       return option;
     }
-    // אופציה חדשה
+    
     if (option.inputValue) {
       return option.inputValue;
     }
-    // אופציה קיימת
+    
     return option;
   }}
   value={form.tags || []}
   onChange={(_, newValue) => {
-    // newValue יכול להיות מערך של מחרוזות או אובייקטים
+    
     const tags = newValue.map((v) =>
       typeof v === "string" ? v : v.inputValue || v
     );
     onFormChange((f) => ({ ...f, tags }));
-    // מוסיפים תגיות חדשות ל־allTags
+    
     tags.forEach((t) => {
       if (!allTags.includes(t)) {
         setAllTags((prev) => [...prev, t]);
@@ -747,7 +747,7 @@ const togglePaid = async (phone) => {
             inputProps={{ dir: "rtl", style: { textAlign: "right" }, min:1 }}
           />
 
-          {/* שדה מחיר */}
+          {/*  price */}
           <TextField
             label="מחיר"
             type="number"
@@ -771,7 +771,7 @@ const togglePaid = async (phone) => {
             inputProps={{ dir: "rtl", style: { textAlign: "right" }, min:0 }}
           />
 
-         {/* שדה תנאי הרשמה */}
+         {/* register restriction*/}
 <TextField
   select
   label="תנאי הרשמה"
@@ -799,7 +799,7 @@ const togglePaid = async (phone) => {
 </TextField>
 
 
-          {/* שדה חיפוש כתובת: מקלידים ולוחצים Enter */}
+          {/* look for address */}
           <TextField
             label="מיקום"
             placeholder="הקלידי כתובת ולחצי Enter"
@@ -809,7 +809,7 @@ const togglePaid = async (phone) => {
               if (e.key === "Enter" && addressQuery.trim()) {
                 const results = await geoProvider.search({ query: addressQuery });
                 if (results.length > 0) {
-                  const typedAddress = addressQuery; // Save the user's input before the API overrides it
+                  const typedAddress = addressQuery; 
                   const { x: lng, y: lat } = results[0];
 
                   // Keep the input unchanged and save only the user input to form state
@@ -817,7 +817,7 @@ const togglePaid = async (phone) => {
                     ...f,
                     location: { address: typedAddress, lat, lng },
                   }));
-                  // עדכון מצב המפה
+                  // update map state
                   setMapCenter([lat, lng]);
                   setMapZoom(15);
                 }
@@ -840,7 +840,7 @@ const togglePaid = async (phone) => {
             inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
         />
 
-{/* ==== מפה + חיפוש כתובת ==== */}
+{/* update map state */}
 <MapContainer
   center={[31.7683, 35.2137]}
   zoom={13}
@@ -916,7 +916,7 @@ const togglePaid = async (phone) => {
         <DialogActions sx={{ justifyContent: "flex-end" }}>
           <Button
             onClick={() => {
-              // איפוס שדה חיפוש ומפה
+              // reset search field and map
               setAddressQuery("");
               setMapCenter([31.7683, 35.2137]);
               setMapZoom(13);
@@ -942,7 +942,7 @@ const togglePaid = async (phone) => {
         </DialogActions>
       </Dialog>
 
-      {/* דיאלוג הוספת תגית חדשה */}
+      {/* dialog for adding new tag */}
       <Dialog
         open={newTagDialogOpen}
         onClose={() => setNewTagDialogOpen(false)}
@@ -962,7 +962,7 @@ const togglePaid = async (phone) => {
         </DialogActions>
       </Dialog>
 
-      {/* דיאלוג הסרת תגית */}
+      {/* dialog for removing tag */}
       <Dialog
         open={removeTagDialogOpen}
         onClose={() => setRemoveTagDialogOpen(false)}
@@ -998,7 +998,7 @@ const togglePaid = async (phone) => {
         </DialogActions>
       </Dialog>
 
-      {/* דיאלוג נרשמים */}
+      {/* dialog for participants */}
      <Dialog
    open={Boolean(selAct)}
    onClose={() => {
@@ -1012,7 +1012,7 @@ const togglePaid = async (phone) => {
           נרשמים – {selAct?.name}
         </DialogTitle>
 <DialogContent dividers sx={{ textAlign: "right" }}>
-  {/* 1. שדה חיפוש נרשמים */}
+  {/* 1. search field */}
   {selAct?.participants?.length > 0 && (
     <TextField
       placeholder="חפש נרשם"
@@ -1024,10 +1024,10 @@ const togglePaid = async (phone) => {
     />
   )}
 
-  {/* 2. תצוגה של תוצאות החיפוש */}
+  {/* 2. display search results */}
   {filteredParticipants.length > 0 ? (
     <>
-      {/* 2a. כותרת עמודת ה־Checkbox “שולם?” רק בפעילויות בתשלום */}
+      {/* 2a. Checkbox column header “Paid?” only for paid activities */}
       {selAct?.price > 0 && (
         <Stack
           direction="row"
@@ -1043,7 +1043,7 @@ const togglePaid = async (phone) => {
         </Stack>
       )}
 
-      {/* 2b. רשימת המשתתפים המסוננים */}
+      {/* 2b. list of filtered participants */}
       {filteredParticipants.map((p) => (
         <Stack
           key={p.phone}
@@ -1070,7 +1070,7 @@ const togglePaid = async (phone) => {
       ))}
     </>
   ) : (
-    /* 3. אין תוצאות */
+    /* 3. no results */
     "אין תוצאות"
   )}
 </DialogContent>

@@ -1,4 +1,4 @@
-// =========  src/services/MessageService.js  =========
+//src/services/MessageService.js  
 import { db } from "../firebase";
 import {
   collection,
@@ -19,7 +19,7 @@ function toTimestamp(dateStr, fallback) {
 }
 
 export default {
-  /* ─── יצירת הודעה ─── */
+  /* new message */
   async create(msg) {
     const nowTS   = Timestamp.now();
     const startTS = toTimestamp(msg.startDate, nowTS);
@@ -37,13 +37,13 @@ export default {
     });
   },
 
-  /* ─── כל ההודעות לפי order ─── */
+  /* order */
   async list() {
     const snap = await getDocs(query(messagesCol, orderBy("order", "asc")));
     return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   },
 
-  /* ─── הודעות פעילות (טווח תאריכים) ─── */
+  /* dates */
   async listActive() {
     const now = new Date();
     const all = await this.list();
@@ -54,9 +54,9 @@ export default {
     });
   },
 
- /* ─── החלפת סדר בין שתי הודעות ─── */
+ /* switch*/
  async swapOrder(a, b) {
-   // a & b הם אובייקטים עם id + order
+   // a & b id + order
    const batch = writeBatch(db);
     batch.update(doc(messagesCol, a.id), { order: b.order });
    batch.update(doc(messagesCol, b.id), { order: a.order });

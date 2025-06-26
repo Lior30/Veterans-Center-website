@@ -23,12 +23,12 @@ const UpdateCard = styled(Card)(({ theme }) => ({
   position: "relative",
   flex: "0 0 auto",
   width: "var(--msg-card-width)",
-  minHeight: 140,                                           // היה 160
+  minHeight: 140,                                           
   display: "flex",
   flexDirection: "column",
   borderRadius: theme.shape.borderRadius * 2,
   overflow: "hidden",
-  backgroundColor: theme.palette.background.paper,          // שימוש ברקע theme
+  backgroundColor: theme.palette.background.paper,          
   border: `1px solid ${theme.palette.divider}`,
   boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
   transition: "transform .25s, box-shadow .25s",
@@ -85,8 +85,8 @@ export default function MessagesSection({ messages, openDialog, justIdentified }
       component="section"
       sx={{
         "--msg-card-width": `${cardWidth}px`,
-        py: { xs: 3, sm: 4 },                                   // פחות גובה
-        backgroundColor: theme.palette.primary.vlight,          // צבע רקע אחיד מה-theme
+        py: { xs: 3, sm: 4 },                                   
+        backgroundColor: theme.palette.primary.vlight,          
       }}
     >
       <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
@@ -116,7 +116,7 @@ export default function MessagesSection({ messages, openDialog, justIdentified }
               pr: { xs: theme.spacing(3), sm: theme.spacing(4) },
               scrollSnapType: "x mandatory",
               "&::-webkit-scrollbar": { display: "none" },
-              alignItems: "center",                              // הוסר minHeight
+              alignItems: "center",                              
             }}
           >
             {messages.map((m) => {

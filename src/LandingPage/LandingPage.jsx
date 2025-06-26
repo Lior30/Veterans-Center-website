@@ -219,7 +219,7 @@ const handleFillSurvey = (survey) => {
   const acts = (userProfile?.activities || []).map((s) => s.trim());
 
   if (acts.includes(tag)) {
-    openDialog("survey", survey.id);                  // מורשה
+    openDialog("survey", survey.id);                  
   } else {
     alert(`הסקר מיועד רק למשתתפי הפעילות: ${tag}`);
   }

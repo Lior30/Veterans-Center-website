@@ -13,15 +13,15 @@ import { createTheme } from "@mui/material/styles";
 export function getDesignTheme(mode = "light") {
   const dark = mode === "dark";
 
-  /* ---------- Logo‑purple scale ---------- */
+  /*  Logo‑purple scale  */
   const logo = {
     50:  "#F6EFFB",
     100: "#EAD9F5",
     200: "#D5B2EB",
     300: "#C08BE1",
     400: "#AB63D7",
-    500: "#9B3FAF",   // main (sampled from logo)
-    600: "#842F93",   // dark
+    500: "#9B3FAF",   
+    600: "#842F93",   
     700: "#6A2576",
     contrastText: "#FFFFFF",
   };

@@ -27,12 +27,12 @@ export default class UserService {
     return snap.exists() ? { id: snap.id, ...snap.data() } : null;
   }
 
-   /* ✔︎ כל מספר שמתחיל ב-05 ולאחריו עוד 8 ספרות (סה״כ 10) */
+   
   static isValidPhone(phone) {
     return /^05\d{8}$/.test(phone.replace(/\D/g, ""));
   }
 
-  /** הסרת שם פעילות משדה activities של המשתמש */
+  
 static async removeActivity(phone, activityName) {
   const ref = doc(db, UserService.COL, phone);
   await updateDoc(ref, {
@@ -48,7 +48,7 @@ static async addActivity(phone, activityName) {
 }
 
 
-  /** וולידציה לשם: אותיות מרובות מילים, מינימום 2 תווים כל מילה */
+  
   static isValidName(name) {
     return /^[א-תA-Za-z]{2,}(?: [א-תA-Za-z]{2,})*$/.test(name.trim());
   }
@@ -79,37 +79,33 @@ static async addActivity(phone, activityName) {
 
 
     static getPhoneError(phoneRaw) {
-      const digits = phoneRaw.replace(/\D/g, "");      // משאיר ספרות בלבד
+      const digits = phoneRaw.replace(/\D/g, "");      
 
-      // 1. חייב להיות בדיוק 10 ספרות
+      
       if (digits.length !== 10) {
         return "מספר טלפון צריך להכיל בדיוק 10 ספרות";
       }
 
-      // 2. בדיקת קידומת מותרת
-      //    05 ואז אחת מהספרות: 0,1,2,3,4,5,7,8
+     
       if (!/^05[01234578]\d{7}$/.test(digits)) {
         return "הקידומת שהוקלדה אינה נתמכת";
       }
 
-      return null;   // ✔︎ תקין
+      return null;   
 
     }
 
-  /** האם מספר תקין? */
+  
   static isValidPhone(phone) {
     return UserService.getPhoneError(phone) === null;
   }
 
-  /** (אופציונלי) וולידציה לשם */
+  
   static isValidName(name) {
     return /^[א-תA-Za-z]{2,}(?: [א-תA-Za-z]{2,})*$/.test(name.trim());
   }
 
-  /**
-   * מאזין לשינויים בקולקציית המשתמשים
-   * ומעביר מפה של phone → fullName לכל callback
-   */
+  
   static subscribe(callback) {
     const colRef = collection(db, UserService.COL);
     return onSnapshot(colRef, (snap) => {
