@@ -1,4 +1,4 @@
-// =========  src/services/BannerService.js  =========
+// src/services/BannerService.js 
 import { db, storage } from "../firebase";
 import {
   collection,
@@ -10,7 +10,7 @@ import {
   writeBatch,
   doc,
   updateDoc,
-  deleteDoc,          // ← added
+  deleteDoc,          
   serverTimestamp
 } from "firebase/firestore";
 import {
@@ -24,7 +24,7 @@ const COLL = "homepageBanners";
 const PATH = "banners/";
 const DEFAULT_DURATION = 5;
 
-/* ───────── עזר ───────── */
+/* helper */
 async function nextOrder() {
   const snap = await getDocs(
     query(collection(db, COLL), orderBy("order", "desc"), limit(1))
@@ -32,9 +32,9 @@ async function nextOrder() {
   return snap.empty ? 0 : snap.docs[0].data().order + 1;
 }
 
-/* ───────── API ───────── */
+/*API  */
 const service = {
-  /* העלאת באנר חדש */
+  /* upload banner*/
   async uploadBanner({ title, file, link = "", start, end, duration = DEFAULT_DURATION }) {
     // 1. Storage
     const fileRef = ref(storage, PATH + Date.now() + "_" + file.name);
@@ -51,12 +51,12 @@ const service = {
       duration,
       order: await nextOrder(),
       createdAt: serverTimestamp(),
-      storagePath: fileRef.fullPath, // שמירת fullPath למחיקה
+      storagePath: fileRef.fullPath, 
       filename: file.name,
     });
   },
 
-  /* שליפה ממוקמת לפי order */
+  /* order */
   async getBanners() {
     const snap = await getDocs(
       query(collection(db, COLL), orderBy("order", "asc"))
@@ -64,12 +64,12 @@ const service = {
     return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   },
 
-  /* עדכון */
+  /* update*/
   async updateBanner(id, data) {
     await updateDoc(doc(db, COLL, id), data);
   },
 
-  /* החלפת סדר בין שני פריטים */
+  /* switch*/
   async swapOrder(a, b) {
     const batch = writeBatch(db);
     batch.update(doc(db, COLL, a.id), { order: a.order });
@@ -77,9 +77,9 @@ const service = {
     await batch.commit();
   },
 
-  /* מחיקה */
+  /* delete*/
   async deleteBanner(banner) {
-    // 1) מחיקת הקובץ מה־Storage (אם כבר נמחק – מתעלם)
+    
     try {
       await deleteObject(ref(storage, banner.storagePath));
     } catch (err) {
@@ -87,7 +87,7 @@ const service = {
         throw err;
       }
     }
-    // 2) מחיקת המסמך ב־Firestore
+    
     await deleteDoc(doc(db, COLL, banner.id));
   },
 };

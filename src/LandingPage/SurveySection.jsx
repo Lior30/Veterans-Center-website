@@ -15,7 +15,7 @@ import PollIcon from "@mui/icons-material/Poll";
 import SectionTitle from "./SectionTitle";
 import CtaButton from "./CtaButton";
 
-/* — כרטיס סקר — */
+/* survey card */
 const SurveyCard = styled(Card)(({ theme }) => ({
   position: "relative",
   borderRadius: theme.shape.borderRadius * 2,
@@ -28,7 +28,7 @@ const SurveyCard = styled(Card)(({ theme }) => ({
     transform: "translateY(-6px)",
     boxShadow: "0 8px 24px rgba(0,0,0,.15)",
   },
-  /* פס סגול דקורטיבי משמאל */
+  /* decorative line*/
   "&::before": {
     content: '""',
     position: "absolute",
@@ -42,7 +42,7 @@ const SurveyCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-/* — קומפוננטת הסקרים — */
+/* surveys componnents */
 export default function SurveySection({
   surveys,
   userProfile,

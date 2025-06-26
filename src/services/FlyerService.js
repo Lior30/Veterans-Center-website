@@ -1,4 +1,4 @@
-// =========  src/services/FlyerService.js  =========
+//src/services/FlyerService.js 
 import { db, storage } from "../firebase";
 import {
   collection, addDoc, getDocs, query, orderBy,
@@ -13,7 +13,7 @@ import { onSnapshot } from "firebase/firestore";
 const FLYERS_COL   = "flyers";
 const ONE_YEAR_MS  = 365 * 24 * 60 * 60 * 1000;
 
-/* --- עזר --- */
+/* helper */
 function toTimestamp(dateStr, fallback) {
   if (!dateStr) return fallback;
   const d = new Date(dateStr);
@@ -21,7 +21,7 @@ function toTimestamp(dateStr, fallback) {
 }
 
 const FlyerService = {
-  /* --- העלאה --- */
+  /* upload */
 async uploadFlyer({ file, name, startDate, endDate, activityId }) {
   const storageRef = ref(storage, `flyers/${Date.now()}_${file.name}`);
   await uploadBytes(storageRef, file, { contentType: file.type });
@@ -47,12 +47,12 @@ async uploadFlyer({ file, name, startDate, endDate, activityId }) {
     startDate: startTS,
     endDate: endTS,
     filename: file.name,
-    activityId,    // ← נוסף כאן
+    activityId,    
   });
 },
 
 
-  /* --- שליפה (לניהול) --- */
+  /* manage*/
   async getFlyers() {
     const snap = await getDocs(
       query(collection(db, FLYERS_COL), orderBy("order", "asc"))
@@ -60,7 +60,7 @@ async uploadFlyer({ file, name, startDate, endDate, activityId }) {
     return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   },
 
-  /* --- שליפה פעילים (לאתר) --- */
+  /* into website */
   async getActiveFlyers() {
     const now = new Date();
     const all = await this.getFlyers();
@@ -71,7 +71,7 @@ async uploadFlyer({ file, name, startDate, endDate, activityId }) {
     });
   },
 
-  /* --- מחיקה --- */
+  /* delete */
   async deleteFlyer(flyer) {
     // ① -Storage
     try {
@@ -83,7 +83,7 @@ async uploadFlyer({ file, name, startDate, endDate, activityId }) {
     await deleteDoc(doc(db, FLYERS_COL, flyer.id));
   },
 
-  /* --- החלפת סדר (Drag & Drop) --- */
+  /* Drag & Drop*/
   async swapOrder(a, b) {
     const batch = writeBatch(db);
     batch.update(doc(db, FLYERS_COL, a.id), { order: a.order });
