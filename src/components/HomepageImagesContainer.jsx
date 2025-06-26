@@ -1,4 +1,4 @@
-// src/components/HomepageImagesContainer.jsx
+//HomepageImagesContainer.jsx 
 import React, { useState, useEffect, useRef } from "react";
 import HomepageImagesDesign from "./HomepageImagesDesign.jsx";
 import BannerService from "../services/BannerService.js";
@@ -70,20 +70,6 @@ export default function HomepageImagesContainer() {
     }
   };
 
-  /* change */
-  const handleDurationChange = (id, val) =>
-    setBanners((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, durationSec: val } : b))
-    );
-
-  const handleDurationBlur = async (id, val) => {
-    try {
-      await BannerService.updateBanner(id, { durationSec: val });
-    } catch (err) {
-      alert("השמירה נכשלה: " + err.code);
-    }
-  };
-
   /* upload/delete */
   const reload = () => load();
   const handleDelete = async (banner) => {
@@ -91,6 +77,32 @@ export default function HomepageImagesContainer() {
     await BannerService.deleteBanner(banner);
     load();
   };
+
+  const handleOrderChange = async (id, newOrder) => {
+  const curr = banners.find((b) => b.id === id);
+  const other = banners.find((b) => b.order === newOrder);
+
+  if (!curr || !other || curr.id === other.id) return;
+
+  try {
+    await BannerService.updateBanner(curr.id, { order: newOrder });
+    await BannerService.updateBanner(other.id, { order: curr.order });
+
+    // Update local state (optional: for speed before reload)
+    setBanners((prev) =>
+      prev.map((b) =>
+        b.id === curr.id
+          ? { ...b, order: newOrder }
+          : b.id === other.id
+          ? { ...b, order: curr.order }
+          : b
+      )
+    );
+  } catch (err) {
+    alert("שגיאה בשמירת הסדר: " + err.code);
+    load();
+  }
+};
 
   return (
     <Box
@@ -133,8 +145,7 @@ export default function HomepageImagesContainer() {
             onDelete={handleDelete}
             onDragStart={handleDragStart}
             onDragEnter={handleDragEnter}
-            onDurationChange={handleDurationChange}
-            onDurationBlur={handleDurationBlur}
+            onOrderChange={handleOrderChange}
           />
         </Stack>
       </Container>

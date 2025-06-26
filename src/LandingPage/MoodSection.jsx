@@ -11,25 +11,25 @@ export default function MoodSection() {
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
 
-  // טוען באנרים כ"תמונות אווירה"
+  
   useEffect(() => {
     BannerService.getBanners()
       .then((items) => setBanners(items))
       .catch((err) => console.error("Error loading banners:", err));
   }, []);
 
-  // לולאת שינוי תמונה עם fade
+  
   useEffect(() => {
     if (!banners.length) return;
-    const displayDuration = 5000;    // תצוגה כל 5 שניות
-    const fadeDuration = 800;        // משך האנימציה
+    const displayDuration = 5000;    // display every 5 seconds
+    const fadeDuration = 800;        // duration of the animation
     let hideTimeout, showTimeout, cycleInterval;
 
     const cycle = () => {
-      // אחרי הזמן מוצגים, מתחילים להסתיר
+      // after displayDuration, start hiding
       hideTimeout = setTimeout(() => {
         setVisible(false);
-        // אחרי fadeDuration משנים תמונה ומראים
+        // after fadeDuration, change image and show
         showTimeout = setTimeout(() => {
           setIndex((i) => (i + 1) % banners.length);
           setVisible(true);

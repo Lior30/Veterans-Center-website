@@ -26,7 +26,7 @@ import CtaButton from "./CtaButton";
 import EventIcon from "@mui/icons-material/Event";
 import ActivityService from "../services/ActivityService";
 
-/* ---------- styled helpers ---------- */
+/*  styled helpers  */
 const StyledDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiPaper-root": {
     borderRadius: theme.shape.borderRadius * 2,
@@ -46,7 +46,7 @@ const Label = (props) => (
   <Typography variant="subtitle2" fontWeight={600} sx={{ minWidth: 60 }} {...props} />
 );
 
-/* ---------- component ---------- */
+/* component  */
 export default function LandingDialogs({
   infoOpen,
   setInfoOpen,
@@ -76,20 +76,17 @@ export default function LandingDialogs({
 
   const [message, setMessage] = useState({ open: false, text: '', type: 'success', title: '' });
 
-  /* ---------- helper ---------- */
+  /*  helper */
   const toDateTime = (a) => new Date(`${a.date}T${a.startTime || "23:59"}:00`);
 
-  /* ---------- state – up-to-date list every time dialog opens ---------- */
+  /* state – up-to-date list every time dialog opens  */
   const [upcomingActs, setUpcomingActs] = useState([]);
 
   useEffect(() => {
     if (!openMyActivities) return;
 
     async function refresh() {
-      // אם יש לך קריאת API ייעודית – החלף בשורה הבאה
-      // const fresh = await ActivityService.getMyActivities(userProfile.id);
-
-      // ברירת-מחדל: סינון מתוך ‎activities‎ שהגיעו כ-prop
+  
       const fresh = activities.filter(
         (a) =>
           userProfile?.activities?.includes(a.id) ||
@@ -102,7 +99,7 @@ export default function LandingDialogs({
     refresh();
   }, [openMyActivities, activities, userProfile]);
 
-  /* ---------- UI ---------- */
+  /* UI  */
   return (
     <>
       {/* 2. cancel registration */}
@@ -330,12 +327,12 @@ export default function LandingDialogs({
         <DialogContent>
   {dialog.data ? (
     <>
-      {/* כותרת הפעילות */}
+      {/* activity title */}
       <Typography variant="h6" gutterBottom fontWeight={700}>
         {dialog.data.title}
       </Typography>
 
-      {/* תאריך ושעה */}
+      {/* date and hour*/}
       <Typography>
         <strong>תאריך:</strong>{" "}
         {new Date(dialog.data.date).toLocaleDateString("he-IL")}
@@ -346,16 +343,16 @@ export default function LandingDialogs({
         {dialog.data.endTime && `– ${dialog.data.endTime}`}
       </Typography>
 
-     
-      {/* תגים (אם קיימים) */}
+
+      {/* tags if exist */}
       {dialog.data.tags?.length > 0 && (
         <Typography>
           <strong>קטגוריה:</strong> {dialog.data.tags.join(", ")}
         </Typography>
       )}
 
-    
-      {/* תיאור חופשי */}
+
+      {/* free text */}
       {dialog.data.description && (
         <Typography sx={{ mt: 2 }}>{dialog.data.description}</Typography>
       )}
@@ -449,7 +446,7 @@ onClick={async () => {
   } catch (err) {
     console.error(err);
 
-    // ✅ טיפול במשתמש שכבר רשום
+    // ✅ handling already registered user
     if (err.message === "alreadyRegistered") {
       setMessage({
         open: true,
@@ -468,7 +465,7 @@ onClick={async () => {
       return;
     }
 
-    // ❌ שגיאה כללית
+    // ❌ general error handling
     setMessage({
       open: true,
       text: "אירעה שגיאה במהלך ההרשמה. אנא נסה שוב",
