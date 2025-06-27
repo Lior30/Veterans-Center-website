@@ -30,12 +30,18 @@ import ActivityService from "../services/ActivityService";
 const StyledDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiPaper-root": {
     borderRadius: theme.shape.borderRadius * 2,
-    padding: theme.spacing(2),
     boxShadow: theme.shadows[4],
-    maxHeight: "90vh",
     overflowY: "auto",
+    width: "100%",
+    [theme.breakpoints.down("sm")]: {
+      margin: 0,
+      borderRadius: 0,
+      height: "100%",
+      maxHeight: "none",
+    },
   },
 }));
+
 const InfoCard = styled(Card)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 2,
   transition: "box-shadow .3s",
@@ -75,6 +81,7 @@ export default function LandingDialogs({
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [message, setMessage] = useState({ open: false, text: '', type: 'success', title: '' });
+const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   /*  helper */
   const toDateTime = (a) => new Date(`${a.date}T${a.startTime || "23:59"}:00`);
@@ -130,6 +137,7 @@ export default function LandingDialogs({
         onClose={() => setOpenMyActivities(false)}
         fullWidth
         maxWidth="sm"
+         fullScreen={fullScreen}
       >
         <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
           הפעילויות שלי
@@ -157,19 +165,23 @@ export default function LandingDialogs({
                 : "";
 
             return (
-              <Box
-                key={a.id}
-                sx={{
-                  mb: 2,
-                  p: 2,
-                  borderRadius: 2,
-                  boxShadow: 1,
-                  backgroundColor:
-                    theme.palette.mode === "light" ? theme.palette.grey[50] : theme.palette.grey[900],
-                  display: "flex",
-                  gap: 2,
-                }}
-              >
+             <Box
+  key={a.id}
+  sx={{
+    mb: 2,
+    p: 2,
+    borderRadius: 2,
+    boxShadow: 1,
+    backgroundColor: theme.palette.mode === "light"
+      ? theme.palette.grey[50]
+      : theme.palette.grey[900],
+    display: "flex",
+    flexDirection: isMobile ? "column" : "row", // שינוי חשוב!
+    alignItems: isMobile ? "center" : "flex-start",
+    gap: 2,
+  }}
+>
+
                 {flyers?.some((f) => f.activityId === a.id) && (
                   <Box
                     onClick={() =>
@@ -268,6 +280,7 @@ export default function LandingDialogs({
         onClose={closeDialog}
         fullWidth
         maxWidth="sm"
+         fullScreen={fullScreen}
       >
         <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
           כל ההודעות
@@ -314,80 +327,73 @@ export default function LandingDialogs({
         </DialogActions>
       </StyledDialog>
 
-      {/* 5. Activity details */}
-      <StyledDialog
-        open={dialog.type === "activity-details"}
-        onClose={closeDialog}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
-          פרטי פעילות
-        </DialogTitle>
-        <DialogContent>
-  {dialog.data ? (
-    <>
-      {/* activity title */}
-      <Typography variant="h6" gutterBottom fontWeight={700}>
-        {dialog.data.title}
-      </Typography>
-
-      {/* date and hour*/}
-      <Typography>
-        <strong>תאריך:</strong>{" "}
-        {new Date(dialog.data.date).toLocaleDateString("he-IL")}
-      </Typography>
-      <Typography>
-        <strong>שעה:</strong>{" "}
-        {dialog.data.startTime || "לא צוינה"}{" "}
-        {dialog.data.endTime && `– ${dialog.data.endTime}`}
-      </Typography>
-
-
-      {/* tags if exist */}
-      {dialog.data.tags?.length > 0 && (
-        <Typography>
-          <strong>קטגוריה:</strong> {dialog.data.tags.join(", ")}
+    {/* 5. Activity details */}
+<StyledDialog
+  open={dialog.type === "activity-details"}
+  onClose={closeDialog}
+  fullWidth
+  maxWidth="sm"
+>
+  <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
+    פרטי פעילות
+  </DialogTitle>
+  <DialogContent>
+    {dialog.data ? (
+      <>
+        {/* כותרת הפעילות */}
+        <Typography variant="h6" gutterBottom fontWeight={700}>
+          {dialog.data.name || dialog.data.title}
         </Typography>
-      )}
 
+        {/* תאריך ושעות */}
+        {dialog.data.date && (
+          <Typography>
+            <strong>תאריך:</strong>{" "}
+            {new Date(dialog.data.date).toLocaleDateString("he-IL")}
+          </Typography>
+        )}
+        <Typography>
+          <strong>שעה:</strong>{" "}
+          {dialog.data.startTime || "לא צוינה"}{" "}
+          {dialog.data.endTime ? `– ${dialog.data.endTime}` : ""}
+        </Typography>
 
-      {/* free text */}
-      {dialog.data.description && (
-        <Typography sx={{ mt: 2 }}>{dialog.data.description}</Typography>
-      )}
-    </>
-  ) : (
-    <Typography>לא נמצאו פרטים</Typography>
-  )}
-</DialogContent>
+        {/* תגיות אם קיימות */}
+        {dialog.data.tags?.length > 0 && (
+          <Typography>
+            <strong>קטגוריה:</strong> {dialog.data.tags.join(", ")}
+          </Typography>
+        )}
 
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          {userProfile?.phone ? (
-            <CtaButton
-              color="primary"
-              startIcon={<EventIcon />}
-              onClick={() => openDialog("register", dialog.data.id)}
-            >
-              הרשמה מהירה
-            </CtaButton>
-          ) : (
-            <CtaButton
-              color="primary"
-              startIcon={<EventIcon />}
-              onClick={() => {
-                closeDialog();
-                setOpenIdentify(true);
-              }}
-            >
-              התחברות להרשמה
-            </CtaButton>
-          )}
-          <CtaButton color="primary.light" onClick={closeDialog}>
-            סגור
-          </CtaButton>
-        </DialogActions>
-      </StyledDialog>
+        {/* מיקום */}
+        {dialog.data.location && (
+          <Typography>
+            <strong>מיקום:</strong>{" "}
+            {typeof dialog.data.location === "string"
+              ? dialog.data.location
+              : dialog.data.location?.address ||
+                `${dialog.data.location.lat}, ${dialog.data.location.lng}`}
+          </Typography>
+        )}
+
+        {/* תיאור */}
+        {dialog.data.description && (
+          <Typography sx={{ mt: 2, whiteSpace: "pre-wrap" }}>
+            {dialog.data.description}
+          </Typography>
+        )}
+      </>
+    ) : (
+      <Typography>לא נמצאו פרטים</Typography>
+    )}
+  </DialogContent>
+  <DialogActions>
+    <CtaButton color="primary.light" onClick={closeDialog}>
+      סגור
+    </CtaButton>
+  </DialogActions>
+</StyledDialog>
+
 
      {/* 6. Register confirmation */}
       <StyledDialog
@@ -395,6 +401,7 @@ export default function LandingDialogs({
         onClose={closeDialog}
         fullWidth
         maxWidth="xs"
+         fullScreen={fullScreen}
       >
       <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
         הרשמה לפעילות
@@ -481,97 +488,131 @@ onClick={async () => {
     </CtaButton>
   </DialogActions>
 </StyledDialog>
-
-      {/* 7. Flyer info */}
-      <StyledDialog
-        open={dialog.type === "flyer"}
-        onClose={closeDialog}
-        fullWidth
-        maxWidth="sm"
-        TransitionComponent={Grow}
-      >
-        <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }} />
-        <DialogContent>
-          {!dialog.data?.fromMyActivities && (
-            <Box
-              display="flex"
-              justifyContent="center"
-              mb={2}
-              sx={{ flexWrap: "wrap", gap: 2 }}
-            >{dialog.data?.activityId &&
-  activities.find((a) => a.id === dialog.data.activityId)?.registrationCondition === "member60" && (
-    <Box display="flex" justifyContent="center" mb={2}>
+{/* 7. Flyer info */}
+<StyledDialog
+  open={dialog.type === "flyer"}
+  onClose={closeDialog}
+  fullWidth
+  maxWidth="sm"
+  TransitionComponent={Grow}
+  fullScreen={fullScreen}
+  scroll="body" // ✅ מאפשר תוכן פנימי לגלול במקום לחתוך
+>
+  <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }} />
+  <DialogContent>
+    {!dialog.data?.fromMyActivities && (
       <Box
-        component="img"
-        src="/assets/Club60.png"
-        alt="מועדון 60+"
-        sx={{ width: 36, height: 36 }}
-      />
-    </Box>
-)}
-
-              <CtaButton
-                color="primary"
-                startIcon={<EventIcon />}
-                onClick={() => {
-                  const activityId = dialog.data.activityId;
-                  if (!activityId) {
-                    alert("הפלייר הזה אינו מקושר לפעילות");
-                    return;
-                  }
-                  closeDialog();
-                  if (!userProfile?.phone) {
-                    setOpenIdentify(true);
-                    return;
-                  }
-                  openDialog("register", activityId);
-                }}
-              >
-                הרשמה מהירה
-              </CtaButton>
-
-              <CtaButton
-                color="default"
-                onClick={() => {
-                  const act = activities.find((a) => a.id === dialog.data.activityId);
-                  if (act) {
-                    closeDialog();
-                    openDialog("activity-details", act);
-                  } else {
-                    alert("לא נמצאה פעילות מתאימה לפלייר זה");
-                  }
-                }}
-              >
-                לפרטים מלאים
-              </CtaButton>
-              
+        display="flex"
+        justifyContent="center"
+        mb={2}
+        sx={{ flexWrap: "wrap", gap: 2 }}
+      >
+        {dialog.data?.activityId &&
+          activities.find((a) => a.id === dialog.data.activityId)?.registrationCondition ===
+            "member60" && (
+            <Box display="flex" justifyContent="center" mb={2}>
+              <Box
+                component="img"
+                src="/assets/Club60.png"
+                alt="מועדון 60+"
+                sx={{ width: 36, height: 36 }}
+              />
             </Box>
-            
           )}
 
+        <CtaButton
+          color="primary"
+          startIcon={<EventIcon />}
+          onClick={() => {
+            const activityId = dialog.data.activityId;
+            if (!activityId) {
+              alert("הפלייר הזה אינו מקושר לפעילות");
+              return;
+            }
+            closeDialog();
+            if (!userProfile?.phone) {
+              setOpenIdentify(true);
+              return;
+            }
+            openDialog("register", activityId);
+          }}
+        >
+          הרשמה מהירה
+        </CtaButton>
 
-          <Box
-            component="img"
-            src={dialog.data?.fileUrl}
-            alt={dialog.data?.name || "פלייר"}
-            sx={{
-              width: "100%",
-              height: "auto",
-              objectFit: "contain",
-              borderRadius: 2,
-              boxShadow: theme.shadows[2],
-            }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <CtaButton color="primary.light" onClick={closeDialog}>
-            סגור
-          </CtaButton>
-        </DialogActions>
-      </StyledDialog>
+        <CtaButton
+          color="default"
+          onClick={() => {
+            const activityId = dialog.data?.activityId;
+            if (!activityId) {
+              alert("הפלייר הזה אינו מקושר לפעילות");
+              return;
+            }
+
+            const act = activities.find((a) => a.id === activityId);
+            if (act) {
+              closeDialog();
+              openDialog("activity-details", {
+                id: act.id,
+                name: act.name,
+                date: act.date,
+                startTime: act.startTime,
+                endTime: act.endTime,
+                tags: act.tags || [],
+                location: act.location || "",
+                description: act.description || "",
+              });
+            } else {
+              alert("לא נמצאה פעילות מתאימה לפלייר זה");
+            }
+          }}
+        >
+          לפרטים מלאים
+        </CtaButton>
+      </Box>
+    )}
+
+    {/* ✅ תצוגת תמונה נוחה וניתנת לפתיחה בטאב חדש */}
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        maxHeight: { sm: "80vh", xs: "none" },
+        overflow: "auto",
+      }}
+    >
+      <a
+        href={dialog.data?.fileUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ display: "block", width: "100%" }}
+      >
+        <Box
+          component="img"
+          src={dialog.data?.fileUrl}
+          alt={dialog.data?.name || "פלייר"}
+          sx={{
+            width: "100%",
+            maxWidth: "100%",
+            height: "auto",
+            objectFit: "contain",
+            borderRadius: 2,
+            boxShadow: theme.shadows[2],
+          }}
+        />
+      </a>
+    </Box>
+  </DialogContent>
+  <DialogActions>
+    <CtaButton color="primary.light" onClick={closeDialog}>
+      סגור
+    </CtaButton>
+  </DialogActions>
+</StyledDialog>
 
       {/* 8. Message reply */}
-      <StyledDialog open={dialog.type === "message"} onClose={closeDialog} fullWidth>
+      <StyledDialog open={dialog.type === "message"} onClose={closeDialog} fullWidth  fullScreen={fullScreen}>
         <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
           השב להודעה
         </DialogTitle>
@@ -586,7 +627,7 @@ onClick={async () => {
       </StyledDialog>
 
       {/* 9. Survey fill */}
-      <StyledDialog open={dialog.type === "survey"} onClose={closeDialog} fullWidth>
+      <StyledDialog open={dialog.type === "survey"} onClose={closeDialog} fullWidth  fullScreen={fullScreen}>
         <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
           מילוי סקר
         </DialogTitle>
@@ -606,6 +647,7 @@ onClick={async () => {
         onClose={closeDialog}
         fullWidth
         maxWidth="sm"
+         fullScreen={fullScreen}
       >
         <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
           כל הסקרים
@@ -647,6 +689,7 @@ onClick={async () => {
         onClose={() => setOpenIdentify(false)}
         fullWidth
         maxWidth="xs"
+         fullScreen={fullScreen}
       >
         <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
           הזדהות
@@ -667,6 +710,7 @@ onClick={async () => {
         onClose={() => setOpenAdminSignIn(false)}
         fullWidth
         maxWidth="xs"
+         fullScreen={fullScreen}
       >
         <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
           התחברות מנהל

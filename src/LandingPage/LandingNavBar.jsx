@@ -111,7 +111,7 @@ export default function LandingNavBar({
           width: "100%",
           zIndex: theme.zIndex.appBar,
           backdropFilter: "blur(10px)",
-          background: "rgba(255,255,255,0.85)",
+background: "rgba(245, 245, 245, 0.85)",
           boxShadow: isSticky
             ? "0 4px 12px rgba(0,0,0,.15)"
             : "0 1px 4px rgba(0,0,0,.08)",

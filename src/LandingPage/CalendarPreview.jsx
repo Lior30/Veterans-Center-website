@@ -45,7 +45,9 @@ export default function CalendarPreview({
   const isMobile   = useMediaQuery(theme.breakpoints.down("sm"));
   const calendarRef = useRef(null);
 
-  const [view, setView]       = useState("timeGridWeek");
+const [view, setView] = useState("timeGridDay");
+const calendarMinWidth = isMobile && view === "timeGridDay" ? "100%" : isMobile ? 650 : "auto";
+
   const [tag,  setTag]        = useState("ALL");
   const holidays              = usePublicHolidays();
 
@@ -58,21 +60,43 @@ export default function CalendarPreview({
 
   // build events: activities + holidays
   const events = useMemo(() => {
+    const toDateTime = (a) => new Date(`${a.date}T${a.startTime || "23:59"}:00`);
+
     const actEv = activities
+    
       .filter(a => tag === "ALL" || (a.tags || []).includes(tag))
-      .map(a => ({
-        id:    a.id,
-        title: a.name,
-        start: a.recurring ? undefined : `${a.date}T${a.startTime}`,
-        end:   a.recurring ? undefined : `${a.date}T${a.endTime}`,
-        daysOfWeek:  a.recurring ? a.weekdays   : undefined,
-        startTime:   a.recurring ? a.startTime  : undefined,
-        endTime:     a.recurring ? a.endTime    : undefined,
-        startRecur:  a.recurring ? a.date       : undefined,
-        backgroundColor: theme.palette.primary.lightblue,
-        textColor: "#000",
-        extendedProps: { activityId: a.id, isHoliday: false },
-      }));
+      
+
+ .map(a => {
+  const isRegistered =
+    userProfile?.activities?.includes(a.id) ||
+    userProfile?.activities?.includes(a.name);
+
+  const isPast = toDateTime(a) < new Date(); // ✅ בדיקה זהה לזו שבקובץ שלך
+
+  return {
+    id: a.id,
+    title: a.name,
+    start: a.recurring ? undefined : `${a.date}T${a.startTime}`,
+    end:   a.recurring ? undefined : `${a.date}T${a.endTime}`,
+    daysOfWeek:  a.recurring ? a.weekdays   : undefined,
+    startTime:   a.recurring ? a.startTime  : undefined,
+    endTime:     a.recurring ? a.endTime    : undefined,
+    startRecur:  a.recurring ? a.date       : undefined,
+    backgroundColor: isPast
+      ? "#e0e0e0" // ✅ אפור לפעילויות שעברו
+      : theme.palette.primary.lightblue,
+    textColor: "#000",
+    extendedProps: {
+      activityId: a.id,
+      isHoliday: false,
+      isRegistered,
+      isPast,
+    },
+  };
+});
+
+
 
     const holEv = holidays.map(h => ({
       id:  `hol-${h.date}`,
@@ -101,6 +125,8 @@ export default function CalendarPreview({
     const flyer    = flyers.find(f => f.activityId === activityId);
     const activity = activities.find(a => a.id === activityId);
 
+
+
     if (flyer)       openDialog("flyer", flyer);
     else if (activity) openDialog("activity-details", activity);
     else alert("לא נמצאה פעילות תואמת");
@@ -114,30 +140,47 @@ export default function CalendarPreview({
       <Container maxWidth="lg">
         <SectionTitle icon={<EventIcon />} title="לוח פעילויות" />
 
-        {/* TOGGLE */}
-        <Stack direction="row" spacing={6} justifyContent="center" sx={{ mb: 4 }}>
-          <ToggleButton
-            title="תצוגה שבועית"
-            active={view === "timeGridWeek"}
-            icon={<ViewWeekIcon fontSize="large" />}
-            label="שבועי"
-            onClick={() => {
-              setView("timeGridWeek");
-              calendarRef.current.getApi().changeView("timeGridWeek");
-            }}
-          />
+    <Box
+  sx={{
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 3, // רווח קבוע בין הכפתורים (24px)
+    mb: 4,
+  }}
+>
+  <ToggleButton
+    title="תצוגה יומית"
+    active={view === "timeGridDay"}
+    icon={<EventIcon fontSize="large" />}
+    label="יומי"
+    onClick={() => {
+      setView("timeGridDay");
+      calendarRef.current.getApi().changeView("timeGridDay");
+    }}
+  />
+  <ToggleButton
+    title="תצוגה שבועית"
+    active={view === "timeGridWeek"}
+    icon={<ViewWeekIcon fontSize="large" />}
+    label="שבועי"
+    onClick={() => {
+      setView("timeGridWeek");
+      calendarRef.current.getApi().changeView("timeGridWeek");
+    }}
+  />
+  <ToggleButton
+    title="תצוגה חודשית"
+    active={view === "dayGridMonth"}
+    icon={<CalendarMonthIcon fontSize="large" />}
+    label="חודשי"
+    onClick={() => {
+      setView("dayGridMonth");
+      calendarRef.current.getApi().changeView("dayGridMonth");
+    }}
+  />
+</Box>
 
-          <ToggleButton
-            title="תצוגה חודשית"
-            active={view === "dayGridMonth"}
-            icon={<CalendarMonthIcon fontSize="large" />}
-            label="חודשי"
-            onClick={() => {
-              setView("dayGridMonth");
-              calendarRef.current.getApi().changeView("dayGridMonth");
-            }}
-          />
-        </Stack>
 
         {/* NAV ARROWS */}
         <NavWrapper>
@@ -181,8 +224,9 @@ export default function CalendarPreview({
 
         {/* CALENDAR */}
         <Box sx={{ overflowX: isMobile ? "auto" : "visible" }}>
-          <Box sx={{
-            minWidth: isMobile ? 650 : "auto",
+         <Box sx={{
+  minWidth: calendarMinWidth,
+
             borderRadius: 2,
             overflow: "hidden",
             boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
@@ -278,28 +322,70 @@ displayEventEnd={false}
               slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
 
               eventClick={handleEventClick}
+eventDidMount={(info) => {
+  const { isPast, isRegistered } = info.event.extendedProps;
 
-              eventDidMount={(info) => {
-                const title = info.el.querySelector(".fc-event-title");
-                const frame = info.el.querySelector(".fc-event-main");
-                if (!title || !frame) return;
+  // צבע רקע
+  if (isPast) {
+    info.el.style.backgroundColor = "#e0e0e0"; // אפור
+  } else {
+    info.el.style.backgroundColor = theme.palette.primary.lightblue; // תכלת רגיל
+  }
 
-                // font size adjustment
-                let fs = parseFloat(getComputedStyle(title).fontSize);
-                const fits = () =>
-                  title.scrollHeight <= frame.clientHeight &&
-                  title.scrollWidth  <= frame.clientWidth;
+  // צבע טקסט אחיד
+  info.el.style.color = "#000";
 
-                while (!fits() && fs > 8) {
-                  fs -= 1;
-                  title.style.fontSize = `${fs}px`;
-                }
-              }}
+  // מסגרת אם המשתמש רשום
+  if (isRegistered && !isPast) {
+    info.el.style.border = "2px solid #81D4FA";
+    info.el.style.borderRadius = "8px";
+  }
 
-             eventContent={(renderInfo) => {
-const startOnly = renderInfo.timeText;   
+  // הוספת ✔️ לפני כותרת
+  const titleEl = info.el.querySelector(".fc-event-title");
+  if (titleEl && isRegistered) {
+    // הימנעי מהוספה כפולה של ✔️ אם כבר קיים
+    if (!titleEl.innerHTML.startsWith("✔️")) {
+      titleEl.innerHTML = `✔️ ${titleEl.innerHTML}`;
+    }
+  }
+
+  // שינוי גודל טקסט אוטומטי
+  const frame = info.el.querySelector(".fc-event-main");
+  if (!titleEl || !frame) return;
+
+  let fs = parseFloat(getComputedStyle(titleEl).fontSize);
+  const fits = () =>
+    titleEl.scrollHeight <= frame.clientHeight &&
+    titleEl.scrollWidth <= frame.clientWidth;
+
+  while (!fits() && fs > 8) {
+    fs -= 1;
+    titleEl.style.fontSize = `${fs}px`;
+  }
+}}
+eventContent={(renderInfo) => {
+  const { isRegistered, isPast } = renderInfo.event.extendedProps;
+  const startOnly = renderInfo.timeText;
+
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        width: "100%",
+        height: "100%",
+        boxSizing: "border-box",
+        border: isRegistered && !isPast ? "2px solid #81D4FA" : "none",
+        borderRadius: "8px",
+        padding: "4px",
+        backgroundColor: isPast
+          ? "#e0e0e0"
+          : theme.palette.primary.lightblue,
+        backgroundClip: "padding-box",
+      }}
+    >
       <Typography
         variant="body2"
         sx={{
@@ -308,16 +394,31 @@ const startOnly = renderInfo.timeText;
           textAlign: "center",
           lineHeight: 1.2,
           fontSize: isMobile ? "0.7em" : "0.85em",
+          display: "flex",
+          alignItems: "center",
+          gap: 0.5,
         }}
       >
+        {isRegistered && (
+          <Box component="span" sx={{ color: "#81D4FA" }}>✔️</Box>
+        )}
         {renderInfo.event.title}
       </Typography>
-      <Typography variant="caption" sx={{ fontSize: isMobile ? "0.6em" : "0.75em" }}>
+      <Typography
+        variant="caption"
+        sx={{ fontSize: isMobile ? "0.6em" : "0.75em" }}
+      >
         {startOnly}
       </Typography>
     </Box>
   );
 }}
+
+
+
+
+ 
+
 
             />
           </Box>
@@ -331,26 +432,38 @@ const startOnly = renderInfo.timeText;
 
 function ToggleButton({ title, icon, label, active, onClick }) {
   const theme = useTheme();
+
   return (
     <Tooltip title={title}>
-      <IconButton
+      <Box
         onClick={onClick}
         sx={{
+          cursor: "pointer",
+          width: 90,
+          height: 90,
+          borderRadius: "16px",
+          backgroundColor: active ? theme.palette.primary.light : "#f0f0f0",
+          color: active ? theme.palette.primary.contrastText : theme.palette.text.secondary,
+          boxShadow: active ? "0 4px 12px rgba(0,0,0,0.15)" : "none",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          color: active ? theme.palette.primary.light : theme.palette.text.secondary,
+          justifyContent: "center",
+          transition: "all 0.3s ease",
+          "&:hover": {
+            backgroundColor: active ? theme.palette.primary.main : "#e0e0e0",
+          },
         }}
       >
         {icon}
         <Typography
           variant="subtitle1"
           fontWeight={active ? 700 : 400}
-          sx={{ mt: 0.5 }}
+          sx={{ mt: 0.5, fontSize: "0.9rem", lineHeight: 1 }}
         >
           {label}
         </Typography>
-      </IconButton>
+      </Box>
     </Tooltip>
   );
 }
