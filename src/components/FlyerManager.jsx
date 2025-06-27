@@ -1,16 +1,19 @@
-//FlyerManager.jsx
 import React, { useState, useEffect, useRef } from "react";
 import FlyerUploader from "./FlyerUploaderArea.jsx";
 import FlyerService from "../services/FlyerService.js";
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from "@mui/material";
 
 export default function FlyerManager() {
   const [flyers, setFlyers] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  /*remember the index*/
   const dragIndexRef = useRef(null);
 
-  /*first load */
+  // New: edit dialog state
+  const [editingFlyer, setEditingFlyer] = useState(null);
+  const [newStartDate, setNewStartDate] = useState("");
+  const [newEndDate, setNewEndDate] = useState("");
+
+  /* first load */
   useEffect(() => {
     (async () => {
       const list = await FlyerService.getFlyers();
@@ -19,7 +22,7 @@ export default function FlyerManager() {
     })();
   }, []);
 
-  /*Drag & Drop*/
+  /* Drag & Drop */
   const handleDragStart = (_, idx) => (dragIndexRef.current = idx);
 
   const handleDragOver = (e) => e.preventDefault();
@@ -29,20 +32,13 @@ export default function FlyerManager() {
     if (dragIdx === null || dragIdx === hoverIdx) return;
 
     const updated = [...flyers];
-    // switצching the two flyers in the array
-    [updated[dragIdx], updated[hoverIdx]] = [
-      updated[hoverIdx],
-      updated[dragIdx],
-    ];
-    // and updating their order
+    [updated[dragIdx], updated[hoverIdx]] = [updated[hoverIdx], updated[dragIdx]];
     updated[dragIdx].order = dragIdx;
     updated[hoverIdx].order = hoverIdx;
 
-    // UI update
     setFlyers(updated);
     dragIndexRef.current = hoverIdx;
 
-    //  saving the new order to the server
     try {
       await FlyerService.swapOrder(
         { id: updated[dragIdx].id, order: dragIdx },
@@ -50,30 +46,43 @@ export default function FlyerManager() {
       );
     } catch (err) {
       alert("שמירת הסדר נכשלה: " + err.code);
-      // if saving fails, revert the UI change
       const fresh = await FlyerService.getFlyers();
       setFlyers(fresh);
       dragIndexRef.current = null;
     }
   };
 
-  /*delete */
+  /* Delete */
   const handleDelete = async (flyer) => {
     if (!window.confirm(`למחוק את "${flyer.name}"?`)) return;
-
     try {
       await FlyerService.deleteFlyer(flyer);
-      //remove from UI
       setFlyers(await FlyerService.getFlyers());
     } catch (err) {
       alert("המחיקה נכשלה: " + err.code);
     }
   };
 
-  /* refresh*/
+  /* Refresh */
   const refreshList = async () => setFlyers(await FlyerService.getFlyers());
 
-  /*UI */
+  /* Save edited dates */
+  const handleSaveDates = async () => {
+    if (!editingFlyer) return;
+    if (newEndDate && newStartDate && newEndDate < newStartDate) {
+      alert("תאריך סיום חייב להיות אחרי תאריך התחלה");
+      return;
+    }
+    try {
+      await FlyerService.updateFlyerDates(editingFlyer.id, newStartDate, newEndDate);
+      setEditingFlyer(null);
+      refreshList();
+    } catch (err) {
+      alert("שמירת התאריכים נכשלה: " + (err.code || err.message));
+    }
+  };
+
+  /* UI */
   return (
     <div
       dir="rtl"
@@ -81,10 +90,8 @@ export default function FlyerManager() {
     >
       <h2 style={{ textAlign: "center", marginBottom: 32 }}>ניהול פלייארים</h2>
 
-      {/* upload area*/}
       <FlyerUploader onUpload={refreshList} />
 
-      {/* list*/}
       <div style={{ marginTop: 40 }}>
         <h3 style={{ marginBottom: 12 }}>פלייארים קיימים:</h3>
         {loading ? (
@@ -132,7 +139,6 @@ export default function FlyerManager() {
                   {flyer.name}
                 </p>
 
-                {/* delete button*/}
                 <button
                   onClick={() => handleDelete(flyer)}
                   style={{
@@ -146,11 +152,59 @@ export default function FlyerManager() {
                 >
                   מחק
                 </button>
+
+                <button
+                  onClick={() => {
+                    setEditingFlyer(flyer);
+                    setNewStartDate(flyer.startDate?.toDate ? flyer.startDate.toDate().toISOString().substr(0,10) : "");
+                    setNewEndDate(flyer.endDate?.toDate ? flyer.endDate.toDate().toISOString().substr(0,10) : "");
+                  }}
+                  style={{
+                    background: "#1976d2",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 4,
+                    padding: "4px 12px",
+                    cursor: "pointer",
+                    marginTop: 6,
+                  }}
+                >
+                  ערוך תאריכים
+                </button>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Edit dialog */}
+      <Dialog open={!!editingFlyer} onClose={() => setEditingFlyer(null)}>
+        <DialogTitle>עריכת תאריכים</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="הצג החל מ־"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+            value={newStartDate}
+            onChange={(e) => setNewStartDate(e.target.value)}
+            margin="dense"
+          />
+          <TextField
+            label="ועד (כולל)"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+            value={newEndDate}
+            onChange={(e) => setNewEndDate(e.target.value)}
+            margin="dense"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditingFlyer(null)}>ביטול</Button>
+          <Button onClick={handleSaveDates} variant="contained">שמור</Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }

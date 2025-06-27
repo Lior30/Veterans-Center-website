@@ -1,14 +1,12 @@
-//src/services/FlyerService.js 
 import { db, storage } from "../firebase";
 import {
   collection, addDoc, getDocs, query, orderBy,
-  doc, deleteDoc, writeBatch, serverTimestamp, Timestamp
+  doc, deleteDoc, writeBatch, serverTimestamp, Timestamp, updateDoc
 } from "firebase/firestore";
 import {
   ref, uploadBytes, getDownloadURL, deleteObject
 } from "firebase/storage";
 import { onSnapshot } from "firebase/firestore";
-
 
 const FLYERS_COL   = "flyers";
 const ONE_YEAR_MS  = 365 * 24 * 60 * 60 * 1000;
@@ -22,37 +20,36 @@ function toTimestamp(dateStr, fallback) {
 
 const FlyerService = {
   /* upload */
-async uploadFlyer({ file, name, startDate, endDate, activityId }) {
-  const storageRef = ref(storage, `flyers/${Date.now()}_${file.name}`);
-  await uploadBytes(storageRef, file, { contentType: file.type });
-  const fileUrl    = await getDownloadURL(storageRef);
-  const storagePath = storageRef.fullPath;
+  async uploadFlyer({ file, name, startDate, endDate, activityId }) {
+    const storageRef = ref(storage, `flyers/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, file, { contentType: file.type });
+    const fileUrl    = await getDownloadURL(storageRef);
+    const storagePath = storageRef.fullPath;
 
-  const snap      = await getDocs(collection(db, FLYERS_COL));
-  const nextOrder = snap.size;
+    const snap      = await getDocs(collection(db, FLYERS_COL));
+    const nextOrder = snap.size;
 
-  const nowTS   = serverTimestamp();
-  const startTS = toTimestamp(startDate, nowTS);
-  const endTS   = toTimestamp(
-    endDate,
-    Timestamp.fromMillis(Date.now() + ONE_YEAR_MS)
-  );
+    const nowTS   = serverTimestamp();
+    const startTS = toTimestamp(startDate, nowTS);
+    const endTS   = toTimestamp(
+      endDate,
+      Timestamp.fromMillis(Date.now() + ONE_YEAR_MS)
+    );
 
-  await addDoc(collection(db, FLYERS_COL), {
-    name,
-    fileUrl,
-    storagePath,
-    order: nextOrder,
-    createdAt: nowTS,
-    startDate: startTS,
-    endDate: endTS,
-    filename: file.name,
-    activityId,    
-  });
-},
+    await addDoc(collection(db, FLYERS_COL), {
+      name,
+      fileUrl,
+      storagePath,
+      order: nextOrder,
+      createdAt: nowTS,
+      startDate: startTS,
+      endDate: endTS,
+      filename: file.name,
+      activityId,    
+    });
+  },
 
-
-  /* manage*/
+  /* manage */
   async getFlyers() {
     const snap = await getDocs(
       query(collection(db, FLYERS_COL), orderBy("order", "asc"))
@@ -83,13 +80,23 @@ async uploadFlyer({ file, name, startDate, endDate, activityId }) {
     await deleteDoc(doc(db, FLYERS_COL, flyer.id));
   },
 
-  /* Drag & Drop*/
+  /* Drag & Drop */
   async swapOrder(a, b) {
     const batch = writeBatch(db);
     batch.update(doc(db, FLYERS_COL, a.id), { order: a.order });
     batch.update(doc(db, FLYERS_COL, b.id), { order: b.order });
     await batch.commit();
   },
+
+  /* ✅ NEW: update flyer dates */
+  async updateFlyerDates(id, startDateStr, endDateStr) {
+    const flyerRef = doc(db, FLYERS_COL, id);
+    const update = {
+      startDate: toTimestamp(startDateStr, serverTimestamp()),
+      endDate: toTimestamp(endDateStr, Timestamp.fromMillis(Date.now() + ONE_YEAR_MS)),
+    };
+    await updateDoc(flyerRef, update);
+  }
 };
 
 FlyerService.subscribe = function (callback) {
