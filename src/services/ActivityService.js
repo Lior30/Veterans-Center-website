@@ -25,19 +25,21 @@ export default class ActivityService {
 
   /** ➖ delete full  doc*/
   static async delete(id) {
-  try {
-    const flyers = await FlyerService.getFlyers();
-    const related = flyers.filter((f) => f.activityId === id);
-    for (const flyer of related) {
-      await FlyerService.deleteFlyer(flyer);
-    }
+    try {
+      const flyers = await FlyerService.getFlyers();
+      const related = flyers.filter((f) => f.activityId === id);
+      for (const flyer of related) {
+        await FlyerService.deleteFlyer(flyer);
+      }
 
-    return deleteDoc(doc(db, ActivityService.COL, id));
-  } catch (err) {
-    console.error("שגיאה במחיקת פעילות ופליירים", err);
-    throw err;
+      return deleteDoc(doc(db, ActivityService.COL, id));
+    } catch (err) {
+      console.error("שגיאה במחיקת פעילות ופליירים", err);
+      throw err;
+    }
   }
-}
+
+
 
   /* Realtime stream  */
   static subscribe(callback) {
@@ -113,128 +115,137 @@ export default class ActivityService {
 
   /*  Registration helpers*/
 
-/**
- * ➕ user registers (transaction = capacity safe), ועדכון גם של מסמך המשתמש
- * @param {string} activityId
- * @param {{name: string, phone: string}} user  
- */
-static async registerUser(activityId, user) {
-  
-  if (!activityId) {
-    throw new Error("MISSING_ACTIVITY_ID");
-  }
-  if (!user || !user.phone) {
-    throw new Error("USER_NO_PHONE");
-  }
-  // Normalize phone
-  const normalizedPhone = String(user.phone).replace(/\D/g, "");
-  if (!normalizedPhone) {
-    throw new Error("USER_PHONE_INVALID");
-  }
+  /**
+   * ➕ user registers (transaction = capacity safe), ועדכון גם של מסמך המשתמש
+   * @param {string} activityId
+   * @param {{name: string, phone: string}} user  
+   */
+  static async registerUser(activityId, user) {
+    
+    if (!activityId) {
+      throw new Error("MISSING_ACTIVITY_ID");
+    }
+    if (!user || !user.phone) {
+      throw new Error("USER_NO_PHONE");
+    }
+    // Normalize phone
+    const normalizedPhone = String(user.phone).replace(/\D/g, "");
+    if (!normalizedPhone) {
+      throw new Error("USER_PHONE_INVALID");
+    }
+    
+    const usersCol = collection(db, "users");
+    const userQuery = query(usersCol, where("phone", "==", normalizedPhone));
+    const userSnap = await getDocs(userQuery);
+    if (userSnap.empty) {
+      console.warn("ActivityService.registerUser: USER_NOT_FOUND for phone:", normalizedPhone);
+      throw new Error("USER_NOT_FOUND");
+    }
+    const userRef = userSnap.docs[0].ref;
 
-  
-  const usersCol = collection(db, "users");
-  const userQuery = query(usersCol, where("phone", "==", normalizedPhone));
-  console.log("ActivityService.registerUser: query user by phone:", normalizedPhone);
-  const userSnap = await getDocs(userQuery);
-  if (userSnap.empty) {
-    console.warn("ActivityService.registerUser: USER_NOT_FOUND for phone:", normalizedPhone);
-    throw new Error("USER_NOT_FOUND");
-  }
-  const userRef = userSnap.docs[0].ref;
+    const activityRef = doc(db, ActivityService.COL, activityId);
 
-  const activityRef = doc(db, ActivityService.COL, activityId);
+    // check if possible to register
+    try {
+      const result = await runTransaction(db, async (tx) => {
+        const snap = await tx.get(activityRef);
+        if (!snap.exists()) {
+          throw new Error("NOT_FOUND");
+        }
+        const data = snap.data();
 
-  // check if possible to register
-  try {
+        // Check if the activity date has already passed.
+        if (data.date) {
+          const activityYMD = data.date; // e.g., "2025-07-02"
+          const todayYMD = new Date().toISOString().split("T")[0]; // e.g., "2025-07-02"
 
-    const result =await runTransaction(db, async (tx) => {
-    const snap = await tx.get(activityRef);
-      if (!snap.exists()) {
-        console.warn("ActivityService.registerUser: activity not found:", activityId);
-        throw new Error("NOT_FOUND");
-      }
-      const data = snap.data();
-
-      const userSnapTx = await tx.get(userRef);
-      const userData = userSnapTx.data();
-
-      // check for 60+
-      if (data.registrationCondition === 'member60' && !userData.is_club_60) {
-        return { 
-          success: false, 
-          reason: "CONDITION_NOT_MET", 
-          message: "פעילות זו מיועדת לחברי מרכז 60+ בלבד",
-          title: "הרשמה לא אושרה"
-        };
-      }
-
-      const capacity = data.capacity ?? 0;
-      const rawParticipants = Array.isArray(data.participants)
-        ? data.participants
-        : [];
-      // Normalize participants array
-      const participants = rawParticipants
-        .map((p) => {
-          if (typeof p === "string") {
-            return { phone: String(p).replace(/\D/g, "") };
-          } else {
-            return {
-              ...p,
-              phone: p.phone ? String(p.phone).replace(/\D/g, "") : "",
+          if (activityYMD < todayYMD) {
+            return { 
+              success: false, 
+              reason: "PAST_ACTIVITY", 
+              message: "תאריך הפעילות עבר, לא ניתן להירשם.",
+              title: "הרשמה לא אושרה"
             };
           }
-        })
-        .filter((p) => p.phone); 
+        }
 
-      // Already-registered?
-      if (participants.some((p) => p.phone === normalizedPhone)) {
-        console.warn("ActivityService.registerUser: already registered:", normalizedPhone);
-        throw new Error("alreadyRegistered");
-      }
-      // Capacity check
-      if (capacity && participants.length >= capacity) {
-        return { 
-          success: false, 
-          reason: "FULL", 
-          message: "אין עוד מקומות פנויים בפעילות זו", 
-          title: "הפעילות מלאה"
+        const userSnapTx = await tx.get(userRef);
+        const userData = userSnapTx.data();
+
+        // check for 60+
+        if (data.registrationCondition === 'member60' && !userData.is_club_60) {
+          return { 
+            success: false, 
+            reason: "CONDITION_NOT_MET", 
+            message: "פעילות זו מיועדת לחברי מרכז 60+ בלבד",
+            title: "הרשמה לא אושרה"
+          };
+        }
+
+        const capacity = data.capacity ?? 0;
+        const rawParticipants = Array.isArray(data.participants)
+          ? data.participants
+          : [];
+        // Normalize participants array
+        const participants = rawParticipants
+          .map((p) => {
+            if (typeof p === "string") {
+              return { phone: String(p).replace(/\D/g, "") };
+            } else {
+              return {
+                ...p,
+                phone: p.phone ? String(p.phone).replace(/\D/g, "") : "",
+              };
+            }
+          })
+          .filter((p) => p.phone); 
+
+        // Already-registered?
+        if (participants.some((p) => p.phone === normalizedPhone)) {
+          throw new Error("alreadyRegistered");
+        }
+        // Capacity check
+        if (capacity && participants.length >= capacity) {
+          return { 
+            success: false, 
+            reason: "FULL", 
+            message: "אין עוד מקומות פנויים בפעילות זו", 
+            title: "הפעילות מלאה"
+          };
+        }
+        // new user data to add
+        const newParticipant = {
+          name: user.name || "",
+          phone: normalizedPhone,
         };
-      }
-      // new user page
-      const newParticipant = {
-        name: user.name || "",
-        phone: normalizedPhone,
-      };
-      const updatedParticipants = [...participants, newParticipant];
-      tx.update(activityRef, { participants: updatedParticipants });
+        const updatedParticipants = [...participants, newParticipant];
+        tx.update(activityRef, { participants: updatedParticipants });
 
-      // update user document
-      const activityName = data.name || data.title || activityId;
-      console.log("ActivityService.registerUser: adding activity to user:", activityName);
-      tx.update(userRef, {
-        activities: arrayUnion(activityName),
-        activities_date: arrayUnion(new Date().toISOString()),
+        // update user document with activity registration info
+        const activityName = data.name || data.title || activityId;
+        tx.update(userRef, {
+          activities: arrayUnion(activityName),
+          activities_date: arrayUnion(new Date().toISOString()),
+        });
+
+        return { 
+          success: true, 
+          reason: "OK", 
+          message: "נרשמת לפעילות בהצלחה!", 
+          title: "הרשמה הושלמה בהצלחה"
+        };
       });
-
-      return { 
-        success: true, 
-        reason: "OK", 
-        message: "נרשמת לפעילות בהצלחה!", 
-        title: "הרשמה הושלמה בהצלחה"
+      
+      return result ?? { 
+        success: false, 
+        reason: "ERROR", 
+        message: "אירעה שגיאה במהלך ההרשמה. אנא נסה שוב", 
+        title: "שגיאה בהרשמה"
       };
-    });
-    
-    return result ?? { 
-      success: false, 
-      reason: "ERROR", 
-      message: "אירעה שגיאה במהלך ההרשמה. אנא נסה שוב", 
-      title: "שגיאה בהרשמה"
-    };
-  } catch (err) {
-    throw err;
+    } catch (err) {
+      throw err;
+    }
   }
-}
 
 
 

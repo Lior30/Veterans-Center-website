@@ -641,61 +641,60 @@ try {
 
 
   async function deleteUserCore(user) {
+    const phone   = user.phone || "";
+    const user_id = ensureUserId(user);
 
-      const phone   = user.phone || "";
-      const user_id = ensureUserId(user);
+    /* 1. users (המסמך הראשי) */
+    try {
+      await deleteUserByPhoneNumber(user_id);
+    } catch (err) {
+      console.error("⚠️  users delete failed:", err);
+    }
 
-      /* 1. users (המסמך הראשי) */
-       try {
-        await deleteUserByPhoneNumber(user_id);
-      } catch (err) {
-        console.error("⚠️  users delete failed:", err);
-      }
-
-      /* 2. activityRegistrations / surveyResponses */
-      const COLL = [
-        { path: "activityRegistrations", field: ["phone", phone] },
-        { path: "surveyResponses",       field: ["phone", phone] }
-      ];
-
-      for (const { path, field } of COLL) {
-        const [f, val] = field;
-        const snap = await getDocs(query(collection(db, path), where(f, "==", val)));
-        for (const d of snap.docs) {
-          try { await deleteDoc(d.ref); }
-          catch (e) { console.error(`⚠️  ${path} delete`, e); }
-        }
-      }
-
-      /* 3. replies – תת-אוסף messages/<msg>/replies */
-      const msgs = await getDocs(collection(db, "messages"));
-      for (const m of msgs.docs) {
-        const q = query(
+    /* 2. replies – תת-אוסף messages/<msg>/replies */
+    const msgs = await getDocs(collection(db, "messages"));
+    for (const m of msgs.docs) {
+      const reps = await getDocs(
+        query(
           collection(db, "messages", m.id, "replies"),
           where("phone", "==", phone)
-        );
-        const reps = await getDocs(q);
-        for (const r of reps.docs) {
-          try { await deleteDoc(r.ref); }
-          catch (e) { console.error("⚠️  reply delete", e); }
+        )
+      );
+      for (const r of reps.docs) {
+        try { await deleteDoc(r.ref); }
+        catch (e) { console.error("⚠️  reply delete", e); }
+      }
+    }
+
+    /* 3. הסרה מ־activities.participants */
+    const activitiesSnap = await getDocs(collection(db, "activities"));
+    for (const act of activitiesSnap.docs) {
+      const participants = act.data().participants || [];
+      const filtered = participants.filter(p => p.phone !== phone);
+      if (filtered.length < participants.length) {
+        try {
+          await updateDoc(act.ref, { participants: filtered });
+        } catch (e) {
+          console.error("⚠️  activity participant removal failed:", e);
         }
       }
+    }
 
-      /* 4. 🟢   עדכון ה-state המקומי + ריענון מהרשימה המלאה  */
-      setManualUsers(prev => prev.filter(u => u.phone !== phone));
-      markDeleted(phone);
+    /* 4. 🟢   עדכון ה-state המקומי + ריענון מהרשימה המלאה  */
+    setManualUsers(prev => prev.filter(u => u.phone !== phone));
+    markDeleted(phone);
 
-      const fresh = await getDocs(collection(db, "users"));
-      setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
+    const fresh = await getDocs(collection(db, "users"));
+    setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
 
-      alert("המשתמש נמחק בהצלחה");
+    alert("המשתמש נמחק בהצלחה");
   }
 
   async function deleteUser(user) {
-      const confirmed = window.confirm("האם אתה בטוח שברצונך למחוק משתמש זה?");
-      if (!confirmed) return;
+    const confirmed = window.confirm("האם אתה בטוח שברצונך למחוק משתמש זה?");
+    if (!confirmed) return;
 
-      await deleteUserCore(user);
+    await deleteUserCore(user);
   }
 
 async function saveEditedUser(u) {
