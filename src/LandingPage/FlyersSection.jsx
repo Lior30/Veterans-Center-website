@@ -104,7 +104,8 @@ export default function FlyersSection({ flyers, activities, openDialog }) {
   };
 
   return (
-    <Box component="section" sx={{  background: `linear-gradient(180deg, #ffffff 0%, ${theme.palette.primary.vlight} 100%)`,
+    <Box component="section" sx={{ background: `linear-gradient(180deg, ${theme.palette.primary.vlight} 0%, #ffffff 100%)`,
+
  }}>
       <Container maxWidth="lg" sx={{  }}>
         {/* TITLE */}

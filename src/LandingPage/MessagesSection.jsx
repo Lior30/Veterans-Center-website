@@ -27,7 +27,7 @@ const UpdateCard = styled(Card)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   borderRadius: theme.shape.borderRadius * 2,
-  overflow: "hidden",
+ overflow: "visible",
   backgroundColor: theme.palette.background.paper,          
   border: `1px solid ${theme.palette.divider}`,
   boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
@@ -67,6 +67,31 @@ const ScrollButton = styled(IconButton)(({ theme }) => ({
     boxShadow: "0 2px 6px rgba(106,27,154,.3)",
   },
 }));
+function linkify(text) {
+  const urlRegex = /(\b(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:[^\s]*)?)/gi;
+  const parts = text.split(urlRegex);
+
+  return parts.map((part, index) => {
+    const isLink = urlRegex.test(part);
+    const hasProtocol = /^https?:\/\//i.test(part);
+    const href = hasProtocol ? part : `https://${part}`;
+
+    return isLink ? (
+      <a
+        key={index}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: "#1976d2", textDecoration: "underline" }}
+      >
+        {part}
+      </a>
+    ) : (
+      <React.Fragment key={index}>{part}</React.Fragment>
+    );
+  });
+}
+
 
 export default function MessagesSection({ messages, openDialog, justIdentified }) {
   const [expanded, setExpanded] = useState({});
@@ -89,36 +114,38 @@ export default function MessagesSection({ messages, openDialog, justIdentified }
         backgroundColor: theme.palette.primary.vlight,          
       }}
     >
-      <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
+<Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, overflow: "visible" }}>
         <SectionTitle icon={<ArticleIcon />} title="הודעות" />
 
-        <Box sx={{ position: "relative", mt: 3 }}>
+       <Box sx={{ position: "relative", mt: 3, overflow: "visible" }}>
           {/* LEFT ARROW */}
-          <ScrollButton
-            onClick={() => scroll(-scrollDelta)}
-            sx={{
-              position: "absolute",
-              left: { xs: -14, sm: -20 },
-              top: "50%",
-              transform: "translateY(-50%)",
-            }}
-          >
-            <ChevronLeftIcon fontSize="small" />
-          </ScrollButton>
+       <ScrollButton
+  onClick={() => scroll(-scrollDelta)}
+  sx={{
+    position: "absolute",
+    left: 0,
+    transform: "translate(-50%, -50%)",
+    top: "50%",
+    zIndex: 2,
+  }}
+>
+  <ChevronLeftIcon fontSize="small" />
+</ScrollButton>
 
           {/* SCROLL TRACK */}
-          <Box
-            ref={scrollRef}
-            sx={{
-              display: "flex",
-              gap: theme.spacing(2),
-              overflowX: "auto",
-              pr: { xs: theme.spacing(3), sm: theme.spacing(4) },
-              scrollSnapType: "x mandatory",
-              "&::-webkit-scrollbar": { display: "none" },
-              alignItems: "center",                              
-            }}
-          >
+      <Box
+  ref={scrollRef}
+  sx={{
+    display: "flex",
+    gap: theme.spacing(2),
+    overflowX: "auto",
+    pr: { xs: theme.spacing(6), sm: theme.spacing(4) }, // 🟣 הוגדל ל־6
+    scrollSnapType: "x mandatory",
+    "&::-webkit-scrollbar": { display: "none" },
+    alignItems: "center",
+  }}
+>
+
             {messages.map((m) => {
               const isOpen = !!expanded[m.id];
               const txt = m.body || "";
@@ -139,20 +166,21 @@ export default function MessagesSection({ messages, openDialog, justIdentified }
                       {m.title}
                     </Typography>
 
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{
-                        whiteSpace: "pre-wrap",
-                        wordBreak: "break-word",
-                        lineHeight: 1.45,
-                        fontSize: { xs: "0.8rem", sm: "0.875rem" },
-                        cursor: tooLong ? "pointer" : "default",
-                      }}
-                      onClick={() => tooLong && toggleExpanded(m.id)}
-                    >
-                      {shownTxt}
-                    </Typography>
+                  <Typography
+  variant="body2"
+  color="text.secondary"
+  sx={{
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+    lineHeight: 1.45,
+    fontSize: { xs: "0.8rem", sm: "0.875rem" },
+    cursor: tooLong ? "pointer" : "default",
+  }}
+  onClick={() => tooLong && toggleExpanded(m.id)}
+>
+  {linkify(shownTxt)}
+</Typography>
+
 
                     <Box mt={1.5} sx={{ display: "flex", gap: 1 }}>
                       {tooLong && (
@@ -181,17 +209,19 @@ export default function MessagesSection({ messages, openDialog, justIdentified }
           </Box>
 
           {/* RIGHT ARROW */}
-          <ScrollButton
-            onClick={() => scroll(scrollDelta)}
-            sx={{
-              position: "absolute",
-              right: { xs: -14, sm: -20 },
-              top: "50%",
-              transform: "translateY(-50%)",
-            }}
-          >
-            <ChevronRightIcon fontSize="small" />
-          </ScrollButton>
+      <ScrollButton
+  onClick={() => scroll(scrollDelta)}
+  sx={{
+    position: "absolute",
+    right: 0,
+    transform: "translate(50%, -50%)",
+    top: "50%",
+    zIndex: 2,
+  }}
+>
+  <ChevronRightIcon fontSize="small" />
+</ScrollButton>
+
         </Box>
       </Container>
     </Box>
