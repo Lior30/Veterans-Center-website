@@ -20,7 +20,8 @@ const initialForm = {
   participants: [],
   registrationCondition: "",
   tags: [],
-  price: "",
+  priceMember60: "",
+  priceRegular: "",
   location: "",
 };
 
@@ -87,7 +88,7 @@ export default function ActivitiesContainer() {
       alert("הקיבולת חייבת להיות 1 או יותר");
       return;
     }
-    if (Number(form.price) < 0) {
+    if (Number(form.priceMember60) < 0 || Number(form.priceRegular) < 0) {
       alert("המחיר חייב להיות 0 או יותר");
       return;
     }
@@ -102,6 +103,8 @@ export default function ActivitiesContainer() {
     await ActivityService.save({
       ...form,
       capacity: Number(form.capacity),
+      priceMember60: Number(form.priceMember60),
+      priceRegular: Number(form.priceRegular),
     });
     setDialogOpen(false);
   };
