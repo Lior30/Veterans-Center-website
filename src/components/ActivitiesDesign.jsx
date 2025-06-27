@@ -41,6 +41,8 @@ import { MapContainer, TileLayer, Marker, Popup, useMap  } from "react-leaflet";
 import { OpenStreetMapProvider } from "leaflet-geosearch";
 import "leaflet/dist/leaflet.css";
 import "leaflet-geosearch/dist/geosearch.css";
+import * as XLSX from 'xlsx';
+
 
 function Recenter({ center, zoom }) {
   const map = useMap();
@@ -136,6 +138,55 @@ export default function ActivitiesDesign({
   // render map center and zoom
   const [mapCenter, setMapCenter] = useState([31.7683, 35.2137]);
   const [mapZoom, setMapZoom]     = useState(13);
+
+  // יוצרת קובץ אקסל מכל הרשימה של activities
+const exportToExcel = () => {
+  // "מרחיבים" כל פעילות לשורות: אם יש מספר נרשמים, נייצר שורה לכל משתתף
+  const rows = activities.flatMap(act => {
+    if (Array.isArray(act.participants) && act.participants.length) {
+      return act.participants.map(p => ({
+        activityId: act.id,
+        name: act.name,
+        date: act.date,
+        startTime: act.startTime,
+        endTime: act.endTime,
+        description: act.description,
+        capacity: act.capacity,
+        registrationCondition: act.registrationCondition,
+        recurring: act.recurring ? 'כן' : 'לא',
+        weekday: (act.weekdays || []).join(','),
+        participantName: p.name,
+        participantPhone: p.phone,
+        paid: p.paid ? 'כן' : 'לא',
+      }));
+    } else {
+      // אם אין נרשמים — שורה אחת עם שדות ריקים למשתתף
+      return [{
+        activityId: act.id,
+        name: act.name,
+        date: act.date,
+        startTime: act.startTime,
+        endTime: act.endTime,
+        description: act.description,
+        capacity: act.capacity,
+        registrationCondition: act.registrationCondition,
+        recurring: act.recurring ? 'כן' : 'לא',
+        weekday: (act.weekdays || []).join(','),
+        participantName: '',
+        participantPhone: '',
+        paid: '',
+      }];
+    }
+  });
+
+  // מייצרים גיליון עבודה וכתוב בו את המערך כטבלה
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Activities');
+
+  // שומרים את הקובץ
+  XLSX.writeFile(wb, 'activities_export.xlsx');
+};
 
   // map reference and GeoSearch provider
   const mapRef = useRef(null);
@@ -415,6 +466,15 @@ const togglePaid = async (phone) => {
             הוספת פעילות
           </Button>
 
+          <Button
+  variant="outlined"
+  onClick={exportToExcel}
+  sx={{ mb: 2, ml: 2 }}
+>
+  ייצוא לאקסל
+</Button>
+
+
           
    {/* add or remove tag*/}
    <Box
@@ -425,10 +485,22 @@ const togglePaid = async (phone) => {
        mb: 2
      }}
    >
-     <Button
-       variant="outlined"
-       onClick={() => setNewTagDialogOpen(true)}
-     >
+<ToggleButtonGroup
+        exclusive
+        value={tagFilter}
+        onChange={(_, v) => setTagFilter(v || "ALL")}
+      >
+        <ToggleButton value="ALL">הכל</ToggleButton>
+        {allTags.map((t) => (
+          <ToggleButton key={t} value={t}>
+            {t}
+          </ToggleButton>
+        ))}
+      </ToggleButtonGroup>
+      <Button
+        variant="outlined"
+        onClick={() => setNewTagDialogOpen(true)}
+      >
        הוסף תגית
      </Button>
      <Button
@@ -747,15 +819,39 @@ const togglePaid = async (phone) => {
             inputProps={{ dir: "rtl", style: { textAlign: "right" }, min:1 }}
           />
 
-          {/*  price */}
-          <TextField
-            label="מחיר"
-            type="number"
-            value={form.price || ""}
-            onChange={(e) =>
-              onFormChange((f) => ({ ...f, price: e.target.value }))
-            }
-            fullWidth
+ {/* מחיר עבור חבר 60+ */}
+ <TextField
+   label="מחיר עבור חבר 60+"
+   type="number"
+   value={form.priceMember60}
+   onChange={(e) =>
+     onFormChange((f) => ({ ...f, priceMember60: e.target.value }))
+   }
+   fullWidth
+            InputLabelProps={{
+              shrink: true,
+              sx: {
+                position: "absolute",
+                top: "-6px",
+                right: "12px",
+                transform: "none",
+                backgroundColor: "#fff",
+                px: 0.5,
+                fontSize: "0.75rem",
+              },
+            }}
+            inputProps={{ dir: "rtl", style: { textAlign: "right" }, min:0 }}
+          />
+
+ {/* מחיר עבור משתמש רגיל */}
+ <TextField
+   label="מחיר עבור משתמש רגיל"
+   type="number"
+   value={form.priceRegular}
+   onChange={(e) =>
+     onFormChange((f) => ({ ...f, priceRegular: e.target.value }))
+   }
+   fullWidth
             InputLabelProps={{
               shrink: true,
               sx: {
@@ -1028,7 +1124,7 @@ const togglePaid = async (phone) => {
   {filteredParticipants.length > 0 ? (
     <>
       {/* 2a. Checkbox column header “Paid?” only for paid activities */}
-      {selAct?.price > 0 && (
+      {(selAct?.priceMember60 > 0 || selAct?.priceRegular > 0) && (
         <Stack
           direction="row"
           alignItems="center"
@@ -1056,7 +1152,7 @@ const togglePaid = async (phone) => {
           <span style={{ textAlign: "right", flex: 1 }}>
             {users[p.phone] || p.phone}
           </span>
-          {selAct.price > 0 && (
+          {(selAct?.priceMember60 > 0 || selAct?.priceRegular > 0) && (
             <Checkbox
               checked={p.paid || false}
               onChange={() => togglePaid(p.phone)}
