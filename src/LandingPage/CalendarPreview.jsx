@@ -118,7 +118,7 @@ const calendarMinWidth = isMobile && view === "timeGridDay" ? "100%" : isMobile 
     }));
 
     return [...actEv, ...holEv];
-  }, [activities, holidays, tag, theme.palette]);
+  }, [activities, holidays, tag, theme.palette, userProfile]);
 
   // click handler
   const handleEventClick = info => {
