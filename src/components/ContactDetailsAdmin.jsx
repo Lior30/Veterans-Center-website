@@ -42,16 +42,6 @@ export default function ContactDetailsAdmin() {
     });
   }, []);
 
-  // Auto-hide message after 4 seconds
-  useEffect(() => {
-    if (message.open) {
-      const timer = setTimeout(() => {
-        setMessage(prev => ({ ...prev, open: false }));
-      }, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [message.open]);
-
   // Validation: must be 10 digits
   const isValidPhone = (val) => {
     const digits = val.replace(/\D/g, '');
@@ -206,75 +196,74 @@ export default function ContactDetailsAdmin() {
 
       {/* Large Modal Message for Seniors */}
       <Dialog
-              open={message.open}
-              // Only close when user clicks the button
-              onClose={(e, reason) => {
-                if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
-                  setMessage(prev => ({ ...prev, open: false }));
-                }
-              }}
-              maxWidth="xs"
-              PaperProps={{
-                sx: {
-                  p: 2,
-                  textAlign: 'center',
-                  borderRadius: 1,
-                  // Vibrant border using main palette colors
-                  border: theme => `3px solid ${theme.palette[message.type === 'success' ? 'success' : 'error'].main}`,
-                  boxShadow: 2
-                }
-              }}
-            >
-              <DialogContent>
-                <Box sx={{ mb: 2 }}>
-                  {message.type === 'success' ? (
-                    <CheckCircle sx={{ fontSize: 64, color: 'success.main', mb: 1 }} />
-                  ) : (
-                    <Error sx={{ fontSize: 64, color: 'error.main', mb: 1 }} />
-                  )}
-                </Box>
-                <Typography
-                  variant="h5"                
-                  sx={{
-                    fontWeight: 600,
-                    mb: 1,
-                    color: message.type === 'success' ? 'success.main' : 'error.main'
-                  }}
-                >
-                  {message.title}
-                </Typography>
-                <Typography
-                  variant="body1"             
-                  sx={{
-                    fontSize: '1.8rem',         
-                    lineHeight: 1.6,
-                    color: 'text.primary'
-                  }}
-                >
-                  {message.text}
-                </Typography>
-              </DialogContent>
-              <DialogActions sx={{ justifyContent: 'center', pb: 1 }}>
-                <Button
-                  onClick={() => setMessage(prev => ({ ...prev, open: false }))}
-                  variant="contained"
-                  size="medium"
-                  sx={{
-                    fontSize: '1.2rem',          
-                    py: 1,
-                    px: 4,                       
-                    
-                    bgcolor: message.type === 'success' ? 'success.main' : 'error.main',
-                    color: 'common.white',
-                    '&:hover': {
-                      bgcolor: message.type === 'success' ? 'success.dark' : 'error.dark'
-                    }
-                  }}
-                >
-                  הבנתי
-                </Button>
-              </DialogActions>
-            </Dialog>
+        open={message.open}
+        onClose={(e, reason) => {
+          if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+            setMessage(prev => ({ ...prev, open: false }));
+          }
+        }}
+        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            p: 3,
+            textAlign: 'center',
+            borderRadius: 2,
+            border: theme => `3px solid ${theme.palette.primary.main}`,
+            boxShadow: 4,
+            background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
+          }
+        }}
+      >
+        <DialogContent>
+          <Box sx={{ mb: 3 }}>
+            <CheckCircle 
+              sx={{ 
+                fontSize: 72, 
+                color: 'primary.main', 
+                mb: 2,
+                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))'
+              }} 
+            />
+          </Box>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              mb: 2,
+              color: 'primary.main',
+              textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+          >
+          התוכן עודכן בהצלחה!
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
+          <Button
+            onClick={() => setMessage(prev => ({ ...prev, open: false }))}
+            variant="contained"
+            size="large"
+            sx={{
+              fontSize: '1.3rem',
+              py: 1.5,
+              px: 6,
+              bgcolor: 'primary.main',
+              color: 'common.white',
+              borderRadius: 3,
+              textTransform: 'none',
+              fontWeight: 600,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              '&:hover': {
+                bgcolor: 'primary.dark',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 6px 16px rgba(0,0,0,0.2)'
+              },
+              transition: 'all 0.3s ease'
+            }}
+          >
+            הבנתי
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }
