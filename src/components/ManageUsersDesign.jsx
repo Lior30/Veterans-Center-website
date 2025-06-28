@@ -11,6 +11,7 @@ import UserService from "../services/UserService";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import EditIcon   from "@mui/icons-material/Edit";
 import CancelIcon from "@mui/icons-material/Cancel";
+import { CheckCircle, Error } from "@mui/icons-material";
 import {
   Box,
   Button,
@@ -20,6 +21,7 @@ import {
   DialogTitle,
   DialogContent,
   IconButton,
+  DialogActions,
   Tabs, Tab 
   // … שאר ה-imports הקיימים
 } from "@mui/material";
@@ -54,7 +56,11 @@ async function fixMissingUserFields() {
 
    await Promise.all(updates);
     if (updates.length > 0) {
-      alert("השדות החסרים עודכנו בהצלחה.");
+      setMessage({
+        open: true,
+        type: 'success',
+        text: 'השדות החסרים עודכנו בהצלחה'
+      });
     }
 
 }                           // ← סוגר את הפונקציה כאן
@@ -251,21 +257,35 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
   const [allUsers, setAllUsers] = useState([]);
 
+  const [message, setMessage] = useState({
+    open: false,
+    type: 'success',
+    title: '',
+    text: ''
+  });
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [onConfirmAction, setOnConfirmAction] = useState(() => () => {});
+
+
   
 
   async function handleAddUser() {
     if (!isFirstValid || !isLastValid || !isPhoneValid || !isTypeValid) return;
 
-    const newDigits = newPhone.replace(/\D/g, "");
     const full = `${newFirstName.trim()} ${newLastName.trim()}`;
-    const phone   = newPhone.replace(/\D/g, "");      // רק ספרות
-    const userRef = doc(db, "users", phone); 
+    const phone = newPhone.replace(/\D/g, "");
+    const userRef = doc(db, "users", phone);
 
-    try{
+    try {
       const snap = await getDoc(userRef);
       if (snap.exists()) {
-        alert("מספר הטלפון הזה כבר קיים במערכת ❗");
-        return; // או throw Error כדי לטפל במקום אחר
+        setMessage({
+          open: true,
+          type: 'error',
+          text: 'מספר הטלפון הזה כבר קיים במערכת'
+        });
+        return;
       }
 
       const newUser = {
@@ -275,7 +295,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
         phone: newPhone.trim(),
         user_id: phone,
         is_registered: userType === "registered",
-        is_club_60:    userType === "senior",
+        is_club_60: userType === "senior",
         address: address.trim() || null,
         id_number: idNumber.trim() || null,
         notes: notes.trim() || null,
@@ -287,52 +307,66 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
         replies: [],
         replies_date: []
       };
+
       await setDoc(userRef, newUser);
 
-      // ➕ תוסיפי את הבלוק הזה
-let secondaryApp;
-try {
-  const appName = `secondary-add-${phone}`;
-  try {
-    secondaryApp = initializeApp(firebaseConfig, appName);
-  } catch {
-    secondaryApp = getApp(appName);
-  }
+      // Try to create auth account
+      let secondaryApp;
+      try {
+        const appName = `secondary-add-${phone}`;
+        try {
+          secondaryApp = initializeApp(firebaseConfig, appName);
+        } catch {
+          secondaryApp = getApp(appName);
+        }
 
-  const secondaryAuth = getAuth(secondaryApp);
-  const { email, password } = generateEmailPassword(phone);
-
-  await createUserWithEmailAndPassword(secondaryAuth, email, password);
-} catch (authErr) {
-  if (authErr.code === "auth/email-already-in-use") {
-    console.warn("Auth account already exists — skipping creation.");
-  } else {
-    console.error("Auth error during creation:", authErr);
-    alert("אירעה שגיאה ביצירת חשבון האוטנטיקציה: " + authErr.message);
-  }
-} finally {
-  if (secondaryApp) {
-    await deleteApp(secondaryApp);
-  }
-}
-
+        const secondaryAuth = getAuth(secondaryApp);
+        const { email, password } = generateEmailPassword(phone);
+        await createUserWithEmailAndPassword(secondaryAuth, email, password);
+      } catch (authErr) {
+        if (authErr.code === "auth/email-already-in-use") {
+          // It's okay, user already exists.
+        } else {
+          setMessage({
+            open: true,
+            type: 'error',
+            text: 'אירעה שגיאה ביצירת חשבון האוטנטיקציה'
+          });
+          return;
+        }
+      } finally {
+        if (secondaryApp) await deleteApp(secondaryApp);
+      }
 
       const snapAll = await getDocs(collection(db, "users"));
       setAllUsers(snapAll.docs.map(d => ({ id: d.id, ...d.data() })));
-      // // const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      // setAllUsers(all);
-      setShowModal(false); // סגירת חלון
-      setNewFirstName(""); setNewLastName(""); setNewPhone("");
-      setUserType(""); setAddress(""); setIdNumber(""); setNotes("");
 
+      // Reset form
+      setShowModal(false);
+      setNewFirstName("");
+      setNewLastName("");
+      setNewPhone("");
+      setUserType("");
+      setAddress("");
+      setIdNumber("");
+      setNotes("");
 
-      alert("המשתמש נוסף בהצלחה!");
-    } catch (e) {                 // ← זה ה-catch החיצוני שחסר לך
-      console.error("שגיאה בהוספת המשתמש:", e);
-      alert("אירעה שגיאה בהוספת המשתמש");
+      // ✅ Success message
+      setMessage({
+        open: true,
+        type: 'success',
+        text: 'המשתמש נוסף בהצלחה'
+      });
+
+    } catch (e) {
+      setMessage({
+        open: true,
+        type: 'error',
+        text: 'אירעה שגיאה בהוספת המשתמש'
+      });
     }
+  }
 
-}
 
 
 
@@ -364,28 +398,33 @@ try {
   async function deleteSelected() {
     if (selected.size === 0) return;
 
-    const confirmed = window.confirm("האם אתה בטוח שברצונך למחוק את *כל* המשתמשים שנבחרו?");
-    if (!confirmed) return;
+    setOnConfirmAction(() => async () => {
+      const promises = [];
 
-    const promises = [];
-
-    for (const id of selected) {
-      const u = allUsers.find(x => ensureUserId(x) === id);
-      if (u) {
-        promises.push(deleteUserCore(u)); // רק מחיקה, בלי חלונות
+      for (const id of selected) {
+        const u = allUsers.find(x => ensureUserId(x) === id);
+        if (u) {
+          promises.push(deleteUserCore(u, { skipMessage: true })); // No message per user
+        }
       }
-    }
 
-  await Promise.all(promises);     // מחכה שכולם יימחקו
-  setSelected(new Set());          // מנקה את הבחירה
+      await Promise.all(promises);
+      setSelected(new Set());
 
-  // ריענון הרשימה מה־DB
-  const fresh = await getDocs(collection(db, "users"));
-  setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
+      const fresh = await getDocs(collection(db, "users"));
+      setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
 
-  // רק אחרי שהכול הסתיים → הודעה
-  alert("המשתמשים נמחקו בהצלחה");
+      // Show one global message
+      setMessage({
+        open: true,
+        type: 'success',
+        text: 'כל המשתמשים שנבחרו נמחקו בהצלחה'
+      });
+    });
+
+    setConfirmOpen(true);
   }
+
 
 
     /* ----------------------------------------------------------
@@ -640,18 +679,16 @@ try {
   }
 
 
-  async function deleteUserCore(user) {
+  async function deleteUserCore(user, options = {}) {
     const phone   = user.phone || "";
     const user_id = ensureUserId(user);
 
-    /* 1. users (המסמך הראשי) */
     try {
       await deleteUserByPhoneNumber(user_id);
     } catch (err) {
       console.error("⚠️  users delete failed:", err);
     }
 
-    /* 2. replies – תת-אוסף messages/<msg>/replies */
     const msgs = await getDocs(collection(db, "messages"));
     for (const m of msgs.docs) {
       const reps = await getDocs(
@@ -666,7 +703,6 @@ try {
       }
     }
 
-    /* 3. הסרה מ־activities.participants */
     const activitiesSnap = await getDocs(collection(db, "activities"));
     for (const act of activitiesSnap.docs) {
       const participants = act.data().participants || [];
@@ -680,139 +716,146 @@ try {
       }
     }
 
-    /* 4. 🟢   עדכון ה-state המקומי + ריענון מהרשימה המלאה  */
     setManualUsers(prev => prev.filter(u => u.phone !== phone));
     markDeleted(phone);
 
     const fresh = await getDocs(collection(db, "users"));
     setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
 
-    alert("המשתמש נמחק בהצלחה");
+    if (!options.skipMessage) {
+      setMessage({
+        open: true,
+        type: 'success',
+        text: 'המשתמש נמחק בהצלחה'
+      });
+    }
   }
+
 
   async function deleteUser(user) {
-    const confirmed = window.confirm("האם אתה בטוח שברצונך למחוק משתמש זה?");
-    if (!confirmed) return;
-
-    await deleteUserCore(user);
+    setOnConfirmAction(() => async () => {
+      await deleteUserCore(user);
+    });
+    setConfirmOpen(true);
   }
 
-async function saveEditedUser(u) {
-  const first = u.first_name?.trim()  || "";
-  const last  = u.last_name?.trim()   || "";
-  const newPh = u.phone?.trim()       || "";
-  const full  = `${first} ${last}`.trim();
+  async function saveEditedUser(u) {
+    const first = u.first_name?.trim() || "";
+    const last = u.last_name?.trim() || "";
+    const newPh = u.phone?.trim() || "";
+    const full = `${first} ${last}`.trim();
 
-  if (!first || !last || !newPh) {
-    alert("שם פרטי, שם משפחה ומספר טלפון – שדות חובה");
-    return;
-  }
-
-  const oldDigits   = (editUser.originalPhone || "").replace(/\D/g, "");
-  const newDigits   = newPh.replace(/\D/g, "");
-  const phoneChanged = oldDigits !== newDigits;
-
-  // בונים את האובייקט החדש
-  const newUserDoc = {
-    first_name: first,
-    last_name: last,
-    fullname: full,
-    phone: newPh,
-    user_id: newDigits,
-    address: u.address?.trim()   || null,
-    id_number: u.id_number?.trim() || null,
-    notes: u.notes?.trim()       || null,
-    is_registered: editUser.is_registered || false,
-    is_club_60:    editUser.is_club_60    || false,
-    activities:     Array.isArray(editUser.activities)      ? editUser.activities      : [],
-    activities_date:Array.isArray(editUser.activities_date) ? editUser.activities_date : [],
-    survey:         Array.isArray(editUser.survey)          ? editUser.survey          : [],
-    survey_date:    Array.isArray(editUser.survey_date)     ? editUser.survey_date     : [],
-    replies:        Array.isArray(editUser.replies)         ? editUser.replies         : [],
-    replies_date:   Array.isArray(editUser.replies_date)    ? editUser.replies_date    : [],
-  };
-
-
-  try {
-    if (phoneChanged) {
-      // 1) החלפה ב־Firestore: יצירת doc חדש + מחיקת ישן
-      const batch = writeBatch(db);
-
-      batch.set(doc(db, "users", newDigits), newUserDoc);
-
-      batch.delete(doc(db, "users", oldDigits));
-
-      await batch.commit();
-
-      await patchPhoneInRefs(oldDigits, newDigits);
-
-      let secondaryApp;
-
-     try {
-
-      const appName = `secondary-edit-${newDigits}`;
-      try {
-        secondaryApp = initializeApp(firebaseConfig, appName);
-      } catch {
-        secondaryApp = getApp(appName);
-      }
-
-      const secondaryAuth = getAuth(secondaryApp);
-
-      const { email, password } = generateEmailPassword(newDigits);
-
-      await createUserWithEmailAndPassword(secondaryAuth, email, password);
-
-    } catch (err) {
-      console.error("❌ Error during secondary auth creation flow:", err);
+    if (!first || !last || !newPh) {
+      setMessage({
+        open: true,
+        type: 'error',
+        text: 'שם פרטי, שם משפחה ומספר טלפון – שדות חובה'
+      });
+      return;
     }
 
+    const newDigits = newPh.replace(/\D/g, "");
+    if (!/^05\d{8}$/.test(newDigits)) {
+      setMessage({
+        open: true,
+        type: 'error',
+        text: 'מספר טלפון אינו תקין. יש להזין מספר המתחיל ב־05, ואורכו 10 ספרות'
+      });
+      return;
+    }
 
+    const oldDigits = (editUser.originalPhone || "").replace(/\D/g, "");
+    const phoneChanged = oldDigits !== newDigits;
 
-      // 4) ניקוי האפליקציה המשנית
-      if (secondaryApp) {
-        await deleteApp(secondaryApp);
-      }
+    const newUserDoc = {
+      first_name: first,
+      last_name: last,
+      fullname: full,
+      phone: newPh,
+      user_id: newDigits,
+      address: u.address?.trim() || null,
+      id_number: u.id_number?.trim() || null,
+      notes: u.notes?.trim() || null,
+      is_registered: editUser.is_registered || false,
+      is_club_60: editUser.is_club_60 || false,
+      activities: Array.isArray(editUser.activities) ? editUser.activities : [],
+      activities_date: Array.isArray(editUser.activities_date) ? editUser.activities_date : [],
+      survey: Array.isArray(editUser.survey) ? editUser.survey : [],
+      survey_date: Array.isArray(editUser.survey_date) ? editUser.survey_date : [],
+      replies: Array.isArray(editUser.replies) ? editUser.replies : [],
+      replies_date: Array.isArray(editUser.replies_date) ? editUser.replies_date : []
+    };
 
-      await deleteUserSilent(editUser);
-
-    } else {
-    // 2b) overwrite existing Firestore user
-    await setDoc(doc(db, "users", oldDigits), newUserDoc);
-
-    // ניסיון יצירת חשבון Auth — אם זה נכשל, לא נפסיק את מחיקת/ריענון Firestore
     try {
-      const secondaryApp = initializeApp(firebaseConfig, `secondary-edit-${newDigits}`);
-      const secondaryAuth = getAuth(secondaryApp);
-      const { email, password } = generateEmailPassword(newDigits);
-      await createUserWithEmailAndPassword(secondaryAuth, email, password);
-      await deleteApp(secondaryApp);
-    } catch (authErr) {
-      console.warn("Auth failed, but Firestore already updated:", authErr);
-    }
-  }
+      if (phoneChanged) {
+        const batch = writeBatch(db);
+        batch.set(doc(db, "users", newDigits), newUserDoc);
+        batch.delete(doc(db, "users", oldDigits));
+        await batch.commit();
 
-    // ריענון ה-state
-    const fresh = await getDocs(collection(db, "users"));
-    setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
+        await patchPhoneInRefs(oldDigits, newDigits);
 
-    alert("הפרטים עודכנו בהצלחה 🎉");
-  } catch (err) {
-   console.error("⚠️ שגיאה בעדכון משתמש:", err);
-   if (err && err.message) {
-     alert("אירעה שגיאה בעדכון המשתמש: " + err.message);
-   } else {
-     alert("אירעה שגיאה בעדכון המשתמש. ראה קונסול לפרטים");
-   }
-   } finally {
-     // ריענון הרשימה מ־Firestore תמיד, גם אם קרתה שגיאה ב־Auth
-    if (phoneChanged) {
+        let secondaryApp;
+        try {
+          const appName = `secondary-edit-${newDigits}`;
+          try {
+            secondaryApp = initializeApp(firebaseConfig, appName);
+          } catch {
+            secondaryApp = getApp(appName);
+          }
+
+          const secondaryAuth = getAuth(secondaryApp);
+          const { email, password } = generateEmailPassword(newDigits);
+          await createUserWithEmailAndPassword(secondaryAuth, email, password);
+        } catch (err) {
+          // Not critical; log and continue
+          console.warn("Auth creation failed (new phone):", err);
+        }
+
+        if (secondaryApp) await deleteApp(secondaryApp);
+
+        await deleteUserSilent(editUser);
+
+      } else {
+        await setDoc(doc(db, "users", oldDigits), newUserDoc);
+
+        try {
+          const secondaryApp = initializeApp(firebaseConfig, `secondary-edit-${newDigits}`);
+          const secondaryAuth = getAuth(secondaryApp);
+          const { email, password } = generateEmailPassword(newDigits);
+          await createUserWithEmailAndPassword(secondaryAuth, email, password);
+          await deleteApp(secondaryApp);
+        } catch (authErr) {
+          console.warn("Auth failed, but Firestore already updated:", authErr);
+        }
+      }
+
       const fresh = await getDocs(collection(db, "users"));
       setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
+
+      setMessage({
+        open: true,
+        type: 'success',
+        text: 'הפרטים עודכנו בהצלחה'
+      });
+
+    } catch (err) {
+      setMessage({
+        open: true,
+        type: 'error',
+        text: err?.message
+          ? 'אירעה שגיאה בעדכון המשתמש: ' + err.message
+          : 'אירעה שגיאה בעדכון המשתמש'
+      });
+    } finally {
+      if (phoneChanged) {
+        const fresh = await getDocs(collection(db, "users"));
+        setAllUsers(fresh.docs.map(d => ({ id: d.id, ...d.data() })));
+      }
+      setEditUser(null);
     }
-    setEditUser(null);
   }
-}
+
 
 
 
@@ -839,9 +882,21 @@ async function saveEditedUser(u) {
             : u
         )
       );
+
+      setMessage({
+        open: true,
+        type: 'success',
+        text: 'סוג המשתמש עודכן בהצלחה'
+      });
+
     } catch (error) {
       console.error("שגיאה בעדכון סוג המשתמש:", error);
-      alert("אירעה שגיאה בעדכון סוג המשתמש");
+      
+      setMessage({
+        open: true,
+        type: 'error',
+        text: 'אירעה שגיאה בעדכון סוג המשתמש'
+      });
     }
   }
 
@@ -1176,171 +1231,219 @@ async function saveEditedUser(u) {
 
 
 
-      {/* Modal */}
       {showModal && (
-        <div style={{
-          position: "fixed",
-          top: "50%", left: "50%",
-          transform: "translate(-50%, -50%)",
-          background: "white",
+  <div style={{
+    position: "fixed",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    background: "#fff",
+    borderRadius: 12,
+    padding: 24,
+    width: "90%",
+    maxWidth: 400,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+    zIndex: 1300,
+    direction: "rtl"
+  }}>
+    {/* Close button */}
+    <button
+      onClick={() => setShowModal(false)}
+      style={{
+        position: "absolute",
+        top: 10,
+        left: 10,
+        background: "transparent",
+        border: "none",
+        fontSize: 22,
+        cursor: "pointer",
+        color: "#666"
+      }}
+      aria-label="סגור"
+    >
+      ×
+    </button>
+
+    <h2 style={{ textAlign: "center", marginBottom: 20 }}>הוספת משתמש</h2>
+
+    {/* Field: First Name */}
+    <div style={{ marginBottom: 16 }}>
+      <input
+        type="text"
+        placeholder="שם פרטי"
+        value={newFirstName}
+        onChange={e => {
+          setNewFirstName(e.target.value);
+          setFirstTouched(true);
+        }}
+        onBlur={() => setFirstTouched(true)}
+        style={{
+          width: "100%",
+          padding: "10px 12px",
+          borderRadius: 8,
           border: "1px solid #ccc",
-          padding: 20,
-          zIndex: 9999,
-          boxShadow: "0 0 20px rgba(0,0,0,0.2)"
-        }}>
-
-          <button
-            onClick={() => setShowModal(false)}
-            style={{
-              position: "absolute",
-              top: 10,
-              right: 10,
-              background: "transparent",
-              border: "none",
-              fontSize: "20px",
-              cursor: "pointer"
-            }}
-            aria-label="סגור"
-          >
-            ×
-          </button>
-
-          <h2>הוספת משתמש</h2>
-
-
-          <div style={{ marginBottom: 12 }}>
-            <label>
-              שם פרטי:
-              <input
-                type="text"
-                value={newFirstName}
-                onChange={e => {
-                setNewFirstName(e.target.value);
-                setFirstTouched(true);
-              }}
-     onBlur={() => setFirstTouched(true)}
-                style={{ display: "block", width: "100%", marginTop: 4 }}
-              />
-            </label>
-            {firstTouched && !isFirstValid && (
-              <div style={{ color: "red", marginTop: 4 }}>יש להזין שם פרטי</div>
-            )}
-
-          </div>
-
-          <div style={{ marginBottom: 12 }}>
-            <label>
-              שם משפחה:
-              <input
-                type="text"
-                value={newLastName}
-                 onChange={e => {
-                setNewLastName(e.target.value);
-                setLastTouched(true);
-              }}
-              onBlur={() => setLastTouched(true)}
-                style={{ display: "block", width: "100%", marginTop: 4 }}
-              />
-            </label>
-            {lastTouched && !isLastValid && (
-              <div style={{ color: "red", marginTop: 4 }}>יש להזין שם משפחה</div>
-            )}
-
-          </div>
-
-          <div style={{ marginBottom: 12 }}>
-            <label>
-              מספר טלפון:
-              <input
-                type="text"
-                value={newPhone}
-                onChange={e => {
-                setNewPhone(e.target.value);
-                setPhoneTouched(true);
-              }}
-                style={{ display: "block", width: "100%", marginTop: 4 }}
-              />
-
-
-              {phoneTouched && phoneError && (
-              <div style={{ color: "red", marginTop: 4 }}>
-                 {phoneError}
-              </div>
-             )}
-            </label>
-          </div>
-
-          
-          <div style={{ marginBottom: 12 }}>
-            <label>
-              תעודת זהות:
-              <input
-                type="text"
-                value={idNumber}
-                onChange={e => setIdNumber(e.target.value)}
-                style={{ display: "block", width: "100%", marginTop: 4 }}
-              />
-            </label>
-          </div>
-
-          <div style={{ marginBottom: 12 }}>
-          <label>
-            כתובת:
-            <input
-              type="text"
-              value={address}
-              onChange={e => setAddress(e.target.value)}
-              style={{ display: "block", width: "100%", marginTop: 4 }}
-            />
-          </label>
-        </div>
-
-
-          <div style={{ marginBottom: 12 }}>
-            <label>
-              הערות:
-              <textarea
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                rows={3}
-                style={{ display: "block", width: "100%", marginTop: 4 }}
-              />
-            </label>
-          </div>
-
-
-          <div style={{ marginBottom: 12 }}>
-          <label>
-            סוג משתמש:
-            <select
-              value={userType}
-              onChange={e => setUserType(e.target.value)}
-              style={{ display: "block", width: "100%", marginTop: 4 }}
-            >
-              <option value="" disabled>בחר סוג משתמש</option>
-              <option value="registered">משתמש רשום</option>
-              <option value="senior">חברי מרכז ה־60 פלוס</option>
-            </select>
-          </label>
-        </div>
-
-
-           <button
-            onClick={handleAddUser}
-            disabled={!isPhoneValid || !isFirstValid || !isLastValid || !isTypeValid}
-            style={{
-              ...actionButtonStyle,
-              opacity:  isPhoneValid ? 1 : 0.5,
-              cursor:  isPhoneValid ? "pointer" : "not-allowed",
-            }}
-          >
-            הוספה
-          </button>
-          
-
-        </div>
-                 
+          fontSize: 16,
+          direction: "rtl",
+          textAlign: "right"
+        }}
+      />
+      {firstTouched && !isFirstValid && (
+        <div style={{ color: "red", fontSize: 14, marginTop: 4 }}>יש להזין שם פרטי</div>
       )}
+    </div>
+
+    {/* Field: Last Name */}
+    <div style={{ marginBottom: 16 }}>
+      <input
+        type="text"
+        placeholder="שם משפחה"
+        value={newLastName}
+        onChange={e => {
+          setNewLastName(e.target.value);
+          setLastTouched(true);
+        }}
+        onBlur={() => setLastTouched(true)}
+        style={{
+          width: "100%",
+          padding: "10px 12px",
+          borderRadius: 8,
+          border: "1px solid #ccc",
+          fontSize: 16,
+          direction: "rtl",
+          textAlign: "right"
+        }}
+      />
+      {lastTouched && !isLastValid && (
+        <div style={{ color: "red", fontSize: 14, marginTop: 4 }}>יש להזין שם משפחה</div>
+      )}
+    </div>
+
+    {/* Field: Phone */}
+    <div style={{ marginBottom: 16 }}>
+      <input
+        type="text"
+        placeholder="מספר טלפון"
+        value={newPhone}
+        onChange={e => {
+          setNewPhone(e.target.value);
+          setPhoneTouched(true);
+        }}
+        style={{
+          width: "100%",
+          padding: "10px 12px",
+          borderRadius: 8,
+          border: "1px solid #ccc",
+          fontSize: 16,
+          direction: "rtl",
+          textAlign: "right"
+        }}
+      />
+      {phoneTouched && phoneError && (
+        <div style={{ color: "red", fontSize: 14, marginTop: 4 }}>{phoneError}</div>
+      )}
+    </div>
+
+    {/* Field: ID Number */}
+    <div style={{ marginBottom: 16 }}>
+      <input
+        type="text"
+        placeholder="תעודת זהות"
+        value={idNumber}
+        onChange={e => setIdNumber(e.target.value)}
+        style={{
+          width: "100%",
+          padding: "10px 12px",
+          borderRadius: 8,
+          border: "1px solid #ccc",
+          fontSize: 16,
+          direction: "rtl",
+          textAlign: "right"
+        }}
+      />
+    </div>
+
+    {/* Field: Address */}
+    <div style={{ marginBottom: 16 }}>
+      <input
+        type="text"
+        placeholder="כתובת"
+        value={address}
+        onChange={e => setAddress(e.target.value)}
+        style={{
+          width: "100%",
+          padding: "10px 12px",
+          borderRadius: 8,
+          border: "1px solid #ccc",
+          fontSize: 16,
+          direction: "rtl",
+          textAlign: "right"
+        }}
+      />
+    </div>
+
+    {/* Field: Notes */}
+    <div style={{ marginBottom: 16 }}>
+      <textarea
+        placeholder="הערות"
+        value={notes}
+        onChange={e => setNotes(e.target.value)}
+        rows={3}
+        style={{
+          width: "100%",
+          padding: "10px 12px",
+          borderRadius: 8,
+          border: "1px solid #ccc",
+          fontSize: 16,
+          direction: "rtl",
+          textAlign: "right"
+        }}
+      />
+    </div>
+
+    {/* Field: User Type */}
+    <div style={{ marginBottom: 24 }}>
+      <select
+        value={userType}
+        onChange={e => setUserType(e.target.value)}
+        style={{
+          width: "100%",
+          padding: "10px 12px",
+          borderRadius: 8,
+          border: "1px solid #ccc",
+          fontSize: 16,
+          direction: "rtl",
+          textAlign: "right"
+        }}
+      >
+        <option value="" disabled>בחר סוג משתמש</option>
+        <option value="registered">משתמש רשום</option>
+        <option value="senior">חברי מרכז ה־60 פלוס</option>
+      </select>
+    </div>
+
+    {/* Add Button */}
+    <button
+      onClick={handleAddUser}
+      disabled={!isPhoneValid || !isFirstValid || !isLastValid || !isTypeValid}
+      style={{
+        width: "100%",
+        padding: "12px",
+        backgroundColor: palette.primary,
+        color: "#fff",
+        border: "none",
+        borderRadius: 8,
+        fontSize: 18,
+        fontWeight: 600,
+        cursor: isPhoneValid ? "pointer" : "not-allowed",
+        opacity: isPhoneValid ? 1 : 0.5,
+        transition: "all 0.3s ease"
+      }}
+    >
+      הוספה
+    </button>
+  </div>
+)}
+
 
 
 
@@ -1581,56 +1684,209 @@ async function saveEditedUser(u) {
         {/* ✎ Modal עריכת שם */}
 {editUser && (
   <Dialog open onClose={() => setEditUser(null)} maxWidth="xs" fullWidth>
-    <DialogTitle>עריכת משתמש</DialogTitle>
+    <DialogTitle
+      sx={{
+        textAlign: "center",
+        fontSize: "1.5rem",
+        fontWeight: 600,
+        marginBottom: 2,
+        marginTop: 5,
+      }}
+    >
+      עריכת משתמש
+    </DialogTitle>
     <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
       <TextField
-        label="שם פרטי"
+        placeholder="שם פרטי"
         value={editUser.first_name || ""}
         onChange={e => setEditUser(prev => ({ ...prev, first_name: e.target.value }))}
+        sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
         fullWidth
       />
       <TextField
-        label="שם משפחה"
+        placeholder="שם משפחה"
         value={editUser.last_name || ""}
         onChange={e => setEditUser(prev => ({ ...prev, last_name: e.target.value }))}
+        sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
         fullWidth
       />
       <TextField
-        label="מספר טלפון"
+        placeholder="מספר טלפון"
         value={editUser.phone || ""}
         onChange={e => setEditUser(prev => ({ ...prev, phone: e.target.value }))}
+        sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
         fullWidth
       />
       <TextField
-        label="תעודת זהות"
+        placeholder="תעודת זהות"
         value={editUser.id_number || ""}
         onChange={e => setEditUser(prev => ({ ...prev, id_number: e.target.value }))}
+        sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
         fullWidth
       />
       <TextField
-        label="כתובת"
+        placeholder="כתובת"
         value={editUser.address || ""}
         onChange={e => setEditUser(prev => ({ ...prev, address: e.target.value }))}
+        sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
         fullWidth
       />
       <TextField
-        label="הערות"
+        placeholder="הערות"
         value={editUser.notes || ""}
         onChange={e => setEditUser(prev => ({ ...prev, notes: e.target.value }))}
         multiline
         rows={3}
+        sx={{ textarea: { direction: 'rtl', textAlign: 'right' } }}
         fullWidth
       />
 
-      <Button variant="contained" onClick={() => saveEditedUser(editUser)}>
+      <Button
+        onClick={() => saveEditedUser(editUser)}
+        sx={{
+          width: "100%",
+          padding: "12px",
+          backgroundColor: palette.primary,
+          borderRadius: "8px",
+          fontSize: "18px",
+          fontWeight: 600,
+          color: "#fff", // or "#000" based on your background
+          textTransform: "none", // optional — keeps original casing
+          "&:hover": {
+            backgroundColor: palette.primary // disables hover color change
+          }
+        }}
+      >
         שמירה
       </Button>
+
+
     </DialogContent>
   </Dialog>
+
+
 )}
 
 
      </Box>
+    <Dialog
+      open={message.open}
+      onClose={(e, reason) => {
+        if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+          setMessage(prev => ({ ...prev, open: false }));
+        }
+      }}
+      maxWidth="sm"
+      sx={{ zIndex: 10000 }}
+      PaperProps={{
+        sx: {
+          p: 3,
+          textAlign: 'center',
+          borderRadius: 2,
+          border: theme =>
+            `3px solid ${
+              message.type === 'success'
+                ? theme.palette.primary.main
+                : theme.palette.error.main
+            }`,
+          boxShadow: 4,
+          backgroundColor: '#f9f9f9', // Neutral background
+          zIndex: 10000
+        }
+      }}
+    >
+      <DialogContent>
+        <Box sx={{ mb: 3 }}>
+          {message.type === 'success' ? (
+            <CheckCircle
+              sx={{
+                fontSize: 72,
+                color: 'primary.main',
+                mb: 2,
+                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))'
+              }}
+            />
+          ) : (
+            <Error
+              sx={{
+                fontSize: 72,
+                color: 'error.main',
+                mb: 2,
+                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))'
+              }}
+            />
+          )}
+        </Box>
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 700,
+            mb: 2,
+            color: message.type === 'success' ? 'primary.main' : 'error.main',
+            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}
+        >
+          {message.text}
+        </Typography>
+      </DialogContent>
+      <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
+        <Button
+          onClick={() => setMessage(prev => ({ ...prev, open: false }))}
+          variant="contained"
+          size="large"
+          sx={{
+            fontSize: '1.3rem',
+            py: 1.5,
+            px: 6,
+            bgcolor:
+              message.type === 'success' ? 'primary.main' : 'error.main',
+            color: 'common.white',
+            borderRadius: 3,
+            textTransform: 'none',
+            fontWeight: 600,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            '&:hover': {
+              bgcolor:
+                message.type === 'success' ? 'primary.dark' : 'error.dark',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 6px 16px rgba(0,0,0,0.2)'
+            },
+            transition: 'all 0.3s ease'
+          }}
+        >
+          הבנתי
+        </Button>
+      </DialogActions>
+    </Dialog>
+
+    <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ fontWeight: 'bold', textAlign: 'center' }}>
+        אישור מחיקה
+      </DialogTitle>
+      <DialogContent>
+        <Typography variant="body1" align="center">
+          האם אתה בטוח שברצונך למחוק משתמש זה?
+        </Typography>
+      </DialogContent>
+      <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
+        <Button onClick={() => setConfirmOpen(false)} variant="outlined">
+          ביטול
+        </Button>
+        <Button
+          onClick={() => {
+            setConfirmOpen(false);
+            onConfirmAction(); // Run the action
+          }}
+          variant="contained"
+          color="error"
+        >
+          מחק
+        </Button>
+      </DialogActions>
+    </Dialog>
+
+
+  
         </>
   ); 
 }

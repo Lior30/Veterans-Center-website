@@ -13,7 +13,7 @@ import {
   Button,
 } from "@mui/material";
 
-function BannerUploader({ onUpload }) {
+function BannerUploader({ onUpload, setMessage }) {
   const [title, setTitle] = useState("");
   const [file, setFile] = useState(null);
   const [start, setStart] = useState("");
@@ -38,11 +38,19 @@ function BannerUploader({ onUpload }) {
 
   async function handleSubmit() {
     if (!title.trim() || !file) {
-      alert("שם וקובץ חובה");
+      setMessage({
+        open: true,
+        type: 'error',
+        text: "חובה להעלות קובץ, ולתת לו שם ",
+      });
       return;
     }
     if (end && start && end < start) {
-      alert("תאריך סיום לפני תאריך התחלה");
+      setMessage({
+        open: true,
+        type: 'error',
+        text: "שגיאה: תאריך סיום לפני תאריך התחלה",
+      });
       return;
     }
     try {
@@ -58,6 +66,13 @@ function BannerUploader({ onUpload }) {
       setStart("");
       setEnd("");
       onUpload?.();
+
+      setMessage({
+        open: true,
+        type: 'success',
+        text: "התמונה עלתה בהצלחה",
+      });
+
     } catch (err) {
       alert("העלאה נכשלה: " + err.code);
     }
@@ -86,10 +101,10 @@ function BannerUploader({ onUpload }) {
   );
 }
 
-export default function HomepageImagesDesign({ banners, onUpload, onDelete, onDragStart, onDragEnter }) {
+export default function HomepageImagesDesign({ banners, onUpload, onDelete, onDragStart, onDragEnter, setMessage  }) {
   return (
     <Container maxWidth="lg">
-      <BannerUploader onUpload={onUpload} />
+      <BannerUploader onUpload={onUpload} setMessage={setMessage} />
       <Typography variant="h6" align="center" gutterBottom>
         תמונות קיימות
       </Typography>

@@ -42,7 +42,7 @@ export default function IdentifyPage({ onSuccess }) {
   const handleLogin = async () => {
     const trimmed = phoneNumber.trim();
     if (!isValidPhone(trimmed)) {
-      setMessage('טלפון לא תקין. הקלד מספר בפורמט 05XXXXXXXX');
+      setMessage('מספר טלפון אינו תקין. יש להזין מספר המתחיל ב־05 ואורכו 10 ספרות');
       return;
     }
 
