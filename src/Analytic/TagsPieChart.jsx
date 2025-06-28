@@ -63,35 +63,35 @@ export default function TagsPieChart({ activities = [] }) {
 
   /* Data processing */
   const pieData = useMemo(() => {
-    /* ➊ Aggregate participants and capacity per tag */
-    const byTag = {};
-    activities.forEach(
-      ({ tag, participants = 0, capacity = 0 }) => {
-        if (!byTag[tag]) byTag[tag] = { p: 0, c: 0 };
-        byTag[tag].p += participants;
-        byTag[tag].c += capacity;
-      }
-    );
+const agg = {};
+  activities.forEach(({ tag, participants = 0, capacity = 0 }) => {
+    if (!capacity) return;                // skip corrupt rows
+    if (!agg[tag]) agg[tag] = { used: 0, cap: 0 };
+    agg[tag].used += participants;
+    agg[tag].cap  += capacity;
+  });
 
-    /* ➋ Raw usage ratio */
-    const raw = Object.entries(byTag).map(([tag, { p, c }]) => ({
-      tag,
-      ratio: c ? p / c : 0
-    }));
+  // demandIndex = Σparticipants / Σcapacity  (0–1)
+  const demand = Object.fromEntries(
+    Object.entries(agg).map(([tag, v]) => [tag, v.used / v.cap])
+  );
+  const sum = Object.values(demand).reduce((s, v) => s + v, 0) || 1;
 
-    /* ➌ Normalize to 100% total */
-    const total = raw.reduce((s, d) => s + d.ratio, 0) || 1;
-
-    /* ➍ Sort + assign color */
-    return raw
-      .sort((a, b) => b.ratio - a.ratio) 
-      .map(({ tag, ratio }, idx) => ({
+  return Object.entries(demand)
+    .sort((a, b) => b[1] - a[1])        // high → low
+    .map(([tag, idx], i) => {
+    const pct = (idx / sum) * 100;
+      return {
         id   : tag,
         label: tag,
-        value: (ratio / total) * 100,  
-        color: BASE_COLORS[idx] ?? pickExtraColor()
-      }));
-  }, [activities, pickExtraColor]);
+        value: pct,                       // keeps Nivo happy (used for angles)
+        pct  : pct.toFixed(1),            // string: '14.3'
+        participants: agg[tag].used,      /* optional, est. scale */
+        color: BASE_COLORS[i] ?? pickExtraColor()
+      };
+    });
+}, [activities, pickExtraColor]);
+
 
   if (!pieData.length) {
     return <p style={{ textAlign: 'center' }}>No data to display</p>;
@@ -123,11 +123,11 @@ export default function TagsPieChart({ activities = [] }) {
           borderWidth={1}
           borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
           tooltip={({ datum }) => (
-            <div style={{ padding: 8, direction: 'rtl' }}>
-              <strong>{datum.id}</strong><br />
-              {datum.value.toFixed(1)}%
-            </div>
-          )}
+          <div style={{ padding: 8, direction: 'rtl' }}>
+            <strong>{datum.id}</strong><br />
+            {datum.data.pct}%&nbsp;|&nbsp;{datum.data.participants} משתתפים
+          </div>
+        )}
         />
       </div>
 
@@ -168,7 +168,7 @@ export default function TagsPieChart({ activities = [] }) {
               }}
             >
               {item.label}<br />
-              {item.value.toFixed(1)}%
+              {item.pct}%
             </span>
           </div>
         ))}

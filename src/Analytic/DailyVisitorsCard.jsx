@@ -40,7 +40,7 @@ export default function DailyVisitsCard({ count = 0 }) {
           color: '#6c757d'
         }}
       >
-        Today's&nbsp;Visits
+        כניסות&nbsp;היום
       </div>
     </div>
   );

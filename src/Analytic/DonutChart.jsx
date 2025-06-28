@@ -1,5 +1,5 @@
 // src/components/DonutChart.jsx
-import React, { memo } from 'react';
+import React, { useMemo, memo } from 'react';
 import { ResponsivePie } from '@nivo/pie';
 
 /**
@@ -13,6 +13,11 @@ const DonutChart = memo(function DonutChart({ title, data, size = 200, children 
   const displayData = data && data.length > 0 ? data : [
     { id: 'Loading...', value: 100, color: '#e9ecef' }
   ];
+
+   const total = useMemo(
+    () => displayData.reduce((s, d) => s + (d.value ?? 0), 0) || 1,
+    [displayData]
+  );
 
   return (
     <div
@@ -54,19 +59,33 @@ const DonutChart = memo(function DonutChart({ title, data, size = 200, children 
           enableArcLinkLabels={false}
           borderWidth={0}
           animate={false}
-          isInteractive={false}
-          layers={['arcs']}
-          renderWrapper={false}
+          isInteractive={true}
+          tooltip={({ datum }) => (
+            <div style={{
+              padding   : 8,
+              fontSize  : 14,
+              lineHeight: 1.4,
+              direction : 'rtl',
+              textAlign : 'right'
+            }}>
+              <strong style={{ fontSize: 15 }}>{datum.id}</strong><br/>
+              {((datum.value / total) * 100).toFixed(1)}%
+              <span style={{ fontWeight: 600, margin: '0 4px' }}>|</span>
+              {datum.value} משתתפים
+            </div>
+          )}
         />
       </div>
 
       {/* ───────── Legend and optional button in one row ───────── */}
+      {/* Legend + button */} 
       <div style={{
-        marginTop: 12,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        width: '100%'
+        marginTop      : 12,
+        display        : 'flex',
+        justifyContent : 'space-between',
+        alignItems     : 'center',
+        width          : '100%',
+        pointerEvents  : 'none'   /* ←  NEW */
       }}>
 
         {/* Legend on the right side */}
@@ -94,7 +113,7 @@ const DonutChart = memo(function DonutChart({ title, data, size = 200, children 
 
         {/* Optional button (children) on the left side */}
         {children && (
-          <div>
+          <div style={{ pointerEvents:'auto' }}>
             {children}
           </div>
         )}
