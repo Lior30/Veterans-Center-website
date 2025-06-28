@@ -1,10 +1,10 @@
 // src/components/AnalyticsDashboard.jsx
-import React, {  useEffect,useState } from 'react';
+import React, {  useEffect,useState, useMemo } from 'react';
 import { ResponsivePie }   from '@nivo/pie';
 import { ResponsiveBar }   from '@nivo/bar';
 import { ResponsiveLine }  from '@nivo/line';
 import TagsPieChart        from './TagsPieChart';
-import { collection,getDocs, getDoc, doc,  onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection,getDocs, getDoc, doc,  onSnapshot, query, orderBy, Timestamp, updateDoc } from "firebase/firestore";
 import { db } from '../firebase'; 
 import ActivitiesTable from './ActivitiesTable';
 import JerusalemMap from './JerusalemMap';
@@ -13,6 +13,61 @@ import DonutChart              from './DonutChart';
 import DailyVisitsCard  from './DailyVisitorsCard';
 import WeeklyVisitsCard from './WeeklyVisitsCard';
 import { Link } from 'react-router-dom';
+import { getDateRange } from '../utils/timeFilters';
+import LineTimeFilter    from './LineTimeFilter';
+
+/* ------------- helper: build tag stats after date-filter ------------- */
+function buildTagStats(acts) {
+  return acts.flatMap(a => {
+    // prefer explicit field from analytics
+    const participants =
+      a.num_registrants ??
+      (Array.isArray(a.participants) ? a.participants.length : 0);
+      // pick real capacity; if missing ► fall back to participants
+    const rawCap   = a.capacity ?? a.max_participants ?? 0;
+    const capacity = rawCap > 0 ? rawCap : participants;
+
+    // no demand & no capacity → irrelevant
+    if (!participants && !capacity) return [];
+
+    return (a.tags ?? []).map(tag => ({
+      tag,
+      participants,
+      activity_date: a.activity_date, 
+      capacity,          // avoid divide-by-zero
+      timestamp: a.timestamp
+    }));
+  });
+}
+
+
+// utils / wherever the helper lives
+export function getFilteredActivities(activities, filterOption) {
+  const { startDate, endDate } = getDateRange(filterOption);
+
+  return activities.filter(act => {
+    /* pick the best available date field */
+    let when;
+
+    if (act.activity_date) {
+      // 'YYYY-MM-DD'
+      when = new Date(act.activity_date);
+    } else if (act.timestamp?.toDate) {
+      // Firestore Timestamp
+      when = act.timestamp.toDate();
+    } else if (act.timestamp instanceof Date) {
+      // plain JS Date that כבר נשמר במסמך
+      when = act.timestamp;
+    } else {
+      // no usable date → skip the record
+      return false;
+    }
+
+    return when >= startDate && when <= endDate;
+  });
+}
+
+
 
 /* dashboard */
 export default function AnalyticsDashboard() {
@@ -25,6 +80,159 @@ export default function AnalyticsDashboard() {
   const [surveyBreakdown, setSurveyBreakdown] = useState([]);
   const [tagStats,    setTagStats]    = useState([]); 
   const [surveyDetails,   setSurveyDetails]   = useState([]); 
+  const [filterLineChart, setFilterLineChart] = useState({ type:'quarterPrev' });
+  const [activities, setActivities] = useState([]);
+  const [filterTagChart, setFilterTagChart] = useState({ type: 'quarter' });
+  
+  // for the tag-pie: just filter the raw tagStats by date range
+  const filteredTagStats = useMemo(
+     () => getFilteredActivities(tagStats, filterTagChart),
+     [tagStats, filterTagChart]
+   );
+
+  /* ---------- demand-line stats (busiest / quietest / total) ---------- */
+  const lineStats = useMemo(() => {
+    const acts = getFilteredActivities(allActivities, filterLineChart);
+    if (!acts.length) return null;
+
+  const byDay  = {};              // סך-הכול ליום
+   const byHour = Array(24).fill(0); // סך-הכול לשעה (0-23)
+    let total = 0;
+
+  acts.forEach(a => {
+      const cnt = a.participants ?? 0;   // כבר מספר, לא מערך
+      total += cnt;
+
+      const when = a.activity_date       ? new Date(a.activity_date)
+                :  a.date                ? new Date(a.date)
+                :  (a.timestamp && a.timestamp.toDate?.())
+                || new Date();
+
+      const d = when.getDay();                 // ‎0-6
+      byDay[d] = (byDay[d] || 0) + cnt;
+
+      const hr = parseInt((a.activity_time || '00').slice(0,2), 10);
+      if (hr >= 0 && hr < 24) byHour[hr] += cnt;
+    });
+
+    const entries   = Object.entries(byDay);
+    const busiest   = entries.reduce((a,b)=>(b[1]>a[1]?b:a));
+    const quietest  = entries.reduce((a,b)=>(b[1]<a[1]?b:a));
+    const maxHour   = byHour.indexOf(Math.max(...byHour));
+    const HOURS_RANGE = Array.from({ length: 14 }, (_, i) => i + 8); // 8..21
+    let minHour = 8, minCnt = byHour[8] ?? 0;
+    HOURS_RANGE.forEach(h => {
+      const c = byHour[h] ?? 0;
+      if (c > 0 && (c < minCnt || minCnt === 0)) {   // הקטן > 0
+        minHour = h;
+        minCnt  = c;
+      }
+    });
+    const HEB_DAYS = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+
+    return {
+      total,
+      busiest : { day: HEB_DAYS[busiest[0]],  count: busiest[1] },
+      quietest: { day: HEB_DAYS[quietest[0]], count: quietest[1] },
+      busiestHour: { hour: maxHour, count: byHour[maxHour] },
+      quietestHour: { hour: minHour, count: minCnt }  
+    };
+  }, [allActivities, filterLineChart]);
+
+  /* ---------- tag-pie stats (most / least popular tag) ---------- */
+  const pieStats = useMemo(() => {
+    if (!filteredTagStats.length) return null;
+
+    // Σ per-tag → used / cap
+    const agg = {};
+    filteredTagStats.forEach(r => {
+      if (!agg[r.tag]) agg[r.tag] = { used: 0, cap: 0 };
+      agg[r.tag].used += r.participants;
+      agg[r.tag].cap  += r.capacity || r.participants;
+    });
+
+    const rows = Object.entries(agg)
+      .filter(([,v]) => v.cap > 0)                // drop corrupt / zero-cap
+      .map(([tag,v]) => ({ tag, used: v.used, idx: v.used / v.cap }))
+      .sort((a,b) => b.idx - a.idx);              // desc by index
+
+    if (!rows.length) return null;
+    return { top: rows[0], bottom: rows[rows.length - 1] };
+  }, [filteredTagStats]);
+
+
+useEffect(() => {
+  const unsub = onSnapshot(collection(db, 'activityAnalytics'), snap => {
+    const tagsRows = [];
+    const actsRows = [];
+
+    snap.forEach(d => {
+      const a  = d.data();
+      const ts = a.timestamp?.toDate?.() ?? new Date(a.activity_date);
+
+      const rawCap  = a.capacity ?? a.max_participants ?? 0;
+      const finalCap = rawCap > 0 ? rawCap : (a.num_registrants ?? 0);
+
+      const cnt = a.num_registrants ??
+      (Array.isArray(a.participants) ? a.participants.length : 0);
+
+      (a.tags ?? []).forEach(t => tagsRows.push({
+      tag: t,
+      participants: cnt,
+      capacity: finalCap, 
+      activity_date: a.activity_date,      
+      timestamp: ts
+      }));
+
+   actsRows.push({
+        date          : a.activity_date,
+        activity_time : a.activity_time,   // שומרים בשם האחיד
+        participants  : cnt,               // מספר בפועל, לא מערך
+        timestamp     : ts
+      });
+    });
+
+    setAllActivities(actsRows);
+    setTagStats(tagsRows);
+  });
+
+  return () => unsub();
+}, []);
+
+
+  /* ---------------- main effect: load + normalise activities ----------- */
+useEffect(() => {
+  const fetchActivities = async () => {
+    const snap = await getDocs(collection(db, 'activityAnalytics'));
+    const now  = Timestamp.now();
+    const all  = [];
+
+    for (const d of snap.docs) {
+      const data = d.data();
+
+      // guarantee every activity has a timestamp
+      if (!data.timestamp) {
+        await updateDoc(doc(db, 'activities', d.id), { timestamp: now });
+        data.timestamp = now;
+      }
+      const cnt = data.num_registrants ??
+                  (Array.isArray(data.participants) ? data.participants.length : 0);
+
+      all.push({
+        id            : d.id,
+        ...data,
+        participants  : cnt,
+        activity_time : data.activity_time   // לשם אחיד
+      });
+    }
+
+    setAllActivities(all);                    // raw activities for filters
+    setTagStats(buildTagStats(all));          // initial tag stats
+  };
+
+  fetchActivities();
+}, []);
+
 
 useEffect(() => {
   const now = new Date();
@@ -89,36 +297,6 @@ useEffect(() => {
 
   useEffect(() => {
   (async () => {
-    const snap = await getDocs(collection(db, 'activities'));
-
-    /*RAW activities*/
-    const raw = snap.docs.map(d => ({
-      id: d.id,        
-      ...d.data()
-    }));
-    setAllActivities(raw);                     
-
-    /* Tag statistics  */
-    const rows = raw.flatMap(d => {
-      const participants = Array.isArray(d.participants)
-        ? d.participants.length
-        : 0;
-      const capacity = d.capacity ?? 0;
-
-      return (d.tags ?? []).map(tag => ({
-        tag,
-        participants,
-        capacity,
-      }));
-    });
-    setTagStats(rows);
-  })();
-}, []);
-
-
-
-  useEffect(() => {
-  (async () => {
     const snap = await getDocs(collection(db, 'users'));
     let registered = 0, senior = 0;
 
@@ -147,9 +325,23 @@ useEffect(() => {
     const detailsArr    = [];
 
       for (const surveyDoc of surveysSnap.docs) {
-        const surveyData   = surveyDoc.data();
-        const activityId   = surveyData.of_activity;
-        if (!activityId) continue;
+        const surveyData = surveyDoc.data();
+
+        const expRaw = surveyData.expires_at;         
+        if (expRaw) {
+          const expDate = expRaw.toDate               
+                        ? expRaw.toDate()
+                        : new Date(expRaw);          
+          if (expDate < new Date()) continue;         
+        }
+        const activityId = surveyData.of_activity;
+
+         if (!activityId || activityId === 'כללי') continue;
+
+         if (surveyData.expires_at?.toDate &&
+        surveyData.expires_at.toDate() <= new Date()) {
+      continue;
+    }
 
         
         const answersSnap   = await getDocs(
@@ -160,10 +352,7 @@ useEffect(() => {
         
         const act = allActivities.find(a => a.id === activityId);
         if (!act) continue;
-
-        const registeredCount = Array.isArray(act.participants)
-          ? act.participants.length
-          : 0;
+        const registeredCount = Number(act.participants) || 0;
 
         totalAnswered   += answeredCount;
         totalRegistered += registeredCount;
@@ -269,7 +458,7 @@ useEffect(() => {
           color: '#212529',
           margin: 0
         }}>
-          Website and Social Media Analytics
+          ניתוח נתונים
         </h1>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
         </div>
@@ -290,7 +479,7 @@ useEffect(() => {
           fontSize: 16, fontWeight: 600, color: '#495057',
           marginBottom: 16, textAlign: 'center'
         }}>
-           הרשמות לפי תגיות בחודש האחרון
+           הרשמות לפי תגיות 
         </h3>
          <div style={{
           display: 'flex',
@@ -310,15 +499,25 @@ useEffect(() => {
            </button>
          </Link>
         </div>
-
-        <TagsPieChart activities={tagStats} />
+        <LineTimeFilter  value={filterTagChart}  onChange={setFilterTagChart}  hideWeek/>
+        <TagsPieChart activities={filteredTagStats} />
+         {pieStats && (
+          <p style={{ marginTop: 8, fontSize: 13, textAlign: 'center', direction: 'rtl' }}>
+            התגית&nbsp;המבוקשת&nbsp;ביותר:
+            <strong>{pieStats.top.tag}</strong>
+            &nbsp;({pieStats.top.used} משתתפים)
+            התגית&nbsp;הכי&nbsp;פחות&nbsp;מבוקשת:
+            <strong>{pieStats.bottom.tag}</strong>
+            &nbsp;({pieStats.bottom.used} משתתפים)
+          </p>
+        )}
       </div>
 
         {/*KPI 2*/}
       <div
       style={{
-        gridColumn: 2,                 // הטור המרכזי
-        gridRow   : '1 / span 2',      // שורה 1 וגם 2
+        gridColumn: 2,                 
+        gridRow   : '1 / span 2',      
         display   : 'flex',
         flexDirection: 'column',
         gap: 16
@@ -376,9 +575,6 @@ useEffect(() => {
         </div>
         </div>
 
-
-
-
         {/*Map*/}
        <div style={{ ...cardStyle, gridArea: '2 / 1 / 4 / 2' }}>
           <h3 style={{
@@ -425,8 +621,34 @@ useEffect(() => {
 
         {/* Line Chart – registrations by hour/day */}
         <div style={{ ...cardStyle, gridColumn: 1, gridRow: 1  }}>
-          <h3 /* … */> הרשמות לפי שעה ויום בחודש האחרון</h3>
-          <RegistrationsLineChart activities={allActivities} />
+          <h3 /* … */> ביקוש לפי יום בשבוע ושעת פעילות</h3>
+          <LineTimeFilter value={filterLineChart} onChange={setFilterLineChart} />
+          <RegistrationsLineChart activities={getFilteredActivities(allActivities, filterLineChart)} />
+
+          
+             {lineStats && (
+            <p style={{ marginTop: 8, fontSize: 13, textAlign: 'center', direction: 'rtl' }}>
+              היום&nbsp;העמוס&nbsp;ביותר:&nbsp;
+              <strong>{lineStats.busiest.day}</strong>
+              &nbsp;·&nbsp;השעה&nbsp;העמוסה&nbsp;ביותר:&nbsp;
+              <strong>{String(lineStats.busiestHour.hour).padStart(2,'0')}:00</strong>
+              &nbsp;({lineStats.busiestHour.count} נרשמים)<br/>
+
+              היום&nbsp;הכי&nbsp;פחות&nbsp;עמוס:&nbsp;
+              <strong>{lineStats.quietest.day}</strong>
+              &nbsp;·&nbsp;השעה&nbsp;הכי&nbsp;פחות&nbsp;עמוסה:&nbsp;
+              {lineStats.quietestHour.count
+                ? <>
+                    <strong>{String(lineStats.quietestHour.hour).padStart(2,'0')}:00</strong>
+                    &nbsp;({lineStats.quietestHour.count} נרשמים)
+                  </>
+                : '—'}
+              <br/>
+
+              סה״כ&nbsp;נרשמים&nbsp;בטווח:&nbsp;
+              <strong>{lineStats.total}</strong>
+            </p>
+          )}
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 // src/components/Analytic/RegistrationsLineChart.jsx
 import React, { useMemo } from 'react';
+  
 import { ResponsiveLine } from '@nivo/line';
 
 /*
@@ -24,14 +25,18 @@ export default function RegistrationsLineChart({ activities = [] }) {
     );
 
     activities.forEach(act => {
-      const date   = new Date(act.date);
+      const date =
+      act.date            ? new Date(act.date) :
+      act.activity_date   ? new Date(act.activity_date) :
+                            null;
+    if (!date) return;   // skip corrupted rows
       const dayIdx = date.getDay();              
-      const hr     = parseInt((act.startTime || '00').slice(0, 2), 10);
+      const hr   = parseInt((act.activity_time || '00').slice(0,2),10);
 
       if (hr >= 8 && hr <= 21) {
-        const cnt = Array.isArray(act.participants)
-          ? act.participants.length
-          : +act.participants || 0;
+        const cnt =
+        act.num_registrants ??
+        (Array.isArray(act.participants) ? act.participants.length : 0);
         table[dayIdx][hr] += cnt;
       }
     });

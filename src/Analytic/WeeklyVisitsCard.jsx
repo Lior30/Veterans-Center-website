@@ -8,10 +8,13 @@ import React from 'react';
  * @prop {number} count    
  * @prop {number} deltaPct 
  */
-export default function WeeklyVisitsCard({ count = 0, deltaPct = 0 }) {
-  const isUp   = deltaPct >= 0;
-  const arrow  = isUp ? '▲' : '▼';
-  const color  = isUp ? '#28a745' : '#dc3545';
+export default function WeeklyVisitsCard({ count = 0, deltaPct = null }) {
+  const hasDelta = Number.isFinite(deltaPct);
+  const cappedPct = hasDelta ? Math.max(-100, Math.min(deltaPct, 100)) : null;
+
+  const isUp  = cappedPct !== null && cappedPct >= 0;
+  const arrow = cappedPct === null ? ''        : isUp ? '▲' : '▼';
+  const color = cappedPct === null ? '#6c757d' : isUp ? '#28a745' : '#dc3545';
 
   return (
     <div
@@ -52,8 +55,15 @@ export default function WeeklyVisitsCard({ count = 0, deltaPct = 0 }) {
           alignItems: 'center'
         }}
       >
-        {arrow} {Math.abs(deltaPct).toFixed(0)}%
-        <span style={{ color: '#6c757d' }}>&nbsp;משבוע&nbsp;שעבר</span>
+         {cappedPct === null
+          ? '—'
+          : <>
+              {arrow}&nbsp;{Math.abs(cappedPct).toFixed(0)}%
+            </>
+        }
+        <span style={{ color: '#6c757d' }}>
+          &nbsp;משבוע&nbsp;שעבר
+        </span>
       </div>
     </div>
   );
