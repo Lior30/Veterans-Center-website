@@ -5,6 +5,9 @@ import ActivitiesMap from "./ActivitiesMap";
 import { Box, TextField } from "@mui/material";
 import usePublicHolidays from "../hooks/usePublicHolidays";
 import ActivitiesDesign from "./ActivitiesDesign";
+import ActionFeedbackDialog from "./ActionFeedbackDialog";
+import ConfirmDialog from "./ConfirmDialog";
+
 
 const initialForm = {
   id: null,
@@ -31,6 +34,10 @@ export default function ActivitiesContainer() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
 
+  const [message, setMessage] = useState({ open: false, text: "", type: "success" });
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [activityToDelete, setActivityToDelete] = useState(null);
+
   const holidays = usePublicHolidays();
 
   useEffect(() => {
@@ -48,13 +55,25 @@ export default function ActivitiesContainer() {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (row) => {
-    if (
-      window.confirm(`אתה בטוח שברצונך למחוק את הפעילות "${row.name}"?`)
-    ) {
-      await ActivityService.delete(row.id);
+  const handleDelete = (row) => {
+    setActivityToDelete(row);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!activityToDelete) return;
+
+    try {
+      await ActivityService.delete(activityToDelete.id);
+      setMessage({ open: true, type: "success", text: "הפעילות נמחקה בהצלחה" });
+    } catch (err) {
+      setMessage({ open: true, type: "error", text: "שגיאה במחיקת הפעילות" });
+    } finally {
+      setConfirmOpen(false);
+      setActivityToDelete(null);
     }
   };
+
 
   const toMinutes = (timeStr) => {
     const [hh, mm] = timeStr.split(":").map((x) => parseInt(x, 10));
@@ -75,49 +94,83 @@ export default function ActivitiesContainer() {
 
   const handleSave = async () => {
     if (!form.name || !form.date || !form.startTime || !form.endTime) {
-      alert("אנא מלא שם, תאריך, שעת התחלה ושעת סיום.");
+      setMessage({
+        open: true,
+        type: "error",
+        text: "יש למלא שם, תאריך, שעת התחלה ושעת סיום.",
+      });
       return;
     }
 
     if (!form.tags || form.tags.length === 0) {
-      alert("אנא בחרי לפחות תגית אחת לפעילות.");
+      setMessage({
+        open: true,
+        type: "error",
+        text: "יש לבחור לפחות תגית אחת לפעילות.",
+      });
       return;
     }
 
-     if (Number(form.capacity) < 1) {
-      alert("הקיבולת חייבת להיות 1 או יותר");
+    if (Number(form.capacity) < 1) {
+      setMessage({
+        open: true,
+        type: "error",
+        text: "הקיבולת חייבת להיות 1 או יותר.",
+      });
       return;
     }
+
     if (Number(form.priceMember60) < 0 || Number(form.priceRegular) < 0) {
-      alert("המחיר חייב להיות 0 או יותר");
+      setMessage({
+        open: true,
+        type: "error",
+        text: "המחיר חייב להיות 0 או יותר.",
+      });
       return;
     }
 
     const startMinutes = toMinutes(form.startTime);
     const endMinutes = toMinutes(form.endTime);
     if (endMinutes - startMinutes < 30) {
-      alert("שעת הסיום חייבת להיות לפחות חצי שעה אחרי שעת ההתחלה.");
+      setMessage({
+        open: true,
+        type: "error",
+        text: "שעת הסיום חייבת להיות לפחות חצי שעה אחרי שעת ההתחלה.",
+      });
       return;
     }
 
-    await ActivityService.save({
-      ...form,
-      capacity: Number(form.capacity),
-      priceMember60: Number(form.priceMember60),
-      priceRegular: Number(form.priceRegular),
-    });
-    setDialogOpen(false);
+    try {
+      await ActivityService.save({
+        ...form,
+        capacity: Number(form.capacity),
+        priceMember60: Number(form.priceMember60),
+        priceRegular: Number(form.priceRegular),
+      });
+
+      setDialogOpen(false);
+      setMessage({
+        open: true,
+        type: "success",
+        text: "הפעילות נשמרה בהצלחה.",
+      });
+    } catch (err) {
+      setMessage({
+        open: true,
+        type: "error",
+        text: "שגיאה בשמירת הפעילות.",
+      });
+    }
   };
 
   return (
+    <>
     <ActivitiesDesign
-      // data
       tab={tab}
       activities={activities}
       holidays={holidays}
       dialogOpen={dialogOpen}
       form={form}
-      // actions
       onTabChange={setTab}
       onNew={handleNew}
       onEdit={handleEdit}
@@ -128,5 +181,22 @@ export default function ActivitiesContainer() {
       onSave={handleSave}
       onClose={() => setDialogOpen(false)}
     />
+
+    {/* Dialogs below */}
+    <ActionFeedbackDialog
+      open={message.open}
+      type={message.type}
+      text={message.text}
+      onClose={() => setMessage((prev) => ({ ...prev, open: false }))}
+    />
+
+    <ConfirmDialog
+      open={confirmOpen}
+      onClose={() => setConfirmOpen(false)}
+      onConfirm={confirmDelete}
+      title="אישור מחיקה"
+      text={`האם למחוק את הפעילות?`}
+    />
+  </>
   );
 }
