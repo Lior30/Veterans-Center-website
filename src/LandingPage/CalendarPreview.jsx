@@ -166,7 +166,9 @@ const calendarMinWidth = isMobile && view === "timeGridDay" ? "100%" : isMobile 
     label="שבועי"
     onClick={() => {
       setView("timeGridWeek");
-      calendarRef.current.getApi().changeView("timeGridWeek");
+const api = calendarRef.current.getApi();
+api.changeView("timeGridWeek");
+api.today(); // מחזיר לתאריך של היום
     }}
   />
   <ToggleButton

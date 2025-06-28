@@ -70,16 +70,18 @@ export default function HeroSection({ userProfile, onOpenIdentify, onOpenMyActiv
 
   /*JSX*/
   return (
-    <Box
-      component="section"
-      sx={{
-        position: "relative",
-        overflow: "hidden",
-        backgroundColor: "#F3E5F5",
-        borderRadius: 0,
-        mb: { xs: 3, sm: 5 },
-      }}
-    >
+   <Box
+  component="section"
+  sx={{
+    position: "relative",
+    overflow: "hidden",
+    backgroundColor: "#F3E5F5	", // סגול כהה יותר
+    borderRadius: 0,
+    mb: { xs: 3, sm: 5 },
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)", // ✔️ הצללה אלגנטית
+  }}
+>
+
       {/* BG IMAGE – left on desktop, full‑width on mobile */}
       <Fade in={visible} timeout={900}>
         <Box
