@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import CreateMessageDesign   from "./CreateMessageDesign.jsx";
 import MessageService        from "../services/MessageService.js";
 import ActivityService       from "../services/ActivityService.js";
+import ActionFeedbackDialog from "./ActionFeedbackDialog";
 import { Snackbar, Alert }   from "@mui/material";
 
 export default function CreateMessageContainer() {
@@ -63,15 +64,13 @@ export default function CreateMessageContainer() {
         onChange={onChange}
         onSubmit={onSubmit}
       />
-      <Snackbar
+      <ActionFeedbackDialog
         open={success}
-        autoHideDuration={3000}
+        type="success"
+        text="ההודעה נשמרה בהצלחה"
         onClose={() => setSuccess(false)}
-      >
-        <Alert severity="success" onClose={() => setSuccess(false)}>
-          ההודעה נשמרה בהצלחה!
-        </Alert>
-      </Snackbar>
+      />
+
     </>
   );
 }

@@ -26,7 +26,7 @@ export default function CreateMessageDesign({
 
       <Stack spacing={3}>
         <TextField
-          label="כותרת"
+          placeholder="כותרת"
           name="title"
           fullWidth
           value={values.title}
@@ -36,7 +36,7 @@ export default function CreateMessageDesign({
         />
 
         <TextField
-          label="תוכן"
+          placeholder="תוכן"
           name="body"
           multiline
           rows={4}

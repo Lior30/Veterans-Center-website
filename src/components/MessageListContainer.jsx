@@ -23,6 +23,8 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
+import ActionFeedbackDialog from "./ActionFeedbackDialog";
+import ConfirmDialog from "../components/ConfirmDialog";
 import ArrowUpwardIcon   from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import DeleteIcon        from "@mui/icons-material/Delete";
@@ -64,6 +66,10 @@ export default function MessageListContainer() {
   const [editStartDate, setEditStartDate] = useState(""); 
   const [editEndDate, setEditEndDate]     = useState(""); 
   const dragIndexRef = useRef(null);
+  const [search, setSearch] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState(null);
+
 
   // options for activity selection
   const activityOptions = ["פעילות א'", "פעילות ב'", "פעילות ג'"];
@@ -106,6 +112,13 @@ export default function MessageListContainer() {
     load();
   }, []);
 
+  const [message, setMessage] = useState({
+    open: false,
+    type: 'success',
+    text: '',
+  });
+
+
   /*Swap helpers */
   async function swapByIndex(i1, i2) {
     if (i1 < 0 || i2 < 0 || i1 >= messages.length || i2 >= messages.length)
@@ -143,11 +156,34 @@ export default function MessageListContainer() {
   };
 
   /*Delete */
-  const handleDelete = async (id) => {
-    if (!window.confirm("מחק את ההודעה הזו?")) return;
-    await deleteDoc(doc(db, "messages", id));
-    setMessages((prev) => prev.filter((m) => m.id !== id));
+  const handleDelete = (id) => {
+    setMessageToDelete(id);
+    setConfirmOpen(true);
   };
+
+  const confirmDelete = async () => {
+    if (!messageToDelete) return;
+
+    try {
+      await deleteDoc(doc(db, "messages", messageToDelete));
+      setMessages((prev) => prev.filter((m) => m.id !== messageToDelete));
+      setMessage({
+        open: true,
+        type: 'success',
+        text: 'ההודעה נמחקה בהצלחה',
+      });
+    } catch (err) {
+      setMessage({
+        open: true,
+        type: 'error',
+        text: 'שגיאה במחיקה',
+      });
+    } finally {
+      setConfirmOpen(false);
+      setMessageToDelete(null);
+    }
+  };
+
 
   /*Begin editing*/
   const startEditing = (m) => {
@@ -156,42 +192,56 @@ export default function MessageListContainer() {
     setEditBody(m.body || "");
     setEditActivity(m.activity || "");
     setEditStartDate(toInputDate(m.startDate));
-    setEditEndDate(toInputDate(m.endDate));
+    setEditEndDate("");
   };
   const cancelEditing = () => setEditingId(null);
 
   /*Save edits*/
   const saveEditing = async () => {
-    const ref = doc(db, "messages", editingId);
-    await updateDoc(ref, {
-      title: editTitle,
-      body: editBody,
-      activity: editActivity,
-      startDate: editStartDate
-        ? Timestamp.fromDate(new Date(editStartDate))
-        : null,
-      endDate: editEndDate ? Timestamp.fromDate(new Date(editEndDate)) : null,
-    });
+    try {
+      const ref = doc(db, "messages", editingId);
+      await updateDoc(ref, {
+        title: editTitle,
+        body: editBody,
+        activity: editActivity,
+        startDate: editStartDate
+          ? Timestamp.fromDate(new Date(editStartDate))
+          : null,
+        endDate: editEndDate ? Timestamp.fromDate(new Date(editEndDate)) : null,
+      });
 
-    setMessages((prev) =>
-      prev.map((m) =>
-        m.id === editingId
-          ? {
-              ...m,
-              title: editTitle,
-              body: editBody,
-              activity: editActivity,
-              startDate: editStartDate
-                ? Timestamp.fromDate(new Date(editStartDate))
-                : null,
-              endDate: editEndDate
-                ? Timestamp.fromDate(new Date(editEndDate))
-                : null,
-            }
-          : m
-      )
-    );
-    setEditingId(null);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === editingId
+            ? {
+                ...m,
+                title: editTitle,
+                body: editBody,
+                activity: editActivity,
+                startDate: editStartDate
+                  ? Timestamp.fromDate(new Date(editStartDate))
+                  : null,
+                endDate: editEndDate
+                  ? Timestamp.fromDate(new Date(editEndDate))
+                  : null,
+              }
+            : m
+        )
+      );
+      setEditingId(null);
+      setMessage({
+        open: true,
+        type: 'success',
+        text: 'ההודעה נשמרה בהצלחה',
+      });
+    } catch (err) {
+      console.error(err);
+      setMessage({
+        open: true,
+        type: 'error',
+        text: 'שגיאה בעת שמירת ההודעה',
+      });
+    }
   };
 
   /*Render*/
@@ -203,10 +253,29 @@ export default function MessageListContainer() {
         כל ההודעות
       </Typography>
 
-      {messages.map((m, idx) => (
+      <TextField
+        placeholder="חיפוש לפי כותרת"
+        fullWidth
+        sx={{ 
+          mb: 3,
+          '& .MuiInputBase-input': {
+            direction: 'rtl',
+            textAlign: 'right'
+          }
+        }}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      {messages.filter((m) => m.title?.toLowerCase().includes(search.toLowerCase())).map((m, idx) => (
         <Paper
           key={m.id}
-          sx={{ p: 3, mb: 2 }}
+          sx={{ 
+            p: 3, 
+            mb: 2,
+            border: '1px solid',
+            borderColor: 'custom.outline'  // Uses the outline color from your theme
+          }}
           draggable={editingId === null}
           onDragStart={editingId === null ? handleDragStart(idx) : undefined}
           onDragOver={editingId === null ? handleDragOver : undefined}
@@ -356,6 +425,23 @@ export default function MessageListContainer() {
           )}
         </Paper>
       ))}
+      
+      <ActionFeedbackDialog
+        open={message.open}
+        type={message.type}
+        text={message.text}
+        onClose={() => setMessage((prev) => ({ ...prev, open: false }))}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={confirmDelete}
+        title="אישור מחיקה"
+        text="האם למחוק את ההודעה הזו?"
+      />
+
+
     </Container>
   );
 }

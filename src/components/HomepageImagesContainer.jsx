@@ -1,6 +1,8 @@
 //HomepageImagesContainer.jsx 
 import React, { useState, useEffect, useRef } from "react";
 import HomepageImagesDesign from "./HomepageImagesDesign.jsx";
+import ActionFeedbackDialog from "./ActionFeedbackDialog";
+import ConfirmDialog from "../components/ConfirmDialog";
 import BannerService from "../services/BannerService.js";
 import {
   Container,
@@ -25,7 +27,7 @@ export default function HomepageImagesContainer() {
   const [banners, setBanners] = useState([]);
   const dragIndexRef = useRef(null);
 
-  const [message, setMessage] = useState({ open: false, text: '', type: 'success', title: '' });
+  const [message, setMessage] = useState({ open: false, text: '', type: 'success'});
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [bannerToDelete, setBannerToDelete] = useState(null);
 
@@ -179,118 +181,19 @@ export default function HomepageImagesContainer() {
         </Stack>
       </Container>
 
-          <Dialog
-            open={message.open}
-            onClose={(e, reason) => {
-              if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
-                setMessage(prev => ({ ...prev, open: false }));
-              }
-            }}
-            maxWidth="sm"
-            sx={{ zIndex: 10000 }}
-            slotProps={{
-              sx: {
-                p: 3,
-                textAlign: 'center',
-                borderRadius: 2,
-                border: theme =>
-                  `3px solid ${
-                    message.type === 'success'
-                      ? theme.palette.primary.main
-                      : theme.palette.error.main
-                  }`,
-                boxShadow: 4,
-                backgroundColor: '#f9f9f9',
-                zIndex: 10000
-              }
-            }}
-          >
-            <DialogContent>
-              <Box sx={{ mb: 3, display: "flex", justifyContent: "center" }}>
-              {message.type === 'success' ? (
-                <CheckCircle
-                  sx={{
-                    fontSize: 72,
-                    color: 'primary.main',
-                    mb: 2,
-                    filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))'
-                  }}
-                />
-              ) : (
-                <Error
-                  sx={{
-                    fontSize: 72,
-                    color: 'error.main',
-                    mb: 2,
-                    filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))'
-                  }}
-                />
-              )}
-            </Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 700,
-                  mb: 2,
-                  color: message.type === 'success' ? 'primary.main' : 'error.main',
-                  textShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                }}
-              >
-                {message.text}
-              </Typography>
-            </DialogContent>
-            <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
-              <Button
-                onClick={() => setMessage(prev => ({ ...prev, open: false }))}
-                variant="contained"
-                size="large"
-                sx={{
-                  fontSize: '1.3rem',
-                  py: 1.5,
-                  px: 6,
-                  bgcolor:
-                    message.type === 'success' ? 'primary.main' : 'error.main',
-                  color: 'common.white',
-                  borderRadius: 3,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  '&:hover': {
-                    bgcolor:
-                      message.type === 'success' ? 'primary.dark' : 'error.dark',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 6px 16px rgba(0,0,0,0.2)'
-                  },
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                הבנתי
-              </Button>
-            </DialogActions>
-          </Dialog>
-
-          <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="xs" fullWidth>
-            <DialogTitle sx={{ fontWeight: 'bold', textAlign: 'center' }}>
-              אישור מחיקה
-            </DialogTitle>
-            <DialogContent>
-              <Typography variant="body1" align="center">
-                האם אתה בטוח שברצונך למחוק את התמונה  "{bannerToDelete?.title}"?
-              </Typography>
-            </DialogContent>
-            <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
-              <Button onClick={() => setConfirmOpen(false)} variant="outlined">
-                ביטול
-              </Button>
-              <Button
-                onClick={confirmDelete}
-                variant="contained"
-                color="error"
-              >
-                מחק
-              </Button>
-            </DialogActions>
-          </Dialog>
+      <ActionFeedbackDialog
+        open={message.open}
+        type={message.type}
+        text={message.text}
+        onClose={() => setMessage(prev => ({ ...prev, open: false }))}
+      />
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={confirmDelete}
+        title="אישור מחיקה"
+        text={`האם אתה בטוח שברצונך למחוק את התמונה "${bannerToDelete?.title}"?`}
+      />
     </Box>
   );
 }
