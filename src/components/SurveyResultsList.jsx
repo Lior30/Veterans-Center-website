@@ -1,5 +1,5 @@
-import CtaButton from "../LandingPage/CtaButton";
 // src/components/SurveyResultsList.jsx
+import CtaButton from "../LandingPage/CtaButton";
 import React, { useState, useEffect } from "react";
 import {
   collection,
@@ -15,6 +15,7 @@ import { TextField } from "@mui/material";
 export default function SurveyResultsList() {
   const [surveys, setSurveys] = useState([]);
   const [search, setSearch] = useState("");
+  const [responseCounts, setResponseCounts] = useState({});
   const navigate = useNavigate();
 
   const loadSurveys = async () => {
@@ -43,7 +44,14 @@ export default function SurveyResultsList() {
       }
     }
 
-    // Replace activity ID with name
+    // Get response counts for each survey
+    const counts = {};
+    for (const s of rawSurveys) {
+      const resSnap = await getDocs(collection(db, "surveys", s.id, "responses"));
+      counts[s.id] = resSnap.size;
+    }
+    setResponseCounts(counts);
+
     const surveysWithNames = rawSurveys.map((s) => ({
       ...s,
       activity_name:
@@ -91,6 +99,7 @@ export default function SurveyResultsList() {
         filteredSurveys.map((s) => {
           const isExpired =
             s.expires_at && new Date() > new Date(s.expires_at);
+          const hasResponses = responseCounts[s.id] > 0;
 
           return (
             <div
@@ -100,7 +109,7 @@ export default function SurveyResultsList() {
                 border: "1px solid #ccc",
                 padding: 16,
                 margin: "10px auto",
-                maxWidth: 500,
+                maxWidth: 620,
                 borderRadius: 4,
                 textAlign: "right",
               }}
@@ -141,6 +150,7 @@ export default function SurveyResultsList() {
               </div>
 
               <h3>{s.headline}</h3>
+
               <CtaButton
                 onClick={() => navigate(`/surveys/results/${s.id}`)}
                 style={{ marginRight: 8 }}
@@ -153,8 +163,16 @@ export default function SurveyResultsList() {
               >
                 ניתוח סקר
               </CtaButton>
+              {!hasResponses && (
+                <CtaButton
+                  onClick={() => navigate(`/surveys/edit/${s.id}`)}
+                  style={{ marginRight: 8 }}
+                >
+                  ✏️ ערוך סקר
+                </CtaButton>
+              )}
               <CtaButton color="error" onClick={() => handleDeleteSurvey(s.id)}>
-              מחק סקר
+                מחק סקר
               </CtaButton>
             </div>
           );

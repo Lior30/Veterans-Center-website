@@ -25,6 +25,7 @@ import SurveyResultsDetail from "./components/SurveyResultsDetail.jsx";
 import SurveyAnalysisDetail from "./components/SurveyAnalysisDetail";
 import SurveyListContainer from "./components/SurveyListContainer.jsx";
 import SurveyDetailContainer from "./components/SurveyDetailContainer.jsx";
+import CreateSurveyContainer from "./components/CreateSurveyContainer";
 
 import ManageMessages from "./components/ManageMessages.jsx";
 import CreateMessage from "./components/CreateMessageContainer.jsx";
@@ -111,6 +112,7 @@ export default function App({ toggleTheme, mode }) {
         <Route path="/surveys/analysis/:id" element={
           <PrivateRoute requireAdmin={true}><SurveyAnalysisDetail /></PrivateRoute>
         } />
+        <Route path="/surveys/edit/:id" element={<CreateSurveyContainer />} />
 
 
         {/* 🔐 Messages – admin */}

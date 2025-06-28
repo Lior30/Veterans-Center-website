@@ -1,12 +1,19 @@
 // src/components/CreateSurveyContainer.jsx
+import { db } from "../firebase";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import CreateSurveyDesign from "./CreateSurveyDesign.jsx";
 import SurveyService from "../services/SurveyService.js";
-
-let nextId = 1;
+import { getDoc, doc } from "firebase/firestore";
+import { useParams } from "react-router-dom";
 
 export default function CreateSurveyContainer() {
+  const { id } = useParams(); // check if editing
+
+  const isEditing = !!id;
+  const pageTitle = isEditing ? "עריכת סקר קיים" : "יצירת סקר חדש";
+  const submitLabel = isEditing ? "עדכן שינויים" : "פרסם סקר";
+
   const navigate = useNavigate();
 
   const [questions, setQuestions] = useState([]);
@@ -36,6 +43,28 @@ export default function CreateSurveyContainer() {
   const [activityId, setActivityId] = useState("general");
   const [activities, setActivities] = useState([]);
 
+  useEffect(() => {
+  async function loadForEdit() {
+    if (!id) return;
+    const snap = await getDoc(doc(db, "surveys", id));
+    if (!snap.exists()) return;
+    const data = snap.data();
+
+    setHeadline(data.headline || "");
+    setActivityId(data.of_activity || "general");
+    setQuestions(data.questions || []);
+    if (data.expires_at) {
+      setHasExpiration(true);
+      setExpiresAt(new Date(data.expires_at).toISOString().slice(0, 16)); // adjust for input format
+    } else {
+      setHasExpiration(false);
+    }
+  }
+
+  loadForEdit();
+}, [id]);
+
+
   // Load all activities once (for the dropdown)
   useEffect(() => {
     async function loadActivities() {
@@ -50,17 +79,17 @@ export default function CreateSurveyContainer() {
   const handleActivityChange = (e) => setActivityId(e.target.value);
 
   const handleAddQuestion = () =>
-    setQuestions((qs) => [
-      ...qs,
-      {
-        id: `auto_${nextId++}`,
-        text: "",
-        type: "open",
-        options: [],
-        mandatory: false,
-        fixed: false,
-      },
-    ]);
+  setQuestions((qs) => [
+    ...qs,
+    {
+      id: `q_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+      text: "",
+      type: "open",
+      options: [],
+      mandatory: false,
+      fixed: false,
+    },
+  ]);
 
   const handleRemoveQuestion = (id) =>
     setQuestions((qs) => qs.filter((q) => q.id !== id));
@@ -127,22 +156,29 @@ if (hasExpiration && expiresAt) {
   }
 
 
-    await SurveyService.create(payload);
+    if (id) {
+  await SurveyService.update(id, payload);
+} else {
+  await SurveyService.create(payload);
+}
+
     navigate("/surveys");
   };
 
   const handleCancel = () => {
-    if (
-      window.confirm(
-        "בטל יצירת סקר ותאבדו את כל השינויים?"
-      )
-    ) {
-      navigate("/surveys");
-    }
-  };
+  const message = isEditing
+    ? "ביטול עריכת הסקר?"
+    : "בטל יצירת סקר ותאבדו את כל השינויים?";
+  if (window.confirm(message)) {
+    navigate("/surveys");
+  }
+};
+
 
   return (
     <CreateSurveyDesign
+      pageTitle={pageTitle}
+      submitLabel={submitLabel}
       headline={headline}
       onHeadlineChange={handleHeadlineChange}
       questions={questions}
