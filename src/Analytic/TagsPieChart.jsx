@@ -93,22 +93,33 @@ const agg = {};
 }, [activities, pickExtraColor]);
 
 
-  if (!pieData.length) {
-    return <p style={{ textAlign: 'center' }}>No data to display</p>;
-  }
+ const EMPTY = pieData.length === 0;
 
-  /* UI  */
   return (
     <div
       style={{
-        height: 300,
+        height: 300,                             /* גובה קשיח ל-Nivo */
         display: 'flex',
-        columnGap: 24,
-        direction: 'ltr' 
+        columnGap: EMPTY ? 0 : 24,               /* אין רווח כשאין אגדה */
+        direction: 'ltr',
+        alignItems: EMPTY ? 'center' : 'stretch',/* יישור-מרכז רק במצב ריק */
+        justifyContent: EMPTY ? 'center' : 'flex-start'
       }}
     >
-      {/* Pie chart */}
-      <div style={{ flex: 1 }}>
+      {EMPTY ? (
+        <p style={{
+          margin: 0,
+          fontSize: 16,
+          color: '#888',
+          direction: 'rtl',
+          textAlign: 'center'
+        }}>
+          אין נתונים להצגה
+        </p>
+      ) : (
+        <>
+          {/* Pie chart */}
+          <div style={{ flex: 1 }}>
         <ResponsivePie
           data={pieData}
           colors={d => d.data.color}
@@ -128,51 +139,53 @@ const agg = {};
             {datum.data.pct}%&nbsp;|&nbsp;{datum.data.participants} משתתפים
           </div>
         )}
-        />
-      </div>
-
-      {/*Legend */}
-      <div
-        style={{
-          width: 140,
-          maxHeight: 260,
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-          paddingInlineEnd: 4,
-          paddingTop: 16 
-        }}
-      >
-        {pieData.map(item => (
-          <div
-            key={item.id}
-            style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}
-          >
-            <span
-              style={{
-                width: 14,
-                height: 14,
-                borderRadius: '50%',
-                background: item.color,
-                flexShrink: 0
-              }}
             />
-            <span
-              style={{
-                fontSize: 13,
-                color: '#495057',
-                direction: 'rtl',
-                whiteSpace: 'normal',
-                lineHeight: 1.25
-              }}
-            >
-              {item.label}<br />
-              {item.pct}%
-            </span>
           </div>
-        ))}
+
+          {/* Legend */}
+          <div
+            style={{
+              width: 140,
+              maxHeight: 260,
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+              paddingInlineEnd: 4,
+              paddingTop: 16
+            }}
+          >
+            {pieData.map(item => (
+              <div
+                key={item.id}
+                style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}
+              >
+                <span
+                 style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: '50%',
+                    background: item.color,
+                    flexShrink: 0
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: 13,
+                    color: '#495057',
+                    direction: 'rtl',
+                    whiteSpace: 'normal',
+                    lineHeight: 1.25
+                  }}
+                >
+                  {item.label}<br />
+                  {item.pct}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
       </div>
-    </div>
   );
 }

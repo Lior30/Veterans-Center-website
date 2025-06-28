@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import * as XLSX from "xlsx";           // ❶
 import { saveAs } from "file-saver";
 import { db, auth, firebaseConfig  } from "../firebase"; // <-- add auth here
@@ -14,6 +14,7 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import EditIcon   from "@mui/icons-material/Edit";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { CheckCircle, Error } from "@mui/icons-material";
+import CloseIcon from "@mui/icons-material/Close";
 import {
   Box,
   Button,
@@ -24,7 +25,8 @@ import {
   DialogContent,
   IconButton,
   DialogActions,
-  Tabs, Tab 
+  Tabs, Tab,
+  MenuItem
   // … שאר ה-imports הקיימים
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -90,8 +92,11 @@ function formatDate(dateValue) {
 // helper: יוצר user_id קבוע מכל מקור אפשרי
 // helper: יוצר user_id קבוע מכל מקור אפשרי
 function ensureUserId(u) {
+  if (!u) return "";
   // אם כבר יש user_id – פשוט החזרי
   if (u.user_id) return u.user_id;
+
+  const phone = (u.phone || "").replace(/\D/g, "");
 
   // קחי שם מלא מכל אחד מהשדות האפשריים
   const full = (u.fullname || u.fullName || "").trim();
@@ -236,7 +241,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
   const isActivity  = filter === "activity";
   const isSurvey    = filter === "survey";
-  const isBoth      = filter === "both";
+  const isBoth      = false;  
   const [openRows, setOpenRows] = useState(new Set());
   const [editUser,  setEditUser]  = useState(null);
   const [openCats, setOpenCats] = useState({});
@@ -267,6 +272,24 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [onConfirmAction, setOnConfirmAction] = useState(() => () => {});
+  const editPhoneError   = editUser
+  ? UserService.getPhoneError(editUser.phone || "")
+  : null;   
+  const isEditPhoneValid = editPhoneError === null;
+  const firstRef = useRef(null);
+  const lastRef  = useRef(null);
+  const phoneRef = useRef(null);
+  const idRef    = useRef(null);
+  const addressRef = useRef(null);
+  const notesRef   = useRef(null);
+  const eFirstRef   = useRef(null);
+  const eLastRef    = useRef(null);
+  const ePhoneRef   = useRef(null);
+  const eIdRef      = useRef(null);
+  const eAddressRef = useRef(null);
+  const eNotesRef   = useRef(null);
+  const eSaveRef    = useRef(null);  
+
 
 
   
@@ -368,9 +391,6 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     }
   }
 
-
-
-
   function toggleSelect(user) {                 // ← מקבל את כל האובייקט
     const id = ensureUserId(user);              // ← מזהה קבוע ואחיד
     setSelected(prev => {
@@ -383,7 +403,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   function selectAllRows(checked) {
     setSelected(
       checked
-        ? new Set(rowsToShow.map(r => ensureUserId(r.user)))
+        ? new Set(rowsToShow.filter(r => r && r.user).map(r => ensureUserId(r.user)))
         : new Set()
     );
   }
@@ -425,6 +445,15 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
     setConfirmOpen(true);
   }
+
+ 
+  /* ➋ האנדלר הכללי */
+  const focusNext = next => e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      next?.current?.focus();
+    }
+  };
 
 
 
@@ -617,14 +646,10 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   if (filter === "activity") rowsToShow = rowsActivities;
   else if (filter === "replies") rowsToShow = rowsReplies;
   else if (filter === "survey")   rowsToShow = rowsSurveys;
-  else if (filter === "both")     rowsToShow = [...rowsActivities, ...rowsSurveys]
-    .sort((a, b) => {
-      const dateA = a.activityDate || a.surveyDate;
-      const dateB = b.activityDate || b.surveyDate;
-      return new Date(dateB) - new Date(dateA);
-    });
   else if (filter === "replies")  rowsToShow = rowsReplies;
   else                             rowsToShow = rowsAllWithShape;
+
+  rowsToShow = (rowsToShow || []).filter(r => r && r.user);
 
   const term = search.trim().toLowerCase();
   if (term) {
@@ -1123,7 +1148,6 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
             <option value="activity">נרשמים</option>
             <option value="survey">סקרים</option>
             <option value="replies">תגובות</option>
-            <option value="both">פעילות + סקר</option>
           </TextField>
         </Box>
 
@@ -1270,6 +1294,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     {/* Field: First Name */}
     <div style={{ marginBottom: 16 }}>
       <input
+        ref={firstRef}
         type="text"
         placeholder="שם פרטי"
         value={newFirstName}
@@ -1277,6 +1302,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
           setNewFirstName(e.target.value);
           setFirstTouched(true);
         }}
+        onKeyDown={focusNext(lastRef)}
         onBlur={() => setFirstTouched(true)}
         style={{
           width: "100%",
@@ -1296,6 +1322,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     {/* Field: Last Name */}
     <div style={{ marginBottom: 16 }}>
       <input
+        ref={lastRef}
         type="text"
         placeholder="שם משפחה"
         value={newLastName}
@@ -1303,6 +1330,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
           setNewLastName(e.target.value);
           setLastTouched(true);
         }}
+        onKeyDown={focusNext(phoneRef)}
         onBlur={() => setLastTouched(true)}
         style={{
           width: "100%",
@@ -1323,12 +1351,18 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     <div style={{ marginBottom: 16 }}>
       <input
         type="text"
+        inputMode="numeric"      
+        pattern="[0-9]*"       
+        maxLength={10}     
+        ref={phoneRef}     
         placeholder="מספר טלפון"
         value={newPhone}
         onChange={e => {
-          setNewPhone(e.target.value);
+          const digits = e.target.value.replace(/\D/g, '');
+          setNewPhone(digits);
           setPhoneTouched(true);
         }}
+        onKeyDown={focusNext(idRef)}
         style={{
           width: "100%",
           padding: "10px 12px",
@@ -1347,10 +1381,12 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     {/* Field: ID Number */}
     <div style={{ marginBottom: 16 }}>
       <input
+        ref={idRef}
         type="text"
         placeholder="תעודת זהות"
         value={idNumber}
         onChange={e => setIdNumber(e.target.value)}
+        onKeyDown={focusNext(addressRef)}
         style={{
           width: "100%",
           padding: "10px 12px",
@@ -1366,10 +1402,12 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     {/* Field: Address */}
     <div style={{ marginBottom: 16 }}>
       <input
+      ref={addressRef}
         type="text"
         placeholder="כתובת"
         value={address}
         onChange={e => setAddress(e.target.value)}
+        onKeyDown={focusNext(notesRef)}
         style={{
           width: "100%",
           padding: "10px 12px",
@@ -1385,9 +1423,16 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     {/* Field: Notes */}
     <div style={{ marginBottom: 16 }}>
       <textarea
+      ref={notesRef}
         placeholder="הערות"
         value={notes}
         onChange={e => setNotes(e.target.value)}
+         onKeyDown={e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              typeRef.current?.focus();
+            }
+          }}
         rows={3}
         style={{
           width: "100%",
@@ -1479,7 +1524,6 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       {filter === "activity" && <th style={th}>כמות פעילויות</th>}
       {filter === "survey"   && <th style={th}>כמות סקרים</th>}
       {filter === "replies"  && <th style={th}>כמות תגובות</th>}
-      {filter === "both"     && <th style={th}>פעילויות / סקרים</th>}
 
       
       <th style={th}>פעולות</th>
@@ -1572,10 +1616,6 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
             </td>
           </>
         )}
-
-        {filter === "both"    && (
-          <td>{(u.activities?.length || 0) + 1} / {(u.survey?.length || 0) + 1}</td>
-        )}
       
           <td style={{ ...td, position: "relative" }}>
             <div style={{ display: "flex", gap: 4 }}>
@@ -1640,7 +1680,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
                     : filter)
                   : filter
               }
-              collapsible={["both","all"].includes(filter)} // ◄◄ רק כשהמסנן מציג 2-קטגוריות
+              collapsible={["both","all"].includes(filter)} 
             />
           </td>
         </tr>
@@ -1652,32 +1692,86 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
         </table>
 
         {/* ✦✦ דיאלוג ייצוא ✦✦ */}
-        <Dialog open={showExport} onClose={() => setShowExport(false)} maxWidth="xs" fullWidth>
-          <DialogTitle>ייצוא משתמשים</DialogTitle>
+        <Dialog open={showExport} onClose={() => setShowExport(false)} maxWidth="xs" fullWidth
+          PaperProps={{
+            sx: {
+              p: 4,                         // ריווח פנימי נדיב
+              borderRadius: 3,              // ‎12px≈theme.spacing(3)
+              bgcolor: '#ffffff',
+              boxShadow: '0 4px 16px rgba(0,0,0,.12)',
+              direction: 'rtl',             // לשמור על RTL
+            }
+          }}
+        >
+          <DialogTitle
+            sx={{
+              position: "relative",
+              textAlign: "center",
+              fontWeight: 700,
+              fontSize: "1.5rem",
+              color: palette.primary,
+              pr: 4
+            }}
+          >
+            ייצוא משתמשים
+
+            <IconButton
+              aria-label="סגור"
+              onClick={() => setShowExport(false)}
+              sx={{ position: "absolute", top: 8, left: 8, color: "grey.500" }}
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </DialogTitle>
+
           <DialogContent sx={{ display:"flex", flexDirection:"column", gap:2 }}>
-            <label>
+            <Typography sx={{ fontWeight: 600, mb: 1, textAlign: 'right' }}>
               בחר קבוצה:
-              <select
-                value={exportType}
-                onChange={e => setExportType(e.target.value)}
-                style={{ display:"block", width:"100%", marginTop:8 }}
-              >
-                <option value="all">כל המשתמשים</option>
-                <option value="registered">משתמשים רשומים</option>
-                <option value="senior">חברי מרכז 60+</option>
-              </select>
-            </label>
+            </Typography>
+
+            <TextField
+              select
+              size="small"
+              fullWidth
+              value={exportType}
+              onChange={e => setExportType(e.target.value)}
+              sx={{
+                direction: 'rtl',
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,                     // ‎8px
+                  "& fieldset":        { borderColor: palette.border },
+                  "&:hover fieldset":  { borderColor: palette.primaryHL },
+                  "&.Mui-focused fieldset": { borderColor: palette.primary }
+                }
+              }}
+            >
+              <MenuItem value="all">כל המשתמשים</MenuItem>
+              <MenuItem value="registered">משתמשים רשומים</MenuItem>
+              <MenuItem value="senior">חברי מרכז 60+</MenuItem>
+            </TextField>
+
 
             <Button
-              variant="contained" 
+              fullWidth
+              variant="contained"
               onClick={() => {
                 exportToExcel(exportType);
                 setShowExport(false);
               }}
+              sx={{
+                mt: 3,
+                py: 1.5,
+                fontWeight: 600,
+                fontSize: '1.1rem',
+                bgcolor: palette.primary,
+                borderRadius: 2,
+                boxShadow: '0 2px 6px rgba(0,0,0,.15)',
+                "&:hover": { bgcolor: palette.primaryHL }
+              }}
             >
-             
-              ייצוא  
+              יצא
             </Button>
+
           </DialogContent>
         </Dialog>
 
@@ -1687,55 +1781,88 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   <Dialog open onClose={() => setEditUser(null)} maxWidth="xs" fullWidth>
     <DialogTitle
       sx={{
+        position: "relative",
         textAlign: "center",
         fontSize: "1.5rem",
         fontWeight: 600,
-        marginBottom: 2,
-        marginTop: 5,
+        mb: 2, mt: 5,
+        pr: 4          // מקום לטקסט שלא יידחק ע״י האיקון
       }}
     >
       עריכת משתמש
+
+      {/* כפתור X */}
+      <IconButton
+        aria-label="סגור"
+        onClick={() => setEditUser(null)}
+        sx={{ position: "absolute", top: 8, left: 8, color: "grey.500" }}
+      >
+        <CloseIcon fontSize="small" />
+      </IconButton>
     </DialogTitle>
+
     <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
       <TextField
+        inputRef={eFirstRef}
         placeholder="שם פרטי"
         value={editUser.first_name || ""}
         onChange={e => setEditUser(prev => ({ ...prev, first_name: e.target.value }))}
+        onKeyDown={focusNext(eLastRef)}
         sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
         fullWidth
       />
       <TextField
+        inputRef={eLastRef}
         placeholder="שם משפחה"
         value={editUser.last_name || ""}
         onChange={e => setEditUser(prev => ({ ...prev, last_name: e.target.value }))}
+        onKeyDown={focusNext(ePhoneRef)}
         sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
         fullWidth
       />
       <TextField
+        inputRef={ePhoneRef}
         placeholder="מספר טלפון"
         value={editUser.phone || ""}
-        onChange={e => setEditUser(prev => ({ ...prev, phone: e.target.value }))}
+        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 10 }}
+        onChange={e => {
+          const digits = e.target.value.replace(/\D/g, '');
+          setEditUser(prev => ({ ...prev, phone: digits }));
+        }}
+        onKeyDown={focusNext(eIdRef)}
         sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
         fullWidth
       />
+
       <TextField
+        inputRef={eIdRef}
         placeholder="תעודת זהות"
         value={editUser.id_number || ""}
         onChange={e => setEditUser(prev => ({ ...prev, id_number: e.target.value }))}
+        onKeyDown={focusNext(eAddressRef)}
         sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
         fullWidth
       />
       <TextField
+        inputRef={eAddressRef}
         placeholder="כתובת"
         value={editUser.address || ""}
         onChange={e => setEditUser(prev => ({ ...prev, address: e.target.value }))}
+        onKeyDown={focusNext(eNotesRef)}
         sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
         fullWidth
       />
       <TextField
+        inputRef={eNotesRef}
         placeholder="הערות"
         value={editUser.notes || ""}
         onChange={e => setEditUser(prev => ({ ...prev, notes: e.target.value }))}
+        onKeyDown={e => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            eSaveRef.current?.focus();  // קפיצה לכפתור "שמירה"
+          }
+        }}
         multiline
         rows={3}
         sx={{ textarea: { direction: 'rtl', textAlign: 'right' } }}
@@ -1743,7 +1870,11 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       />
 
       <Button
+        variant="contained"          
+        fullWidth
+        disableElevation 
         onClick={() => saveEditedUser(editUser)}
+        disabled={!isEditPhoneValid}
         sx={{
           width: "100%",
           padding: "12px",

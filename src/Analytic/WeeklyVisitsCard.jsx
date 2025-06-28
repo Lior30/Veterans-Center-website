@@ -10,7 +10,7 @@ import React from 'react';
  */
 export default function WeeklyVisitsCard({ count = 0, deltaPct = null }) {
   const hasDelta = Number.isFinite(deltaPct);
-  const cappedPct = hasDelta ? Math.max(-100, Math.min(deltaPct, 100)) : null;
+    const cappedPct = hasDelta ? Math.max(-100, deltaPct) : null;
 
   const isUp  = cappedPct !== null && cappedPct >= 0;
   const arrow = cappedPct === null ? ''        : isUp ? '▲' : '▼';
@@ -58,7 +58,12 @@ export default function WeeklyVisitsCard({ count = 0, deltaPct = null }) {
          {cappedPct === null
           ? '—'
           : <>
-              {arrow}&nbsp;{Math.abs(cappedPct).toFixed(0)}%
+      <span>
+        {cappedPct >= 0 ? '▲' : '▼'}
+        {Math.abs(cappedPct).toFixed(0)}%
+        {cappedPct >= 0 ? '+' : '-'}
+
+      </span>
             </>
         }
         <span style={{ color: '#6c757d' }}>
