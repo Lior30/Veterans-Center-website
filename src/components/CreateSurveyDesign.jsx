@@ -21,12 +21,14 @@ export default function CreateSurveyDesign({
   onActivityChange,
   expiresAt,                
   onExpiresAtChange,
+  pageTitle,
+  submitLabel,
   hasExpiration,               
   onHasExpirationChange
 }) {
   return (
     <div style={{ padding: 40, maxWidth: 600, margin: "0 auto", direction: "rtl" }}>
-      <h2>יצירת סקר חדש</h2>
+      <h2>{pageTitle}</h2>
 
       {/* Headline */}
       <div style={{ margin: "20px 0" }}>
@@ -177,7 +179,7 @@ export default function CreateSurveyDesign({
   style={{ marginRight: 8 }}
   disabled={questions.length === 0}
 >
-  ✅ פרסם סקר
+  {submitLabel}
 </button>
         <button onClick={onCancel}>← ביטול</button>
       </div>

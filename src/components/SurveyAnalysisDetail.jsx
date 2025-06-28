@@ -38,8 +38,6 @@ const COLORS = [
   "#aa00ff", "#ff4081", "#4caf50", "#f44336",
 ];
 
-const sparkleUrl = "/assets/sparkle.svg";
-
 export default function SurveyAnalysisDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -247,11 +245,46 @@ export default function SurveyAnalysisDetail() {
                   </>
                 ) : isLoading ? (
                   <Box display="flex" alignItems="center" sx={{ mt: 2 }}>
-                    <img src={sparkleUrl} alt="טוען..." style={{
-                      width: "48px",
-                      animation: "spin 2s linear infinite"
-                    }} />
-                    <Typography sx={{ ml: 2 }}>המערכת מסכמת תשובות…</Typography>
+                    <Box sx={{ width: 48, height: 48 }}>
+  <svg
+    width="64"
+    height="64"
+    viewBox="0 0 64 64"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <style>{`
+      @keyframes shootUp {
+        0% { transform: translateY(20px); opacity: 0; }
+        50% { transform: translateY(-4px); opacity: 1; }
+        100% { transform: translateY(-20px); opacity: 0; }
+      }
+      .small1, .small2 {
+        fill: #ab47bc;
+        transform-origin: 24px 24px;
+        animation: shootUp 1.2s ease-in-out infinite;
+      }
+      .small2 { animation-delay: 0.6s; }
+      .big {
+        fill: #ab47bc;
+      }
+    `}</style>
+
+    <polygon
+      className="big"
+      points="32,16 36,28 48,32 36,36 32,48 28,36 16,32 28,28"
+    />
+    <polygon
+      className="small1"
+      points="20,12 22,18 28,20 22,22 20,28 18,22 12,20 18,18"
+    />
+    <polygon
+      className="small2"
+      points="20,36 22,42 28,44 22,46 20,52 18,46 12,44 18,42"
+    />
+  </svg>
+</Box>
+
+                    <Typography sx={{ ml: 3 }}>המערכת מסכמת תשובות…</Typography>
                   </Box>
                 ) : (
                   <Button sx={{ mt: 2 }} onClick={() => summarizeAnswers(q.id, q.text)}>
