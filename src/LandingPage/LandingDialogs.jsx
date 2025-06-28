@@ -387,11 +387,29 @@ const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
       <Typography>לא נמצאו פרטים</Typography>
     )}
   </DialogContent>
-  <DialogActions>
+  
+<DialogActions sx={{ justifyContent: "flex-end", pb: 3 }}>
+  <Box display="flex" gap={2}>
+    {dialog.data?.id && userProfile?.phone && (
+      <CtaButton
+        startIcon={<EventIcon />}
+        color="primary"
+        onClick={() => {
+          closeDialog();
+          openDialog("register", dialog.data.id);
+        }}
+      >
+        הרשמה מהירה
+      </CtaButton>
+    )}
+
     <CtaButton color="primary.light" onClick={closeDialog}>
       סגור
     </CtaButton>
-  </DialogActions>
+  </Box>
+</DialogActions>
+
+
 </StyledDialog>
 
 
