@@ -46,6 +46,15 @@ export default function CalendarPreview({
   const calendarRef = useRef(null);
 
 const [view, setView] = useState("timeGridDay");
+const [currentDate, setCurrentDate] = useState(new Date());
+
+const currentMonth = useMemo(() => {
+  return currentDate.toLocaleDateString("he-IL", {
+    month: "long",
+    year: "numeric",
+  });
+}, [currentDate]);
+
 const calendarMinWidth = isMobile && view === "timeGridDay" ? "100%" : isMobile ? 650 : "auto";
 
   const [tag,  setTag]        = useState("ALL");
@@ -147,6 +156,8 @@ const calendarMinWidth = isMobile && view === "timeGridDay" ? "100%" : isMobile 
     alignItems: "center",
     gap: 3, // רווח קבוע בין הכפתורים (24px)
     mb: 4,
+    background: `linear-gradient(180deg, ${theme.palette.primary.vlight} 0%,#ffffff 100%,)`,
+
   }}
 >
   <ToggleButton
@@ -189,6 +200,20 @@ api.today(); // מחזיר לתאריך של היום
           <NavArrow side="left"  onClick={goNext} />
           <NavArrow side="right" onClick={goPrev} />
         </NavWrapper>
+{view === "dayGridMonth" && (
+  <Typography
+    variant="h6"
+    sx={{
+      textAlign: "center",
+      color: theme.palette.primary.main,
+      fontWeight: 700,
+      mt: 2,
+    }}
+  >
+    {currentMonth}
+  </Typography>
+)}
+
 
         {/* TAG FILTER */}
         <Box sx={{
@@ -301,6 +326,12 @@ api.today(); // מחזיר לתאריך של היום
             },
           }}>
             <FullCalendar
+           datesSet={() => {
+    const centerDate = calendarRef.current?.getApi().getDate();
+    if (centerDate) {
+      setCurrentDate(centerDate);
+    }
+  }}
               ref={calendarRef}
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
               initialView={view}
