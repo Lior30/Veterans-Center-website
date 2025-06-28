@@ -9,7 +9,7 @@ import React from 'react';
  * @param {Boolean}  [props.hideWeek=false] If true – do not render the week selector
  */
 export default function LineTimeFilter({ value, onChange, hideWeek = false }) {
-  const { type, month, week } = value;
+  const { type, month, week, quarter } = value;   /* ← רבעון */
 
   /** Merge helper – keeps the rest of the filter intact */
   const set = patch => onChange({ ...value, ...patch });
@@ -20,6 +20,11 @@ export default function LineTimeFilter({ value, onChange, hideWeek = false }) {
     'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר',
   ];
 
+  const HEB_QUARTERS = ['ראשון', 'שני', 'שלישי', 'רביעי'];
+  const showQuarterSelector = type === 'quarter';
+  const CUR_YEAR            = new Date().getFullYear()
+  const getCurrentQuarter = () => Math.floor(new Date().getMonth() / 3)
+
   /** Render week selector only when relevant */
   const showWeekSelector = type === 'month' && !hideWeek;
 
@@ -28,11 +33,22 @@ export default function LineTimeFilter({ value, onChange, hideWeek = false }) {
       <label>סינון לפי טווח זמן:&nbsp;</label>
 
       {/* main type selector */}
-      <select
+       <select
         value={type}
-        onChange={e => set({ type: e.target.value, week: undefined })}
-      >
-        <option value="quarterPrev">רבעון קודם</option>
+        onChange={e =>
+        set({
+            type: e.target.value,
+            week: undefined,
+            month: undefined,
+            quarter:
+            e.target.value === 'quarter'
+                ? (quarter ?? getCurrentQuarter())
+                : undefined
+        })
+        }
+    >
+
+        <option value="quarter">רבעון</option>
         <option value="year">שנה אחרונה</option>
         <option value="month">חודש</option>
       </select>
@@ -47,6 +63,20 @@ export default function LineTimeFilter({ value, onChange, hideWeek = false }) {
           >
             {HEB_MONTHS.map((name, i) => (
               <option key={i} value={i}>{name}</option>
+            ))}
+          </select>
+        </>
+      )}
+
+      {showQuarterSelector && (
+        <>
+          &nbsp;
+          <select
+            value={quarter ?? getCurrentQuarter()}
+            onChange={e => set({ quarter: +e.target.value })}
+          >
+            {HEB_QUARTERS.map((label, i) => (
+              <option key={i} value={i}>רבעון {label}</option>
             ))}
           </select>
         </>

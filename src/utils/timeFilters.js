@@ -18,20 +18,23 @@ export function getDateRange(filterOption) {
   switch (type) {
     /* ───────── רבעון קודם ───────── */
     case 'quarter':
-    case 'quarterPrev': {
-      const currentQuarter = Math.floor(now.getMonth() / 3);   // 0-3
-      let prevQuarter = currentQuarter - 1;
-      let qYear = now.getFullYear();
+        
+    case 'quarter': {
+      const now   = new Date()
+      const year  = now.getFullYear()
+      const currQ = Math.floor(now.getMonth() / 3)         // 0-3
 
-      if (prevQuarter < 0) {        // מתגלגל לשנה קודמת
-        prevQuarter += 4;
-        qYear--;
-      }
+      // אם הגיע מספר רבעון מבחוץ – השתמש בו, אחרת הרבעון הנוכחי
+      const q  = (filterOption.quarter ?? currQ)
+      const sm = q * 3                        // month index 0 / 3 / 6 / 9
 
-      const monthIdx = prevQuarter * 3;        // 0,3,6,9
-      startDate = new Date(qYear, monthIdx, 1);
-      endDate   = new Date(qYear, monthIdx + 3, 0, 23, 59, 59, 999);
-      break;
+      const startDate = new Date(year, sm, 1, 0, 0, 0, 0)
+      const endDate   =
+        q === currQ
+          ? now                                         // רבעון נוכחי → עד היום
+          : new Date(year, sm + 3, 0, 23, 59, 59, 999)  // אחר → סוף אותו רבעון
+
+      return { startDate, endDate }
     }
 
     /* ───────── שנה אחרונה ───────── */
@@ -44,6 +47,7 @@ export function getDateRange(filterOption) {
       endDate = now;
       break;
     }
+
 
     /* ───────── חודש נבחר ───────── */
     case 'month': {

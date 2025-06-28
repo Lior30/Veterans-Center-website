@@ -1,12 +1,52 @@
 // src/components/SurveyDetailsPage.jsx
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { ResponsiveBar } from '@nivo/bar'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { db } from '../firebase' 
+import { doc, getDoc } from 'firebase/firestore'
 
 export default function SurveyDetailsPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const surveys = location.state?.surveyDetails || []
+  const baseSurveys = location.state?.surveyDetails || []    /* + */
+
+  /* state עם סקרים “מעושרים” בשם-פעילות */
+  const [surveys, setSurveys] = useState(baseSurveys)        /* + */
+
+  /* ── מביאים שמות-פעילות לפעם אחת ── */
+  useEffect(() => {                                          /* + */
+    async function enrich() {
+      /* מזהים כל activity-id שאינו "כללי" */
+      const ids = [
+        ...new Set(
+          baseSurveys
+            .filter(s => s.of_activity && s.of_activity !== 'כללי')
+            .map(s => s.of_activity)
+        ),
+      ]
+
+      /* מביאים name מכל activity */
+      const id2name = {}
+      await Promise.all(
+        ids.map(async id => {
+          const snap = await getDoc(doc(db, 'activities', id))
+          if (snap.exists()) id2name[id] = snap.data().name || '—'
+        })
+      )
+
+      /* מוסיפים activityName לכל סקר */
+      setSurveys(
+        baseSurveys.map(s => ({
+          ...s,
+          activityName:
+            s.of_activity && s.of_activity !== 'כללי'
+              ? id2name[s.of_activity]
+              : null,
+        }))
+      )
+    }
+    enrich()
+  }, [baseSurveys]) 
 
   return (
     <div style={{ padding: 24, minHeight: '100vh', background: '#f8f9fa' }}>
@@ -43,8 +83,8 @@ export default function SurveyDetailsPage() {
           const data = [
             {
               metric: 'ענו',
-              answered,
-              remaining,
+              ענו:   answered,
+              נותרו: remaining,
             },
           ]
 
@@ -64,48 +104,40 @@ export default function SurveyDetailsPage() {
               }}
             >
               {/* headline*/}
-              <h2 style={{ fontSize: 18, fontWeight: 600, margin: '0 0 8px' }}>
-                {survey.name}
+               <h2 style={{ fontSize: 18, fontWeight: 600, margin: '0 0 8px' }}>
+                {survey.activityName || 'סקר כללי'}         
                 <span style={{ fontSize: 14, fontWeight: 400, color: '#555' }}>
-                  {' '}({survey.activityName})
+                  {' '}({survey.name})
                 </span>
-              </h2>
+               </h2>
 
               <div style={{ height: 80 }}>
                 <ResponsiveBar
                   data={data}
-                  keys={['answered', 'remaining']}    
-                  indexBy="metric"
+                  keys={['ענו', 'נותרו']}    
+                  indexBy="id"
                   layout="horizontal"
                   groupMode="stacked"
                   margin={{ top: 10, right: 20, bottom: 30, left: 80 }}
                   padding={0.3}
                   borderRadius={3}
                   
-                  colors={({ id }) => (id === 'answered' ? '#7e64e0' : '#e0e0e0')}
+                  colors={({ id }) => (id === 'ענו' ? '#7e64e0' : '#e0e0e0')}
                   colorBy="id"
 
                   
-                  xScale={{ type: 'linear', min: 0, max: registered, reverse: true }}
+                  valueScale={{ type: 'linear', min: 0, max: registered, reverse: true }}
                   
 
                   
                   enableLabel
-                  label={({ id, value }) => (id === 'answered' ? value : '')}
+                  label={({ id, value }) => (id === 'ענו' ? value : '')}
                   valueFormat=">-.0f"
                   labelTextColor="#212529"
 
                   
                   enableGridX={false}
                   enableGridY={false}
-
-                  
-                  axisLeft={{
-                    tickSize: 0,
-                    tickPadding: 8,
-                    tickRotation: 0,
-                  }}
-
                   
                   axisBottom={{
                     tickSize: 0,
@@ -117,6 +149,19 @@ export default function SurveyDetailsPage() {
                     tickValues: ticks,
                     tickFormat: v => v,
                   }}
+
+                  tooltip={({ id, value }) => (
+                    <div style={{ direction:'rtl',
+                                  background:'#fff',
+                                  padding:'6px 8px',
+                                  border:'1px solid #ddd',
+                                  borderRadius:4,
+                                  fontSize:13,
+                                  fontWeight:600 }}>
+                      <span style={{ fontWeight:700 }}>{value}</span> {id}
+                    </div>
+                  )}
+
                   axisTop={null}
                   axisRight={null}
 

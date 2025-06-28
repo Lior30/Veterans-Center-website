@@ -15,6 +15,7 @@ import WeeklyVisitsCard from './WeeklyVisitsCard';
 import { Link } from 'react-router-dom';
 import { getDateRange } from '../utils/timeFilters';
 import LineTimeFilter    from './LineTimeFilter';
+import CardTitle from './CardTitle';
 
 /* ------------- helper: build tag stats after date-filter ------------- */
 function buildTagStats(acts) {
@@ -80,10 +81,21 @@ export default function AnalyticsDashboard() {
   const [surveyBreakdown, setSurveyBreakdown] = useState([]);
   const [tagStats,    setTagStats]    = useState([]); 
   const [surveyDetails,   setSurveyDetails]   = useState([]); 
-  const [filterLineChart, setFilterLineChart] = useState({ type:'quarterPrev' });
   const [activities, setActivities] = useState([]);
-  const [filterTagChart, setFilterTagChart] = useState({ type: 'quarter' });
-  
+  const prevQuarter = () => {
+    const q = Math.floor(new Date().getMonth() / 3);   // 0-3
+    return q === 0 ? 3 : q - 1;
+  };
+
+  const [filterLineChart, setFilterLineChart] = useState({
+    type   : 'quarter',
+    quarter: prevQuarter()
+  });
+
+  const [filterTagChart,  setFilterTagChart ] = useState({
+    type   : 'quarter',
+    quarter: prevQuarter()
+  });
   // for the tag-pie: just filter the raw tagStats by date range
   const filteredTagStats = useMemo(
      () => getFilteredActivities(tagStats, filterTagChart),
@@ -234,64 +246,90 @@ useEffect(() => {
 }, []);
 
 
+/* -----------------------------------------------------------------------------------------------------------------------*/
+// תיקון בחלק של חישוב האחוזים ב-useEffect:
+
 useEffect(() => {
   const now = new Date();
 
-  
-  const weekStart = new Date(now);
-  weekStart.setDate(weekStart.getDate() - now.getDay());
-  weekStart.setHours(0, 0, 0, 0);
+  // תחילת היום (00:00)
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);
 
-  
-  const prevWeekStart = new Date(weekStart);
-  prevWeekStart.setDate(prevWeekStart.getDate() - 7);
+  // תחילת השבוע הנוכחי (ראשון 00:00)
+  const weekStart = new Date(todayStart);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
 
-  
-  const thisWeekEnd = new Date(now);
+  // שבוע קודם: מגבול של לפני 7 ימים ועד רגע לפני תחילת השבוע הנוכחי
+  const prevWeekEnd = new Date(weekStart.getTime() - 1);
+  const prevWeekStart = new Date(prevWeekEnd);
+  prevWeekStart.setDate(prevWeekStart.getDate() - 6);
+  prevWeekStart.setHours(0, 0, 0, 0);
 
-  
-  const lastWeekEnd = new Date(prevWeekStart);
-  lastWeekEnd.setDate(lastWeekEnd.getDate() + now.getDay());
-  lastWeekEnd.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
-
+  // הוספת לוגים לדיבוג
+  console.log('Date ranges:', {
+    prevWeekStart: prevWeekStart.toLocaleString('he-IL'),
+    prevWeekEnd: prevWeekEnd.toLocaleString('he-IL'),
+    weekStart: weekStart.toLocaleString('he-IL'),
+    now: now.toLocaleString('he-IL')
+  });
 
   const q = query(
-    collection(db, "visits"),
-    orderBy("timestamp", "desc")
+    collection(db, 'visits'),
+    orderBy('timestamp', 'desc')
   );
+
   const unsubscribe = onSnapshot(q, snap => {
-    let todayCount    = 0;
-    let thisWeekCount = 0;
-    let lastWeekCount = 0;
+    let todayCnt = 0;
+    let thisWeekCnt = 0;
+    let lastWeekCnt = 0;
 
-    snap.forEach(doc => {
-      const ts = doc.data().timestamp.toDate();
+    snap.forEach(d => {
+      const ts = d.data().timestamp.toDate();
 
-       if (ts >= todayStart && ts <= now) {
-        todayCount++;
+      if (ts >= todayStart && ts <= now) {
+        todayCnt++;
       }
-
-      if (ts >= weekStart && ts <= thisWeekEnd) {
-        thisWeekCount++;
+      if (ts >= weekStart && ts <= now) {
+        thisWeekCnt++;
       }
-
-      if (ts >= prevWeekStart && ts <= lastWeekEnd) {
-        lastWeekCount++;
+      if (ts >= prevWeekStart && ts <= prevWeekEnd) {
+        lastWeekCnt++;
       }
     });
-    setDailyVisitors  (todayCount);
-    setWeeklyVisitors(thisWeekCount);
-    setChangePercent(
-      lastWeekCount
-            ? Math.round((thisWeekCount - lastWeekCount) / lastWeekCount * 100)
-            : 100  
-    );
+
+    // הוספת לוגים לדיבוג
+    console.log('Visit counts:', {
+      todayCnt,
+      thisWeekCnt,
+      lastWeekCnt
+    });
+
+    // עדכון ה-state
+    setDailyVisitors(todayCnt);
+    setWeeklyVisitors(thisWeekCnt);
+
+    // חישוב משופר של אחוז השינוי
+    let delta = 0;
+    
+    if (lastWeekCnt === 0) {
+      // אם לא היו ביקורים בשבוע שעבר אבל יש השבוע
+      delta = thisWeekCnt > 0 ? 100 : 0;
+    } else {
+      // חישוב רגיל של אחוז השינוי
+      delta = Math.round(((thisWeekCnt - lastWeekCnt) / lastWeekCnt) * 100);
+    }
+
+    console.log('Calculated delta:', delta);
+    setChangePercent(delta);
   });
 
   return () => unsubscribe();
 }, []);
+
+// גם וודאי שהרכיב WeeklyVisitsCard מציג נכון את הערך:
+// אם יש לך גישה לקוד של WeeklyVisitsCard, ודאי שהוא לא מגביל את הערך
+
 
 
 
@@ -475,12 +513,8 @@ useEffect(() => {
        
        {/*Pie Chart*/}
       <div style={{ ...cardStyle, gridColumn: 3, gridRow: 1 }}>
-        <h3 style={{
-          fontSize: 16, fontWeight: 600, color: '#495057',
-          marginBottom: 16, textAlign: 'center'
-        }}>
-           הרשמות לפי תגיות 
-        </h3>
+        <CardTitle>הרשמות לפי תגיות </CardTitle>
+
          <div style={{
           display: 'flex',
           justifyContent: 'flex-end',
@@ -542,6 +576,7 @@ useEffect(() => {
               gap: 50,
               justifyContent: 'right',                
               marginTop: 8 
+            
             }}
           >
             <DonutChart
@@ -553,7 +588,7 @@ useEffect(() => {
 
           {/* answer to survey*/}
         <DonutChart
-          title="היענות לסקרים"
+          title="היענות לסקרים פתוחים"
           data={surveyBreakdown}
           size={180}
           colors={['#7e64e0', '#3de1da']}
@@ -577,16 +612,7 @@ useEffect(() => {
 
         {/*Map*/}
        <div style={{ ...cardStyle, gridArea: '2 / 1 / 4 / 2' }}>
-          <h3 style={{
-            fontSize: '16px',
-            fontWeight: '600',
-            color: '#495057',
-            marginBottom: '16px',
-            textAlign: 'center',
-            direction: 'ltr'
-          }}>
-            פיזור גאוגרפי של המשתמשים
-          </h3>
+          <CardTitle>פיזור גאוגרפי של המשתמשים</CardTitle>
           <JerusalemMap locations={locations}/>
         </div>
 
@@ -601,16 +627,7 @@ useEffect(() => {
           flexDirection: 'column'
         }}
         >
-          <h3 style={{
-            fontSize: 16,
-            fontWeight: 600,
-            color: '#495057',
-            margin: '0 0 16px',
-            textAlign: 'center',
-            direction: 'ltr'
-          }}>
-              פעילויות עם ביקוש נמוך בשבוע הקרוב
-          </h3>
+          <CardTitle>פעילויות עם ביקוש נמוך בשבוע הקרוב</CardTitle>
 
           {/* table size */}
           <div style={{ width:'100%', overflowX:'auto', flex:1 }}>
@@ -620,8 +637,16 @@ useEffect(() => {
 
 
         {/* Line Chart – registrations by hour/day */}
-        <div style={{ ...cardStyle, gridColumn: 1, gridRow: 1  }}>
-          <h3 /* … */> ביקוש לפי יום בשבוע ושעת פעילות</h3>
+              <div
+        style={{
+          ...cardStyle,
+          gridColumn: 1,
+          gridRow: 1,
+          position: 'relative',    // כדי שה-tooltip ידע למקם את עצמו יחסית לדיב
+          overflow: 'visible',     // מאפשר לטיפ להיזרח מעבר לגבולות הקליפ
+        }}
+      >
+           <CardTitle>ביקוש לפי יום בשבוע ושעת פעילות</CardTitle>
           <LineTimeFilter value={filterLineChart} onChange={setFilterLineChart} />
           <RegistrationsLineChart activities={getFilteredActivities(allActivities, filterLineChart)} />
 
