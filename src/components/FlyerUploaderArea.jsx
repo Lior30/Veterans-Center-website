@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import FlyerService from "../services/FlyerService.js";
 import ActivityService from "../services/ActivityService";
 import CtaButton from "../LandingPage/CtaButton";
+import ActionFeedbackDialog from "./ActionFeedbackDialog";
 import {
   Box,
   Typography,
@@ -26,6 +27,7 @@ export default function FlyerUploaderArea({ onUpload }) {
   const [activities, setActivities] = useState([]);
   const [activityId, setActivityId] = useState("");
   const dropRef = useRef();
+  const [message, setMessage] = useState({ open: false, text: "", type: "success" });
 
   useEffect(() => {
     const unsub = ActivityService.subscribe((acts) => setActivities(acts));
@@ -52,24 +54,38 @@ export default function FlyerUploaderArea({ onUpload }) {
   };
 
   const handleSubmit = async () => {
-    if (!name.trim() || !file) return alert("שם וקובץ חובה");
-    if (!activityId) return alert("בחרי פעילות לפני שמירה");
-    if (endDate && startDate && endDate < startDate)
-      return alert("תאריך סיום חייב להיות אחרי תאריך התחלה");
+    if (!name.trim() || !file) {
+      setMessage({ open: true, type: "error", text: "יש להזין שם וקובץ" });
+      return;
+    }
+
+    if (!activityId) {
+      setMessage({ open: true, type: "error", text: "יש לבחור פעילות" });
+      return;
+    }
+
+    if (endDate && startDate && endDate < startDate) {
+      setMessage({ open: true, type: "error", text: "תאריך סיום חייב להיות אחרי תאריך התחלה" });
+      return;
+    }
 
     try {
       await FlyerService.uploadFlyer({ name, file, startDate, endDate, activityId });
+
       setName("");
       setFile(null);
       setStart("");
       setEnd("");
       setActivityId("");
+      setMessage({ open: true, type: "success", text: "הפלייר נשמר בהצלחה" });
+
       onUpload?.();
     } catch (err) {
       console.error(err);
-      alert("העלאה נכשלה: " + (err.code || err.message));
+      setMessage({ open: true, type: "error", text: "העלאה נכשלה: " + (err.code || err.message) });
     }
   };
+
 
   return (
     <Box
@@ -178,6 +194,13 @@ export default function FlyerUploaderArea({ onUpload }) {
           שמור פלייר
         </CtaButton>
       </Stack>
+
+      <ActionFeedbackDialog
+        open={message.open}
+        type={message.type}
+        text={message.text}
+        onClose={() => setMessage(prev => ({ ...prev, open: false }))}
+      />
     </Box>
   );
 }

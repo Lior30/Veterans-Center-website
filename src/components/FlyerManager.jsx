@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import FlyerUploader from "./FlyerUploaderArea.jsx";
 import FlyerService from "../services/FlyerService.js";
+import ActionFeedbackDialog from "./ActionFeedbackDialog";
+import ConfirmDialog from "./ConfirmDialog";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from "@mui/material";
 
 export default function FlyerManager() {
@@ -13,6 +15,10 @@ export default function FlyerManager() {
   const [newStartDate, setNewStartDate] = useState("");
   const [newEndDate, setNewEndDate] = useState("");
 
+  const [message, setMessage] = useState({ open: false, text: '', type: 'success' });
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [flyerToDelete, setFlyerToDelete] = useState(null);
+
   /* first load */
   useEffect(() => {
     (async () => {
@@ -21,6 +27,22 @@ export default function FlyerManager() {
       setLoading(false);
     })();
   }, []);
+
+  useEffect(() => {
+    if (editingFlyer) {
+      setNewStartDate(
+        editingFlyer.startDate?.toDate
+          ? editingFlyer.startDate.toDate().toISOString().substr(0, 10)
+          : ""
+      );
+      setNewEndDate(
+        editingFlyer.endDate?.toDate
+          ? editingFlyer.endDate.toDate().toISOString().substr(0, 10)
+          : ""
+      );
+    }
+  }, [editingFlyer]);
+
 
   /* Drag & Drop */
   const handleDragStart = (_, idx) => (dragIndexRef.current = idx);
@@ -53,15 +75,25 @@ export default function FlyerManager() {
   };
 
   /* Delete */
-  const handleDelete = async (flyer) => {
-    if (!window.confirm(`למחוק את "${flyer.name}"?`)) return;
+  const handleDelete = (flyer) => {
+    setFlyerToDelete(flyer);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!flyerToDelete) return;
     try {
-      await FlyerService.deleteFlyer(flyer);
+      await FlyerService.deleteFlyer(flyerToDelete);
       setFlyers(await FlyerService.getFlyers());
+      setMessage({ open: true, type: "success", text: "הפלייר נמחק בהצלחה" });
     } catch (err) {
-      alert("המחיקה נכשלה: " + err.code);
+      setMessage({ open: true, type: "error", text: "המחיקה נכשלה" });
+    } finally {
+      setConfirmOpen(false);
+      setFlyerToDelete(null);
     }
   };
+
 
   /* Refresh */
   const refreshList = async () => setFlyers(await FlyerService.getFlyers());
@@ -69,16 +101,19 @@ export default function FlyerManager() {
   /* Save edited dates */
   const handleSaveDates = async () => {
     if (!editingFlyer) return;
-    if (newEndDate && newStartDate && newEndDate < newStartDate) {
-      alert("תאריך סיום חייב להיות אחרי תאריך התחלה");
+
+    if (newEndDate && newStartDate && new Date(newEndDate) < new Date(newStartDate)) {
+      setMessage({ open: true, type: "error", text: "תאריך סיום חייב להיות אחרי תאריך התחלה" });
       return;
     }
+
     try {
       await FlyerService.updateFlyerDates(editingFlyer.id, newStartDate, newEndDate);
       setEditingFlyer(null);
       refreshList();
+      setMessage({ open: true, type: "success", text: "התאריכים נשמרו בהצלחה" });
     } catch (err) {
-      alert("שמירת התאריכים נכשלה: " + (err.code || err.message));
+      setMessage({ open: true, type: "error", text: "שמירת התאריכים נכשלה: " + (err.code || err.message) });
     }
   };
 
@@ -88,16 +123,16 @@ export default function FlyerManager() {
       dir="rtl"
       style={{ maxWidth: 1150, margin: "0 auto", padding: "2rem 1rem" }}
     >
-      <h2 style={{ textAlign: "center", marginBottom: 32 }}>ניהול פלייארים</h2>
+      <h2 style={{ textAlign: "center", marginBottom: 32 }}>ניהול פליירים</h2>
 
       <FlyerUploader onUpload={refreshList} />
 
       <div style={{ marginTop: 40 }}>
-        <h3 style={{ marginBottom: 12 }}>פלייארים קיימים:</h3>
+        <h3 style={{ marginBottom: 12 }}>פליירים קיימים:</h3>
         {loading ? (
           <p>טוען...</p>
         ) : flyers.length === 0 ? (
-          <p>אין פלייארים כרגע</p>
+          <p>אין פליירים כרגע</p>
         ) : (
           <div
             style={{
@@ -205,6 +240,21 @@ export default function FlyerManager() {
           <Button onClick={handleSaveDates} variant="contained">שמור</Button>
         </DialogActions>
       </Dialog>
+
+      <ActionFeedbackDialog
+        open={message.open}
+        type={message.type}
+        text={message.text}
+        onClose={() => setMessage((prev) => ({ ...prev, open: false }))}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={confirmDelete}
+        title="אישור מחיקה"
+        text={`האם למחוק את הפלייר?`}
+      />
     </div>
   );
 }

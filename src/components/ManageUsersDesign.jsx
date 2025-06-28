@@ -6,6 +6,8 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
  deleteUser  } from "firebase/auth";
 import { initializeApp, deleteApp, getApp } from "firebase/app";
 import { generateEmailPassword } from "./IdentificationPage";
+import ActionFeedbackDialog from "./ActionFeedbackDialog";
+import ConfirmDialog from "../components/ConfirmDialog";
 import { collection, collectionGroup, doc, setDoc, getDoc, getDocs, query, where, updateDoc, deleteDoc, writeBatch } from "firebase/firestore";
 import UserService from "../services/UserService";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
@@ -260,7 +262,6 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   const [message, setMessage] = useState({
     open: false,
     type: 'success',
-    title: '',
     text: ''
   });
 
@@ -1769,124 +1770,25 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
 
      </Box>
-    <Dialog
+    <ActionFeedbackDialog
       open={message.open}
-      onClose={(e, reason) => {
-        if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
-          setMessage(prev => ({ ...prev, open: false }));
-        }
+      type={message.type}
+      text={message.text}
+      onClose={() => setMessage(prev => ({ ...prev, open: false }))}
+    />
+    <ConfirmDialog
+      open={confirmOpen}
+      onClose={() => setConfirmOpen(false)}
+      onConfirm={() => {
+        setConfirmOpen(false);
+        onConfirmAction();
       }}
-      maxWidth="sm"
-      sx={{ zIndex: 10000 }}
-      PaperProps={{
-        sx: {
-          p: 3,
-          textAlign: 'center',
-          borderRadius: 2,
-          border: theme =>
-            `3px solid ${
-              message.type === 'success'
-                ? theme.palette.primary.main
-                : theme.palette.error.main
-            }`,
-          boxShadow: 4,
-          backgroundColor: '#f9f9f9', // Neutral background
-          zIndex: 10000
-        }
-      }}
-    >
-      <DialogContent>
-        <Box sx={{ mb: 3 }}>
-          {message.type === 'success' ? (
-            <CheckCircle
-              sx={{
-                fontSize: 72,
-                color: 'primary.main',
-                mb: 2,
-                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))'
-              }}
-            />
-          ) : (
-            <Error
-              sx={{
-                fontSize: 72,
-                color: 'error.main',
-                mb: 2,
-                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))'
-              }}
-            />
-          )}
-        </Box>
-        <Typography
-          variant="h4"
-          sx={{
-            fontWeight: 700,
-            mb: 2,
-            color: message.type === 'success' ? 'primary.main' : 'error.main',
-            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
-          }}
-        >
-          {message.text}
-        </Typography>
-      </DialogContent>
-      <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
-        <Button
-          onClick={() => setMessage(prev => ({ ...prev, open: false }))}
-          variant="contained"
-          size="large"
-          sx={{
-            fontSize: '1.3rem',
-            py: 1.5,
-            px: 6,
-            bgcolor:
-              message.type === 'success' ? 'primary.main' : 'error.main',
-            color: 'common.white',
-            borderRadius: 3,
-            textTransform: 'none',
-            fontWeight: 600,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            '&:hover': {
-              bgcolor:
-                message.type === 'success' ? 'primary.dark' : 'error.dark',
-              transform: 'translateY(-2px)',
-              boxShadow: '0 6px 16px rgba(0,0,0,0.2)'
-            },
-            transition: 'all 0.3s ease'
-          }}
-        >
-          הבנתי
-        </Button>
-      </DialogActions>
-    </Dialog>
-
-    <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="xs" fullWidth>
-      <DialogTitle sx={{ fontWeight: 'bold', textAlign: 'center' }}>
-        אישור מחיקה
-      </DialogTitle>
-      <DialogContent>
-        <Typography variant="body1" align="center">
-          האם אתה בטוח שברצונך למחוק משתמש זה?
-        </Typography>
-      </DialogContent>
-      <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
-        <Button onClick={() => setConfirmOpen(false)} variant="outlined">
-          ביטול
-        </Button>
-        <Button
-          onClick={() => {
-            setConfirmOpen(false);
-            onConfirmAction(); // Run the action
-          }}
-          variant="contained"
-          color="error"
-        >
-          מחק
-        </Button>
-      </DialogActions>
-    </Dialog>
-
-
-  
+      title="אישור מחיקה"
+      text="האם אתה בטוח שברצונך למחוק משתמש זה?"
+      confirmText="מחק"
+      cancelText="ביטול"
+      confirmColor="error"
+    />
         </>
   ); 
 }
