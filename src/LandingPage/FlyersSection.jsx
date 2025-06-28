@@ -109,7 +109,7 @@ export default function FlyersSection({ flyers, activities, openDialog }) {
   sx={{
     pt: { xs: 6, sm: 10 },  // מרווח למעלה
     pb: { xs: 6, sm: 10 },  // מרווח למטה
-    background: `linear-gradient(180deg, ${theme.palette.primary.vlight} 0%, #ffffff 100%)`,
+    background: `linear-gradient(180deg,#ffffff 0%, ${theme.palette.primary.vlight} 100%)`,
   }}
 >
 
