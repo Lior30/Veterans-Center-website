@@ -35,7 +35,7 @@ import heLocale from "@fullcalendar/core/locales/he";
 import ActivityService from "../services/ActivityService";
 import UserService from "../services/UserService";
 import { db } from "../firebase";
-import { doc, updateDoc, arrayRemove, arrayUnion } from "firebase/firestore";
+import { doc, collection, getDocs, updateDoc, arrayRemove, arrayUnion } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, Popup, useMap  } from "react-leaflet";
 // Leaflet & GeoSearch
 import { OpenStreetMapProvider } from "leaflet-geosearch";
@@ -88,6 +88,8 @@ export default function ActivitiesDesign({
 
   const [searchQuery, setSearchQuery] = useState("");
 
+  const [allUsers, setAllUsers] = useState([]);
+
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("customTags") || "[]");
     const s = new Set(stored);
@@ -101,6 +103,17 @@ export default function ActivitiesDesign({
     const custom = allTags.filter((t) => !defaultSet.has(t));
     localStorage.setItem("customTags", JSON.stringify(custom));
   }, [allTags, activities]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const snapshot = await getDocs(collection(db, "users"));
+      const usersList = snapshot.docs.map(doc => doc.data());
+      setAllUsers(usersList);
+    };
+
+    fetchUsers();
+  }, []);
+
 
   const [newTagDialogOpen, setNewTagDialogOpen] = useState(false);
   const [newTagValue, setNewTagValue] = useState("");
@@ -138,6 +151,32 @@ export default function ActivitiesDesign({
   // render map center and zoom
   const [mapCenter, setMapCenter] = useState([31.7683, 35.2137]);
   const [mapZoom, setMapZoom]     = useState(13);
+
+  useEffect(() => {
+    if (!selAct || !selAct.participants) return;
+
+    const loadUsers = async () => {
+      const snapshot = await getDocs(collection(db, "users"));
+      const userMap = {};
+
+      snapshot.forEach((doc) => {
+        const user = doc.data();
+        if (user.phone) {
+          userMap[user.phone] = user.fullname || user.name || "ללא שם";
+        }
+      });
+
+      const participantDisplay = {};
+      selAct.participants.forEach(({ phone, name }) => {
+        const displayName = userMap[phone] || name || "ללא שם";
+        participantDisplay[phone] = `${displayName} — ${phone}`;
+      });
+
+      setUsers(participantDisplay);
+    };
+
+    loadUsers();
+  }, [selAct]);
 
   // יוצרת קובץ אקסל מכל הרשימה של activities
 const exportToExcel = () => {
@@ -222,17 +261,22 @@ const filteredParticipants = (selAct?.participants || []).filter((p) => {
 
 
   useEffect(() => {
-    if (!selAct) return;
+  if (!selAct || !selAct.participants) return;
 
-    const map = {};
+  console.log("First participant:", selAct.participants[0]);
 
- (selAct.participants || []).forEach(({ name, phone }) => {
-   map[phone] = `${name} — ${phone}`;
- });
+  const map = {};
+  (selAct.participants || []).forEach(({ phone, name }) => {
+  const user = allUsers.find((u) => u.phone === phone);
+  const displayName = user?.fullname || name || "ללא שם";
+  map[phone] = `${displayName} — ${phone}`;
+});
 
 
-    setUsers(map);
-  }, [selAct]);
+  setUsers(map);
+}, [selAct]);
+
+
 
 const kickParticipant = async (phone) => {
   // finds out the participant by phone
@@ -663,6 +707,9 @@ const togglePaid = async (phone) => {
               onFormChange((f) => ({ ...f, description: e.target.value }))
             }
             fullWidth
+            multiline
+            minRows={3}
+            maxRows={8}
             InputLabelProps={{
               shrink: true,
               sx: { textAlign: "right", right: 0, left: "auto" },

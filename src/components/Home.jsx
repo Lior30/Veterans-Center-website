@@ -99,11 +99,15 @@ export default function Home() {
               variant="outlined"
               color="secondary"
               component={RouterLink}
-              to="/"              // Update if your landing route is different
+              to="/"
               startIcon={<ArrowBackIosNewIcon />}
-              sx={{ fontWeight: 600 }}
+              sx={{ 
+                fontWeight: 800,  // Increased from 600 to 700 (bold)
+                backgroundColor: 'white',
+                color: '#6A2576'  // Explicit black text for maximum contrast
+              }}
             >
-              לדף הנחיתה
+              לדף הבית
             </Button>
           </Box>
         </Container>
