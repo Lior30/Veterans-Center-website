@@ -108,14 +108,18 @@ const calendarMinWidth = isMobile && view === "timeGridDay" ? "100%" : isMobile 
 
 
     const holEv = holidays.map(h => ({
-      id:  `hol-${h.date}`,
-      title: h.title || h.name,
-      start: h.date,
-      allDay: true,
-      backgroundColor: "#FFFACD",
-      textColor: "#000",
-      extendedProps: { holiday: true, isHoliday: true },
-    }));
+  id:  `hol-${h.date}`,
+  title: h.title || h.name,
+  start: h.date,
+  allDay: true,
+  backgroundColor: "#FFFACD", // ← כאן מוגדר צבע הרקע של חג (צהוב בהיר)
+  textColor: "#000",          // ← וכאן צבע הטקסט
+  extendedProps: {
+    holiday: true,
+    isHoliday: true
+  }
+}));
+
 
     return [...actEv, ...holEv];
   }, [activities, holidays, tag, theme.palette, userProfile]);
@@ -356,7 +360,10 @@ displayEventEnd={false}
 
               eventClick={handleEventClick}
 eventDidMount={(info) => {
-  const { isPast, isRegistered } = info.event.extendedProps;
+  const { isPast, isRegistered, isHoliday } = info.event.extendedProps;
+
+  // אם זה חג – אל תגעי בכלום
+  if (isHoliday) return;
 
   // צבע רקע
   if (isPast) {
@@ -374,16 +381,13 @@ eventDidMount={(info) => {
     info.el.style.borderRadius = "8px";
   }
 
-  // הוספת ✔️ לפני כותרת
+  // ✔️ לפני כותרת
   const titleEl = info.el.querySelector(".fc-event-title");
-  if (titleEl && isRegistered) {
-    // הימנעי מהוספה כפולה של ✔️ אם כבר קיים
-    if (!titleEl.innerHTML.startsWith("✔️")) {
-      titleEl.innerHTML = `✔️ ${titleEl.innerHTML}`;
-    }
+  if (titleEl && isRegistered && !titleEl.innerHTML.startsWith("✔️")) {
+    titleEl.innerHTML = `✔️ ${titleEl.innerHTML}`;
   }
 
-  // שינוי גודל טקסט אוטומטי
+  // שינוי גודל טקסט
   const frame = info.el.querySelector(".fc-event-main");
   if (!titleEl || !frame) return;
 
@@ -397,10 +401,38 @@ eventDidMount={(info) => {
     titleEl.style.fontSize = `${fs}px`;
   }
 }}
+
 eventContent={(renderInfo) => {
-  const { isRegistered, isPast } = renderInfo.event.extendedProps;
+  const { isRegistered, isPast, isHoliday } = renderInfo.event.extendedProps;
   const startOnly = renderInfo.timeText;
 
+  // אם זה חג – החזר עיצוב שונה
+  if (isHoliday) {
+    return (
+      <Box
+        sx={{
+          backgroundColor: "#FFFACD", // צהוב בלבד
+          borderRadius: "8px",
+          padding: "4px",
+          width: "100%",
+          textAlign: "center",
+        }}
+      >
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 700,
+            fontSize: isMobile ? "0.7em" : "0.85em",
+            color: "#000",
+          }}
+        >
+          {renderInfo.event.title}
+        </Typography>
+      </Box>
+    );
+  }
+
+  // פעילות רגילה
   return (
     <Box
       sx={{
