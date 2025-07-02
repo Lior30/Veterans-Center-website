@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import * as XLSX from "xlsx";           // ❶
+import * as XLSX from "xlsx";           
 import { saveAs } from "file-saver";
-import { db, auth, firebaseConfig  } from "../firebase"; // <-- add auth here
+import { db, auth, firebaseConfig  } from "../firebase"; 
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
  deleteUser  } from "firebase/auth";
 import { initializeApp, deleteApp, getApp } from "firebase/app";
@@ -27,15 +27,15 @@ import {
   DialogActions,
   Tabs, Tab,
   MenuItem
-  // … שאר ה-imports הקיימים
+  
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 
 
 
   const palette = {
-    primary:  "#6c5c94",      // סגול חדש
-    primaryHL:"#6c5c94",      // אם תרצה מעט כהה יותר: "#584b7c"
+    primary:  "#6c5c94",      
+    primaryHL:"#6c5c94",      
     bgHeader:"#f7f5fb",
     border:  "#e3dfff",
   }
@@ -67,17 +67,16 @@ async function fixMissingUserFields() {
       });
     }
 
-}                           // ← סוגר את הפונקציה כאן
+}                           
 
-// קריאה חד-פעמית (בחוץ)
+
 fixMissingUserFields();
 
 
-// מחוץ לקומפוננטה:
+
 function formatDate(dateValue) {
   const d = new Date(dateValue);
-  // 'he-IL' תיתן פורמט יום/חודש/שנה
-  // ושעות בד"כ 24h אם מוסיפים hour12: false
+  
   return d.toLocaleString('he-IL', {
     day: '2-digit',
     month: '2-digit',
@@ -89,19 +88,19 @@ function formatDate(dateValue) {
 }
 
 
-// helper: יוצר user_id קבוע מכל מקור אפשרי
-// helper: יוצר user_id קבוע מכל מקור אפשרי
+// helper
+
 function ensureUserId(u) {
   if (!u) return "";
-  // אם כבר יש user_id – פשוט החזרי
+  // return user_id 
   if (u.user_id) return u.user_id;
 
   const phone = (u.phone || "").replace(/\D/g, "");
 
-  // קחי שם מלא מכל אחד מהשדות האפשריים
+  // fullname
   const full = (u.fullname || u.fullName || "").trim();
 
-  // פירוק לשם פרטי + כל השאר (שם משפחה)
+  // sub to first and last name
   const [first = "", ...rest] = full.split(" ");
   const last = rest.join(" ");
 
@@ -109,9 +108,7 @@ function ensureUserId(u) {
 }
 
 
-/* -------------------------------------------------
-   קומפוננטה שמציגה פירוט של משתמש בודד
---------------------------------------------------*/
+
 function UserDetails({ user, filter, collapsible = true }) {
   const isActivity = filter === "activity";
   const isSurvey   = filter === "survey";
@@ -120,7 +117,7 @@ function UserDetails({ user, filter, collapsible = true }) {
   const [openCats, setOpenCats] = React.useState({});
   const toggle = k => setOpenCats(p => ({ ...p, [k]: !p[k] }));
 
-  /* כל הקטגוריות */
+  /* all*/
   const CATS = [
     { key: "activity", label:"פעילויות", names: user.activities, dates: user.activities_date },
     { key: "survey", label:"סקרים" , names: user.survey,     dates: user.survey_date    },
@@ -130,7 +127,7 @@ function UserDetails({ user, filter, collapsible = true }) {
     if (isSurvey)   return c.key === "survey";
     if (isReplies)  return c.key === "replies";
     if (isBoth)     return c.key === "activity" || c.key === "survey";
-    return true;                     // למסנן "all"
+    return true;                     
   });
 
 return (
@@ -138,7 +135,7 @@ return (
     {CATS.map(cat => (
       <div key={cat.key} style={{ marginBottom: 4 }}>
 
-        {/* כותרת קטגוריה – רק כש-collapsible=true */}
+        {/*category headline */}
         {collapsible && (
           <button
             onClick={() => toggle(cat.key)}
@@ -157,7 +154,7 @@ return (
           </button>
         )}
 
-        {/* הרשימה – אם collapsible=false פתוחה תמיד */}
+        {/* open always if there are members */}
         {(collapsible ? openCats[cat.key] : true) && (
           <ul
             style={{
@@ -184,7 +181,7 @@ return (
 
 };
 
-/* helper: מעדכן את שדה phone בכל האוספים התלויים */
+/* helper:for phone number updates */
 async function patchPhoneInRefs(oldDigits, newDigits) {
   const changePhone = async (coll) => {
     const q    = query(collection(db, coll), where("phone", "==", oldDigits));
@@ -197,7 +194,7 @@ async function patchPhoneInRefs(oldDigits, newDigits) {
   await changePhone("activityRegistrations");
   await changePhone("surveyResponses");
 
-  /* replies תת-אוסף */
+  /* replies */
   const msgs = await getDocs(collection(db, "messages"));
   for (const m of msgs.docs) {
     const q    = query(collection(db, "messages", m.id, "replies"),
@@ -252,7 +249,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(new Set());
   const [selectMode, setSelectMode] = useState(false); 
-  const [userType, setUserType] = useState("");       // ← כבר יש בתצוגה אבל חסר בהגדרה
+  const [userType, setUserType] = useState("");       
   const [address, setAddress] = useState("");
   const [idNumber, setIdNumber] = useState("");
   const [notes, setNotes] = useState("");
@@ -391,8 +388,8 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     }
   }
 
-  function toggleSelect(user) {                 // ← מקבל את כל האובייקט
-    const id = ensureUserId(user);              // ← מזהה קבוע ואחיד
+  function toggleSelect(user) {                 
+    const id = ensureUserId(user);              
     setSelected(prev => {
       const s = new Set(prev);
       s.has(id) ? s.delete(id) : s.add(id);
@@ -410,12 +407,12 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
   function toggleSelectMode() {
     setSelectMode(p => {
-      if (p) setSelected(new Set());   // ניקוי בחזרה למצב רגיל
+      if (p) setSelected(new Set());   //clear selection
       return !p;
     });
   }
 
-  /* מחיקה מרוכזת  */
+  /* delete selected users */
   async function deleteSelected() {
     if (selected.size === 0) return;
 
@@ -425,7 +422,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       for (const id of selected) {
         const u = allUsers.find(x => ensureUserId(x) === id);
         if (u) {
-          promises.push(deleteUserCore(u, { skipMessage: true })); // No message per user
+          promises.push(deleteUserCore(u, { skipMessage: true })); 
         }
       }
 
@@ -446,8 +443,8 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     setConfirmOpen(true);
   }
 
- 
-  /* ➋ האנדלר הכללי */
+
+  /* general handler */
   const focusNext = next => e => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -457,11 +454,9 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
 
 
-    /* ----------------------------------------------------------
-    פונקציה שמקבלת "registered" | "senior" | "all" ומייצרת Excel
-  -----------------------------------------------------------*/
+   
   function exportToExcel(type = "all") {
-    // ➊ מסננים
+    // ➊ filters
     const data = allUsers.filter(u => {
       if (type === "registered") return u.is_registered && !u.is_club_60;
       if (type === "senior")     return u.is_club_60;
@@ -473,7 +468,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       return;
     }
 
-    // ➋ בונים מערך אובייקטים "שטוח" – רק העמודות שרוצים בגליון
+    // ➋ create a "flat" array of objects – only the columns we want in the sheet
     const rows = data.map(u => ({
       "שם פרטי"  : u.first_name  || "",
       "שם משפחה" : u.last_name   || "",
@@ -486,12 +481,12 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       "תגובות"    : Array.isArray(u.replies)    ? u.replies.length    : 0,
     }));
 
-    // ➌ SheetJS: ממירים ל-worksheet ול-workbook
+    // ➌ SheetJS: convert to worksheet and workbook
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Users");
 
-    // ➍ כותבים כ-Blob ושומרים
+    // ➍ write as Blob and save
     const wbBlob = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     const fileName =
       type === "registered" ? "משתמשים_רשומים.xlsx" :
@@ -511,7 +506,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   );
 
   useEffect(() => {
-    // טען את כל המשתמשים מאוסף users
+    // load all users from Firestore
     async function fetchUsers() {
       const snap = await getDocs(collection(db, "users"));
       const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -520,12 +515,12 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     fetchUsers();
   }, []);
 
-  /* אחרי ה-useState של search וה-useEffect שמביא users … */
+  
   useEffect(() => {
     const t = search.trim().toLowerCase();
-    if (!t) return;                     // אם החיפוש ריק – לא עושים כלום
+    if (!t) return;                     
 
-    /* האם נמצאה התאמה אצל רשומים? אצל 60+? */
+    /*  60+? */
     let foundRegistered = false;
     let foundSenior     = false;
 
@@ -543,9 +538,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
     
 
-    /* אם יש התאמה רק ב-60+ → מעבר לטאב senior
-      אם יש התאמה רק ברשומים → מעבר ל-registered
-      (אם יש בשניהם – נשארים בטאב הנוכחי) */
+    /* if there is a match between registered and senior */
     if (foundSenior && !foundRegistered && activeTab !== "senior") {
       setActiveTab("senior");
     } else if (foundRegistered && !foundSenior && activeTab !== "registered") {
@@ -555,19 +548,19 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
 
 
-  // פונקציה שבודקת אם משתמש מתאים ל־activeTab
+  // activeTab is used to filter users based on their type
   const matchesTab = u => {
-      /* אם יש חיפוש – לא להגביל לפי הטאב */
+      /* search */
     if (activeTab === "registered") return u.is_registered && !u.is_club_60;
     if (activeTab === "senior")     return u.is_club_60;
-    return true; // all
+    return true; 
   }
 
   useEffect(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return;          // אין חיפוש → לא משנים טאב
+    if (!term) return;          
 
-    // האם יש התאמה בטאב הרשומים?
+    
     const foundRegistered = allUsers.some(u =>
       u.is_registered && !u.is_club_60 &&
       (
@@ -577,7 +570,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       )
     );
 
-    // האם יש התאמה בטאב 60+?
+    
     const foundSenior = allUsers.some(u =>
       u.is_club_60 &&
       (
@@ -587,12 +580,12 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       )
     );
 
-    /* אם אני בטאב רשומים ואין בו תוצאות אבל יש ב-60+ → עבור לטאב senior */
+    
     if (activeTab === "registered" && !foundRegistered && foundSenior) {
       setActiveTab("senior");
     }
 
-    /* להפך – אם אני ב-senior ואין בו תוצאות אך יש ברשומים */
+    
     if (activeTab === "senior" && !foundSenior && foundRegistered) {
       setActiveTab("registered");
     }
@@ -600,8 +593,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
 
 
-  // מפותחים מערכי שורות של פעילויות וסקרים
-  /* ♦ פעילויות – משתמש + כמות */
+ 
   const rowsActivities = allUsers
     .filter(u => Array.isArray(u.activities) && u.activities.length > 0)
     .filter(matchesTab)
@@ -610,7 +602,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       count: u.activities.length,
     }));
 
-  /* ♦ סקרים – משתמש + כמות */
+  
   const rowsSurveys = allUsers
     .filter(u => Array.isArray(u.survey) && u.survey.length > 0)
     .filter(matchesTab)
@@ -625,7 +617,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     return true;
   });
 
-  /* ♦ תגובות – משתמש + כמות */
+  //1 for every user, count the replies
   const rowsReplies = allUsers
     .filter(u => Array.isArray(u.replies) && u.replies.length > 0)
     .filter(matchesTab)
@@ -634,14 +626,14 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       count: u.replies.length,
     }));
 
-  // 2) מאחד לכל entry את ה־shape { user }
+  // 2) user shape
   const rowsAllWithShape = rowsAll.map(u => ({ user: u }));
 
 
   // const isRepliesTab = filter === "replies";
   // const rowsToShow = isRepliesTab ? rowsReplies : rowsAll;
 
-  // על־פי ה־filter נקבע מה להציג
+  // by filter
   let rowsToShow = [];
   if (filter === "activity") rowsToShow = rowsActivities;
   else if (filter === "replies") rowsToShow = rowsReplies;
@@ -663,17 +655,12 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     });
   }
 
-  /* ------------------------------------------------------------------
-    ✂️  מחיקת משתמש אחד – מסירים אותו מכל האוספים הרלוונטיים
-  -------------------------------------------------------------------*/
-
-  /* ✦✦ 1.  מחיקה "שקטה" של משתמש יחיד  ✦✦
-  - בלי window.confirm ו-alert, אבל עם כל לוגיקת המחיקה וה-state  */
+  
   async function deleteUserSilent(user) {
     const phone   = user.phone || "";
     const user_id = ensureUserId(user);
 
-    /* users (המסמך הראשי) */
+    /* users  */
     try {
       await deleteDoc(doc(db, "users", user_id));
     } catch (err) {
@@ -699,7 +686,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       for (const r of reps.docs) await deleteDoc(r.ref).catch(e => console.error("⚠️  reply", e));
     }
 
-    /* עדכון סטייטים מקומיים */
+    /* update local states */
     setManualUsers(prev => prev.filter(u => u.phone !== phone));
     markDeleted(phone);
   }
@@ -933,12 +920,12 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     const u        = row.user;
     const userId   = ensureUserId(u);
     const docRef   = doc(db, "users", userId);
-    // בואי נקרא קודם את המסמך
+    // first read 
     const snap     = await getDocs(query(collection(db, "users"), where("user_id", "==", userId)));
     if (snap.empty) return;
     const data     = snap.docs[0].data();
 
-    // בונים מערכים חדשים בלי הפריט הזה
+    // new arrays to hold updated data
     let newActivities     = data.activities     || [];
     let newActivitiesDate = data.activities_date|| [];
     let newSurvey         = data.survey         || [];
@@ -968,7 +955,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       }
     }
 
-    // תריץ עדכון ב־Firestore
+    // firebase update
     await updateDoc(docRef, {
       activities:      newActivities,
       activities_date: newActivitiesDate,
@@ -978,7 +965,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       replies_date:    newRepliesDate
     });
 
-    // ועדכון state כדי להעלי המסך
+    // update state to reflect changes
     setAllUsers(prev =>
       prev.map(u0 =>
         ensureUserId(u0) === userId
@@ -1024,15 +1011,15 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       borderRadius:"12px",
       boxShadow:"0 2px 6px rgba(0,0,0,.05)"
     }}>
-    {/* ◄◄ שורת הכותרת + ייצוא ►► */}
+    {/* ◄◄ personal details ►► */}
     <div style={{
       display:"flex",
       justifyContent:"space-between",
       alignItems:"center",
       width:"100%",
-      marginBottom:30    // רווח לפני שאר הבקרות
+      marginBottom:30    
     }}>
-      {/* כותרת מימין (RTL) */}
+      {/* (RTL) */}
       {/* <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 4, mb: 2 }}> */}
 
       <Typography variant="h4" component="h1">
@@ -1057,7 +1044,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
         display: "flex",
         alignItems: "center",
         gap: 8,
-        marginBottom: 16        // ← הרווח שאת מבקשת
+        marginBottom: 16        
       }}
     ></div>
 
@@ -1072,14 +1059,14 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     onChange={e => setSearch(e.target.value)}
     sx={{
       width: 220,
-      // צבעי סגול למסגרת + פוקוס
+      
       "& .MuiOutlinedInput-root": {
         borderRadius: "8px",
         "& fieldset": { borderColor: palette.primary },
         "&:hover fieldset": { borderColor: palette.primaryHL },
         "&.Mui-focused fieldset": { borderColor: palette.primary }
       },
-      // צבע סמן קלט
+      
       "& input": { direction: "rtl" }
     }}
   />
@@ -1087,9 +1074,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     
 
 
-      {/* ----------------------------------------
-          השורה הזו תופיע *מעל* הטבלה, במרכז
-      ------------------------------------------*/}
+      {/* this line is for the user search */}
       <div
         style={{
           position: "relative",
@@ -1103,13 +1088,13 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
         }}
         >
 
-          {/* 1. Add User בצד שמאל */}
-           {/* ❶ “בחר” + “הוסף משתמש” צמודים – הכי שמאלי = הוסף */}
+          {/* 1. Add User */}
+           {/* ❶ “choose user” */}
         <div style={{ display: "flex", gap: 4 }}>
         </div>
 
         
-        {/* SHOW בצד ימין */}
+        {/* SHOW */}
 
         <Box
           sx={{
@@ -1129,7 +1114,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
             onChange={e => onFilterChange(e.target.value)}
             sx={{
               minWidth: 130,
-              // סגול למסגרת
+              // purple border
               "& .MuiOutlinedInput-root": {
                 borderRadius: "8px",
                 "& fieldset": { borderColor: palette.primary },
@@ -1138,9 +1123,9 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
               }
             }}
             SelectProps={{
-              native: true,      // משתמש ב־<select> מקורי כדי לשמור RTL נקי
+              native: true,      
               sx: {
-                "& option": { direction: "rtl" } // יישור טקסט ברשימה
+                "& option": { direction: "rtl" } 
               }
             }}
           >
@@ -1151,10 +1136,10 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
           </TextField>
         </Box>
 
-        {/* טאבים במרכז */}
+        {/* centered tabs*/}
 
         
-        {/* --- Tabs חדשים --- */}
+        {/*  new tabs */}
         <Tabs
           value={activeTab}
           onChange={(e, newValue) => setActiveTab(newValue)}
@@ -1189,26 +1174,26 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
         {/* Add User Button */}
 
 
-  {/* כפתור “הוסף משתמש”  +  “בחר”  +  “מחק נבחרים” */}
+  {/* add user */}
 <Box
   sx={{
     display: "flex",
-    gap: 1.5,          // רווח בין הכפתורים
+    gap: 1.5,          
     alignItems: "center",
-    mb: 2              // ↓ רווח מהטבלה
+    mb: 2              
   }}
 >
-  {/* בחר / בטל בחירה */}
+  {/* choose and un choose*/}
   <Button
   variant="outlined"
   size="small"
   onClick={toggleSelectMode}
   sx={{
     minWidth: 86,
-    /* צבע טקסט + מסגרת בסגול הראשי */
+    
     color:        palette.primary,
     borderColor:  palette.primary,
-    /* בזמן ה-hover נשאיר טקסט סגול, רקע שקוף */
+   
     "&:hover": {
       borderColor: palette.primary,
       backgroundColor: "transparent"
@@ -1219,7 +1204,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 </Button>
 
 
-  {/* מחק נבחרים (מופיע רק במצב selectMode) */}
+  {/* delete selected */}
   {selectMode && (
     <Button
       variant="outlined"
@@ -1233,14 +1218,14 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     </Button>
   )}
 
-  {/* הוסף משתמש */}
+  {/* add user*/}
   <Button
     variant="contained"
     size="small"
     onClick={() => setShowModal(true)}
     sx={{
       minWidth: 110,
-      px: 2,                      // padding אופקי
+      px: 2,                      
       backgroundColor: palette.primary,
       boxShadow: "0 2px 4px rgba(0,0,0,.08)",
       fontWeight: 600,
@@ -1498,7 +1483,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 <table style={{ width: "100%", borderCollapse: "collapse" }}>
   <thead>
     <tr>
-      {/* עמודת “בחר-הכול” מוצגת רק במצב selectMode */}
+      {/* select all */}
       {selectMode && (
         <th style={th}>
           <input
@@ -1536,13 +1521,13 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
   return (
     <React.Fragment key={ensureUserId(u)}>
-      {/* ───── ① שורה ראשית ───── */}
+      {/*main row */}
        <tr
           style={{ transition:"background .15s" }}
           onMouseEnter={e=>e.currentTarget.style.background="#faf8ff"}
           onMouseLeave={e=>e.currentTarget.style.background="transparent"}
         >
-        {/* Check-box – רק במצב selectMode */}
+        {/* select mode */}
         {selectMode && (
           <td style={td}>
             <input
@@ -1554,7 +1539,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
           </td>
         )}
 
-        {/* שם מלא + ⋯ (⋯ מוצג רק במסנן all) */}
+        {/* full name */}
         <td>
           {filter === "all" && (
             <button
@@ -1567,7 +1552,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
           {u.fullname}
         </td>
 
-        {/* טלפון */}
+        {/* phone */}
         <td style={td}>{u.phone}</td>
         <td style={td}>{u.id_number || ""}</td>
         <td style={td}>{u.address || ""}</td>
@@ -1659,12 +1644,12 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
       </tr>
 
-      {/* ───── ② שורת-פירוט מתקפלת ───── */}
+      {/* details row */}
       {Array.from(openRows).some(k => k.startsWith(u.user_id)) && (
         <tr style={{ background: "#fafafa" }}>
-          {/* תא ריק לשמירת יישור אם selectMode פעיל */}
+          {/* empty cell */}
           {selectMode && <td></td>}
-          {/* תא ריק מתחת לעמודת השם */}
+          {/* empty cell under name column */}
           <td></td>
 
           <td
@@ -1691,15 +1676,15 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 </tbody>
         </table>
 
-        {/* ✦✦ דיאלוג ייצוא ✦✦ */}
+        {/* ✦outtoxl */}
         <Dialog open={showExport} onClose={() => setShowExport(false)} maxWidth="xs" fullWidth
           PaperProps={{
             sx: {
-              p: 4,                         // ריווח פנימי נדיב
-              borderRadius: 3,              // ‎12px≈theme.spacing(3)
+              p: 4,                         
+              borderRadius: 3,              
               bgcolor: '#ffffff',
               boxShadow: '0 4px 16px rgba(0,0,0,.12)',
-              direction: 'rtl',             // לשמור על RTL
+              direction: 'rtl',             
             }
           }}
         >
@@ -1738,7 +1723,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
               sx={{
                 direction: 'rtl',
                 "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,                     // ‎8px
+                  borderRadius: 2,                     
                   "& fieldset":        { borderColor: palette.border },
                   "&:hover fieldset":  { borderColor: palette.primaryHL },
                   "&.Mui-focused fieldset": { borderColor: palette.primary }
@@ -1776,7 +1761,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
         </Dialog>
 
 
-        {/* ✎ Modal עריכת שם */}
+        {/* ✎ Modal */}
 {editUser && (
   <Dialog open onClose={() => setEditUser(null)} maxWidth="xs" fullWidth>
     <DialogTitle
@@ -1786,12 +1771,12 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
         fontSize: "1.5rem",
         fontWeight: 600,
         mb: 2, mt: 5,
-        pr: 4          // מקום לטקסט שלא יידחק ע״י האיקון
+        pr: 4          
       }}
     >
       עריכת משתמש
 
-      {/* כפתור X */}
+      {/* X */}
       <IconButton
         aria-label="סגור"
         onClick={() => setEditUser(null)}
@@ -1860,7 +1845,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
         onKeyDown={e => {
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            eSaveRef.current?.focus();  // קפיצה לכפתור "שמירה"
+            eSaveRef.current?.focus();  
           }
         }}
         multiline
@@ -1882,10 +1867,10 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
           borderRadius: "8px",
           fontSize: "18px",
           fontWeight: 600,
-          color: "#fff", // or "#000" based on your background
-          textTransform: "none", // optional — keeps original casing
+          color: "#fff", 
+          textTransform: "none", 
           "&:hover": {
-            backgroundColor: palette.primary // disables hover color change
+            backgroundColor: palette.primary 
           }
         }}
       >
@@ -2001,7 +1986,7 @@ const plusBtnStyle = {
   gap: 4,
 };
 
-  // מחוץ ל-render
+  // render
 const plusStyle = {
   marginInlineStart: 4,
   color: "#7b35ff",
