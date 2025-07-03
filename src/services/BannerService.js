@@ -1,24 +1,24 @@
 // src/services/BannerService.js 
-import { db, storage } from "../firebase";
 import {
-  collection,
   addDoc,
-  getDocs,
-  query,
-  orderBy,
-  limit,
-  writeBatch,
+  collection,
+  deleteDoc,
   doc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  serverTimestamp,
   updateDoc,
-  deleteDoc,          
-  serverTimestamp
+  writeBatch
 } from "firebase/firestore";
 import {
-  ref,
-  uploadBytes,
+  deleteObject,
   getDownloadURL,
-  deleteObject
+  ref,
+  uploadBytes
 } from "firebase/storage";
+import { db, storage } from "../firebase";
 
 const COLL = "homepageBanners";
 const PATH = "banners/";
@@ -47,11 +47,11 @@ const service = {
       url,
       link,
       startDate: start || null,
-      endDate:   end   || null,
+      endDate: end || null,
       duration,
       order: await nextOrder(),
       createdAt: serverTimestamp(),
-      storagePath: fileRef.fullPath, 
+      storagePath: fileRef.fullPath,
       filename: file.name,
     });
   },
@@ -79,7 +79,7 @@ const service = {
 
   /* delete*/
   async deleteBanner(banner) {
-    
+
     try {
       await deleteObject(ref(storage, banner.storagePath));
     } catch (err) {
@@ -87,7 +87,7 @@ const service = {
         throw err;
       }
     }
-    
+
     await deleteDoc(doc(db, COLL, banner.id));
   },
 };

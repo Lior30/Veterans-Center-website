@@ -1,31 +1,31 @@
 // src/components/MessageRepliesContainer.jsx
-import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import {
-  doc,
-  getDoc,
-  collection,
-  getDocs,
-  query,
-  orderBy,
-  deleteDoc,
-} from "firebase/firestore";
-import { db } from "../firebase.js";
+import DeleteIcon from "@mui/icons-material/Delete";
 import {
   Container,
-  Paper,
-  Typography,
+  Divider,
+  IconButton,
   List,
   ListItem,
   ListItemText,
-  IconButton,
+  Paper,
   Tooltip,
-  Divider,
+  Typography,
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  orderBy,
+  query,
+} from "firebase/firestore";
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { db } from "../firebase.js";
 
 export default function MessageRepliesContainer() {
-  const { id } = useParams();                 
+  const { id } = useParams();
   const [message, setMessage] = useState(null);
   const [replies, setReplies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +33,7 @@ export default function MessageRepliesContainer() {
   //load message plus replies
   useEffect(() => {
     async function load() {
-    
+
       const msgSnap = await getDoc(doc(db, "messages", id));
       if (msgSnap.exists()) {
         setMessage({ id: msgSnap.id, ...msgSnap.data() });
@@ -42,7 +42,7 @@ export default function MessageRepliesContainer() {
       // replies from new to old
       const q = query(
         collection(db, "messages", id, "replies"),
-        orderBy("createdAt", "desc")          
+        orderBy("createdAt", "desc")
       );
       const repSnap = await getDocs(q);
       setReplies(repSnap.docs.map((d) => ({ id: d.id, ...d.data() })));

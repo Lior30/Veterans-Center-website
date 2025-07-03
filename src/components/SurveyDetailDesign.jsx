@@ -1,6 +1,5 @@
 // src/components/SurveyDetailDesign.jsx
-import React from "react";
-import { Box, TextField, Typography, Button } from "@mui/material";
+import { Box, Button, TextField, Typography } from "@mui/material";
 
 export default function SurveyDetailDesign({
   survey,
@@ -15,7 +14,7 @@ export default function SurveyDetailDesign({
   submitError,
   isUserLoggedIn,
 }) {
-  
+
   const placeholderAlign = {
     inputProps: { style: { textAlign: "right" } },
     sx: {
@@ -27,66 +26,66 @@ export default function SurveyDetailDesign({
   return (
     <Box sx={{ padding: 4, maxWidth: 600, margin: "0 auto", direction: "rtl" }}>
       <Typography variant="h5" gutterBottom>
-  {survey.headline}{" "}
-  <small style={{ color: "red" }}>* שאלות חובה</small>
-</Typography>
+        {survey.headline}{" "}
+        <small style={{ color: "red" }}>* שאלות חובה</small>
+      </Typography>
 
-{activityTitle && activityTitle !== "כללי" && (
-  <Typography variant="subtitle1" sx={{ fontStyle: "italic" }}>
-    קשור לפעילות: {activityTitle}
-  </Typography>
-)}
+      {activityTitle && activityTitle !== "כללי" && (
+        <Typography variant="subtitle1" sx={{ fontStyle: "italic" }}>
+          קשור לפעילות: {activityTitle}
+        </Typography>
+      )}
 
-{survey.expires_at && (
-  <Typography variant="subtitle2" sx={{ mb: 2, color: "gray" }}>
-     הסקר פתוח עד:{" "}
-    {new Date(survey.expires_at).toLocaleString("he-IL", {
-      dateStyle: "full",
-      timeStyle: "short",
-    })}
-  </Typography>
-)}
+      {survey.expires_at && (
+        <Typography variant="subtitle2" sx={{ mb: 2, color: "gray" }}>
+          הסקר פתוח עד:{" "}
+          {new Date(survey.expires_at).toLocaleString("he-IL", {
+            dateStyle: "full",
+            timeStyle: "short",
+          })}
+        </Typography>
+      )}
 
 
       {!isUserLoggedIn && (
-  <>
-    <TextField
-      placeholder="שם פרטי"
-      value={answers.firstName || ""}
-      onChange={(e) => onChange("firstName", e.target.value)}
-      fullWidth
-      error={!!errors.firstName}
-      helperText={errors.firstName}
-      inputProps={placeholderAlign.inputProps}
-      sx={placeholderAlign.sx}
-      style={{ marginBottom: 16 }}
-    />
+        <>
+          <TextField
+            placeholder="שם פרטי"
+            value={answers.firstName || ""}
+            onChange={(e) => onChange("firstName", e.target.value)}
+            fullWidth
+            error={!!errors.firstName}
+            helperText={errors.firstName}
+            inputProps={placeholderAlign.inputProps}
+            sx={placeholderAlign.sx}
+            style={{ marginBottom: 16 }}
+          />
 
-    <TextField
-      placeholder="שם משפחה"
-      value={answers.lastName || ""}
-      onChange={(e) => onChange("lastName", e.target.value)}
-      fullWidth
-      error={!!errors.lastName}
-      helperText={errors.lastName}
-      inputProps={placeholderAlign.inputProps}
-      sx={placeholderAlign.sx}
-      style={{ marginBottom: 16 }}
-    />
+          <TextField
+            placeholder="שם משפחה"
+            value={answers.lastName || ""}
+            onChange={(e) => onChange("lastName", e.target.value)}
+            fullWidth
+            error={!!errors.lastName}
+            helperText={errors.lastName}
+            inputProps={placeholderAlign.inputProps}
+            sx={placeholderAlign.sx}
+            style={{ marginBottom: 16 }}
+          />
 
-    <TextField
-      placeholder="טלפון"
-      value={answers.phone || ""}
-      onChange={(e) => onChange("phone", e.target.value)}
-      fullWidth
-      error={!!errors.phone}
-      helperText={errors.phone}
-      inputProps={placeholderAlign.inputProps}
-      sx={placeholderAlign.sx}
-      style={{ marginBottom: 24 }}
-    />
-  </>
-)}
+          <TextField
+            placeholder="טלפון"
+            value={answers.phone || ""}
+            onChange={(e) => onChange("phone", e.target.value)}
+            fullWidth
+            error={!!errors.phone}
+            helperText={errors.phone}
+            inputProps={placeholderAlign.inputProps}
+            sx={placeholderAlign.sx}
+            style={{ marginBottom: 24 }}
+          />
+        </>
+      )}
 
       {survey.questions
         .filter((q) => q.id !== "fullname" && q.id !== "phone")
@@ -139,20 +138,20 @@ export default function SurveyDetailDesign({
       )}
 
       <Box sx={{ mt: 4, display: "flex", justifyContent: "space-between" }}>
-       {blocked === null && (
-  <Button variant="contained" disabled>
-    בודק הרשאות…
-  </Button>
-)}
-{blocked === false && (
-  <Button
-    variant="contained"
-    onClick={onSubmit}
-    type="button"
-  >
-    שלח
-  </Button>
-)}
+        {blocked === null && (
+          <Button variant="contained" disabled>
+            בודק הרשאות…
+          </Button>
+        )}
+        {blocked === false && (
+          <Button
+            variant="contained"
+            onClick={onSubmit}
+            type="button"
+          >
+            שלח
+          </Button>
+        )}
 
       </Box>
     </Box>

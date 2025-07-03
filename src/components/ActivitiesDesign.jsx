@@ -1,46 +1,42 @@
 // src/components/ActivitiesDesign.jsx
 import Autocomplete, { createFilterOptions } from "@mui/material/Autocomplete";
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import {
-  Container,
-  Typography,
-  Tabs,
-  Tab,
-  Box,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  FormControlLabel,
-  Checkbox,
-  IconButton,
-  Stack,
-  ToggleButton,
-  ToggleButtonGroup,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-} from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { DataGrid } from "@mui/x-data-grid";
-import FullCalendar from "@fullcalendar/react";
+import heLocale from "@fullcalendar/core/locales/he";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import heLocale from "@fullcalendar/core/locales/he";
+import FullCalendar from "@fullcalendar/react";
+import DeleteIcon from "@mui/icons-material/Delete";
+import {
+  Box,
+  Button,
+  Checkbox,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
+  IconButton,
+  MenuItem,
+  Stack,
+  Tab,
+  Tabs,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography
+} from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
 
-import ActivityService from "../services/ActivityService";
-import UserService from "../services/UserService";
+import { arrayRemove, arrayUnion, collection, doc, getDocs, updateDoc } from "firebase/firestore";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import { db } from "../firebase";
-import { doc, collection, getDocs, updateDoc, arrayRemove, arrayUnion } from "firebase/firestore";
-import { MapContainer, TileLayer, Marker, Popup, useMap  } from "react-leaflet";
+import ActivityService from "../services/ActivityService";
 // Leaflet & GeoSearch
 import { OpenStreetMapProvider } from "leaflet-geosearch";
-import "leaflet/dist/leaflet.css";
 import "leaflet-geosearch/dist/geosearch.css";
+import "leaflet/dist/leaflet.css";
 import * as XLSX from 'xlsx';
 
 
@@ -132,10 +128,10 @@ export default function ActivitiesDesign({
 
   // function to remove a tag
   const handleRemoveTag = (tagToRemove) => {
-    
+
     setAllTags((prev) => prev.filter((t) => t !== tagToRemove));
 
-    
+
     activities.forEach((act) => {
       if (Array.isArray(act.tags) && act.tags.includes(tagToRemove)) {
         const newTags = act.tags.filter((tg) => tg !== tagToRemove);
@@ -150,7 +146,7 @@ export default function ActivitiesDesign({
   const [addressQuery, setAddressQuery] = useState("");
   // render map center and zoom
   const [mapCenter, setMapCenter] = useState([31.7683, 35.2137]);
-  const [mapZoom, setMapZoom]     = useState(13);
+  const [mapZoom, setMapZoom] = useState(13);
 
   useEffect(() => {
     if (!selAct || !selAct.participants) return;
@@ -178,54 +174,47 @@ export default function ActivitiesDesign({
     loadUsers();
   }, [selAct]);
 
-  // יוצרת קובץ אקסל מכל הרשימה של activities
-const exportToExcel = () => {
-  // "מרחיבים" כל פעילות לשורות: אם יש מספר נרשמים, נייצר שורה לכל משתתף
-  const rows = activities.flatMap(act => {
-    if (Array.isArray(act.participants) && act.participants.length) {
-      return act.participants.map(p => ({
-        activityId: act.id,
-        name: act.name,
-        date: act.date,
-        startTime: act.startTime,
-        endTime: act.endTime,
-        description: act.description,
-        capacity: act.capacity,
-        registrationCondition: act.registrationCondition,
-        recurring: act.recurring ? 'כן' : 'לא',
-        weekday: (act.weekdays || []).join(','),
-        participantName: p.name,
-        participantPhone: p.phone,
-        paid: p.paid ? 'כן' : 'לא',
-      }));
-    } else {
-      // אם אין נרשמים — שורה אחת עם שדות ריקים למשתתף
-      return [{
-        activityId: act.id,
-        name: act.name,
-        date: act.date,
-        startTime: act.startTime,
-        endTime: act.endTime,
-        description: act.description,
-        capacity: act.capacity,
-        registrationCondition: act.registrationCondition,
-        recurring: act.recurring ? 'כן' : 'לא',
-        weekday: (act.weekdays || []).join(','),
-        participantName: '',
-        participantPhone: '',
-        paid: '',
-      }];
+  function exportParticipantsToExcel() {
+    if (!selAct || !selAct.participants || selAct.participants.length === 0) {
+      alert("אין נרשמים לייצוא");
+      return;
     }
-  });
 
-  // מייצרים גיליון עבודה וכתוב בו את המערך כטבלה
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Activities');
+    // Use filtered participants (respects search filter)
+    const data = filteredParticipants.length > 0 ? filteredParticipants : selAct.participants;
 
-  // שומרים את הקובץ
-  XLSX.writeFile(wb, 'activities_export.xlsx');
-};
+    // Create a "flat" array of objects – only the columns we want in the sheet
+    const rows = data.map(p => {
+      // Extract just the name part (before the phone number and dash)
+      const userDisplay = users[p.phone] || p.phone;
+      const fullName = userDisplay.includes(' — ')
+        ? userDisplay.split(' — ')[0]
+        : userDisplay;
+
+      const isPaidActivity = selAct.priceMember60 > 0 || selAct.priceRegular > 0;
+
+      const row = {
+        "שם מלא": fullName,
+        "טלפון": p.phone,
+      };
+
+      // Add payment status only for paid activities
+      if (isPaidActivity) {
+        row["שולם?"] = p.paid ? "כן" : "לא";
+      }
+
+      return row;
+    });
+
+    // SheetJS: convert to worksheet and workbook
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "נרשמים");
+
+    // Write file directly
+    const fileName = `נרשמים_${selAct.name}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  }
 
   // map reference and GeoSearch provider
   const mapRef = useRef(null);
@@ -253,74 +242,74 @@ const exportToExcel = () => {
   }, [geoProvider, onFormChange]);
 
   // search for participants based on the filter
-const filteredParticipants = (selAct?.participants || []).filter((p) => {
-  const label = (users[p.phone] || p.phone).toLowerCase();
-  return label.includes(registrantsFilter.trim().toLowerCase());
-});
+  const filteredParticipants = (selAct?.participants || []).filter((p) => {
+    const label = (users[p.phone] || p.phone).toLowerCase();
+    return label.includes(registrantsFilter.trim().toLowerCase());
+  });
 
 
 
   useEffect(() => {
-  if (!selAct || !selAct.participants) return;
+    if (!selAct || !selAct.participants) return;
 
-  console.log("First participant:", selAct.participants[0]);
+    console.log("First participant:", selAct.participants[0]);
 
-  const map = {};
-  (selAct.participants || []).forEach(({ phone, name }) => {
-  const user = allUsers.find((u) => u.phone === phone);
-  const displayName = user?.fullname || name || "ללא שם";
-  map[phone] = `${displayName} — ${phone}`;
-});
-
-
-  setUsers(map);
-}, [selAct]);
+    const map = {};
+    (selAct.participants || []).forEach(({ phone, name }) => {
+      const user = allUsers.find((u) => u.phone === phone);
+      const displayName = user?.fullname || name || "ללא שם";
+      map[phone] = `${displayName} — ${phone}`;
+    });
 
 
+    setUsers(map);
+  }, [selAct]);
 
-const kickParticipant = async (phone) => {
-  // finds out the participant by phone
-  const participant = selAct.participants.find((p) => p.phone === phone);
-  if (!participant) return;
 
-  // remove the participant from the activity in Firestore
-  const actRef = doc(db, "activities", selAct.id);
-  await updateDoc(actRef, {
-    participants: arrayRemove(participant)
-  });
 
-  // update local state to remove the participant
-  setSelAct((prev) =>
-    prev
-      ? {
+  const kickParticipant = async (phone) => {
+    // finds out the participant by phone
+    const participant = selAct.participants.find((p) => p.phone === phone);
+    if (!participant) return;
+
+    // remove the participant from the activity in Firestore
+    const actRef = doc(db, "activities", selAct.id);
+    await updateDoc(actRef, {
+      participants: arrayRemove(participant)
+    });
+
+    // update local state to remove the participant
+    setSelAct((prev) =>
+      prev
+        ? {
           ...prev,
           participants: prev.participants.filter((p) => p.phone !== phone)
         }
-      : null
-  );
-};
+        : null
+    );
+  };
 
-const togglePaid = async (phone) => {
-  const participant = selAct.participants.find((p) => p.phone === phone);
-  if (!participant) return;
-  const updated = { ...participant, paid: !participant.paid };
-  const actRef = doc(db, "activities", selAct.id);
-  
-  await updateDoc(actRef, { participants: arrayRemove(participant) });
-  
-  await updateDoc(actRef, { participants: arrayUnion(updated) });
-  
-  setSelAct((prev) =>
-    prev
-      ? {
+  const togglePaid = async (phone) => {
+    const participant = selAct.participants.find((p) => p.phone === phone);
+    if (!participant) return;
+    const updated = { ...participant, paid: !participant.paid };
+    const actRef = doc(db, "activities", selAct.id);
+
+    await updateDoc(actRef, { participants: arrayRemove(participant) });
+
+    await updateDoc(actRef, { participants: arrayUnion(updated) });
+
+    setSelAct((prev) =>
+      prev
+        ? {
           ...prev,
           participants: prev.participants.map((p) =>
             p.phone === phone ? updated : p
           ),
         }
-      : null
-  );
-};
+        : null
+    );
+  };
 
 
   // sync all tags with local state
@@ -342,25 +331,25 @@ const togglePaid = async (phone) => {
     const actEvents = filteredActs.flatMap((a) =>
       a.recurring && (a.weekdays || []).length
         ? [
-            {
-              id: `${a.id}-rec`,
-              title: a.name,
-              daysOfWeek: a.weekdays,
-              startTime: a.startTime,
-              endTime: a.endTime,
-              startRecur: a.date,
-              backgroundColor: "#A5D6A7",
-            },
-          ]
+          {
+            id: `${a.id}-rec`,
+            title: a.name,
+            daysOfWeek: a.weekdays,
+            startTime: a.startTime,
+            endTime: a.endTime,
+            startRecur: a.date,
+            backgroundColor: "#A5D6A7",
+          },
+        ]
         : [
-            {
-              id: a.id,
-              title: a.name,
-              start: `${a.date}T${a.startTime}`,
-              end: `${a.date}T${a.endTime}`,
-              backgroundColor: "#90CAF9",
-            },
-          ]
+          {
+            id: a.id,
+            title: a.name,
+            start: `${a.date}T${a.startTime}`,
+            end: `${a.date}T${a.endTime}`,
+            backgroundColor: "#90CAF9",
+          },
+        ]
     );
 
     return [...actEvents, ...holidays];
@@ -373,8 +362,22 @@ const togglePaid = async (phone) => {
       width: 120,
       headerAlign: "center",
       align: "right",
+      renderCell: (params) => {
+        if (!params.value) return "";
+
+        // Convert to string if it's not already
+        const dateStr = params.value.toString();
+        const dateParts = dateStr.split('-');
+
+        if (dateParts.length === 3) {
+          const [year, month, day] = dateParts;
+          return `${day}-${month}-${year}`;
+        }
+
+        return params.value; // Return original if format is unexpected
+      }
     },
-    
+
     {
       field: "startTime",
       headerName: "התחלה",
@@ -397,31 +400,31 @@ const togglePaid = async (phone) => {
       headerAlign: "center",
       align: "right",
     },
-{
-  field: "description",
-  headerName: "תיאור",
-  flex: 1,
-  minWidth: 200,
-  headerAlign: "center",
-  align: "right",
-  
-  cellClassName: "multi-line-cell",
-},
+    {
+      field: "description",
+      headerName: "תיאור",
+      flex: 1,
+      minWidth: 200,
+      headerAlign: "center",
+      align: "right",
 
-  
-  {
-    field: "registrationCondition",
-    headerName: "תנאי הרשמה",
-    width: 120,
-    headerAlign: "center",
-    align: "center",
-    renderCell: (params) => {
-      const v = params.value;
-      if (v === "member60")       return "חבר מרכז 60+";
-      if (v === "registeredUser") return "משתמש רשום";
-      return "-";
+      cellClassName: "multi-line-cell",
     },
-  },
+
+
+    {
+      field: "registrationCondition",
+      headerName: "תנאי הרשמה",
+      width: 120,
+      headerAlign: "center",
+      align: "center",
+      renderCell: (params) => {
+        const v = params.value;
+        if (v === "member60") return "חבר מרכז 60+";
+        if (v === "registeredUser") return "משתמש רשום";
+        return "-";
+      },
+    },
 
     {
       field: "capacity",
@@ -504,57 +507,47 @@ const togglePaid = async (phone) => {
       </Box>
 
       {tab === 0 && (
-        <Box sx={{ mt: 2, textAlign: "right",  }}>
+        <Box sx={{ mt: 2, textAlign: "right", }}>
 
           <Button variant="contained" onClick={onNew} sx={{ mb: 2, ml: 2 }}>
             הוספת פעילות
           </Button>
 
-          <Button
-  variant="outlined"
-  onClick={exportToExcel}
-  sx={{ mb: 2, ml: 2 }}
->
-  ייצוא לאקסל
-</Button>
-
-
-          
-   {/* add or remove tag*/}
-   <Box
-     sx={{
-       display: "flex",
-       alignItems: "center",
-       gap: 1,
-       mb: 2
-     }}
-   >
-<ToggleButtonGroup
-        exclusive
-        value={tagFilter}
-        onChange={(_, v) => setTagFilter(v || "ALL")}
-      >
-        <ToggleButton value="ALL">הכל</ToggleButton>
-        {allTags.map((t) => (
-          <ToggleButton key={t} value={t}>
-            {t}
-          </ToggleButton>
-        ))}
-      </ToggleButtonGroup>
-      <Button
-        variant="outlined"
-        onClick={() => setNewTagDialogOpen(true)}
-      >
-       הוסף תגית
-     </Button>
-     <Button
-       variant="outlined"
-       color="error"
-       onClick={() => setRemoveTagDialogOpen(true)}
-     >
-       הסר תגית
-     </Button>
-   </Box>
+          {/* add or remove tag*/}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              mb: 2
+            }}
+          >
+            <ToggleButtonGroup
+              exclusive
+              value={tagFilter}
+              onChange={(_, v) => setTagFilter(v || "ALL")}
+            >
+              <ToggleButton value="ALL">הכל</ToggleButton>
+              {allTags.map((t) => (
+                <ToggleButton key={t} value={t}>
+                  {t}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+            <Button
+              variant="outlined"
+              onClick={() => setNewTagDialogOpen(true)}
+            >
+              הוסף תגית
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => setRemoveTagDialogOpen(true)}
+            >
+              הסר תגית
+            </Button>
+          </Box>
 
 
           {/* search field */}
@@ -576,30 +569,30 @@ const togglePaid = async (phone) => {
               pageSize={10}
               rowsPerPageOptions={[5, 10]}
               getRowId={(r) => r.id ?? r.tempId}
-                
+
               getRowHeight={() => 'auto'}
-              
+
               autoHeight
               sx={{
-              '& .MuiDataGrid-cell': {
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center', 
-              },
-              '& .multi-line-cell': {
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center', 
-                whiteSpace: 'normal',
-                wordBreak: 'break-word',
-                lineHeight: 1.3,
-                paddingTop: '8px',
-                paddingBottom: '8px',
-              },
-              '& .MuiDataGrid-row': {
-                maxHeight: 'none !important',
-              },
-            }}
+                '& .MuiDataGrid-cell': {
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                },
+                '& .multi-line-cell': {
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  whiteSpace: 'normal',
+                  wordBreak: 'break-word',
+                  lineHeight: 1.3,
+                  paddingTop: '8px',
+                  paddingBottom: '8px',
+                },
+                '& .MuiDataGrid-row': {
+                  maxHeight: 'none !important',
+                },
+              }}
             />
           </Box>
         </Box>
@@ -609,47 +602,47 @@ const togglePaid = async (phone) => {
         <Box sx={{ mt: 2, textAlign: "right" }}>
           {/* buttons for adding/removing tags */}
           <Box
-  sx={{
-    display: "flex",
-    alignItems: "center",
-    gap: 1,     
-    mb: 2,
-  }}
->
-  <ToggleButtonGroup
-    exclusive
-    value={tagFilter}
-    onChange={(_, v) => setTagFilter(v || "ALL")}
-  >
-    <ToggleButton value="ALL">הכל</ToggleButton>
-    {allTags.map((t) => (
-      <ToggleButton key={t} value={t}>
-        {t}
-      </ToggleButton>
-    ))}
-  </ToggleButtonGroup>
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              mb: 2,
+            }}
+          >
+            <ToggleButtonGroup
+              exclusive
+              value={tagFilter}
+              onChange={(_, v) => setTagFilter(v || "ALL")}
+            >
+              <ToggleButton value="ALL">הכל</ToggleButton>
+              {allTags.map((t) => (
+                <ToggleButton key={t} value={t}>
+                  {t}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
 
-  {/* toggle buttons for adding/removing tags */}
-  <Button
-    variant="outlined"
-    onClick={() => setNewTagDialogOpen(true)}
-  >
-    הוסף תגית
-  </Button>
-  <Button
-    variant="outlined"
-    color="error"
-    onClick={() => setRemoveTagDialogOpen(true)}
-  >
-    הסר תגית
-  </Button>
-</Box>
+            {/* toggle buttons for adding/removing tags */}
+            <Button
+              variant="outlined"
+              onClick={() => setNewTagDialogOpen(true)}
+            >
+              הוסף תגית
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => setRemoveTagDialogOpen(true)}
+            >
+              הסר תגית
+            </Button>
+          </Box>
 
 
           <FullCalendar
             plugins={[dayGridPlugin, interactionPlugin]}
             initialView="dayGridMonth"
-            
+
             locale={heLocale}
             direction="rtl"
             events={events}
@@ -717,64 +710,64 @@ const togglePaid = async (phone) => {
             inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
           />
 
-<Autocomplete
-  freeSolo
-  multiple
-  options={allTags}
-  filterOptions={(options, params) => {
-    const filtered = filter(options, params);
-    const { inputValue } = params;
-    // new input turns into a new option
-    if (inputValue !== "") {
-      filtered.push({
-        inputValue,
-        title: `Add "${inputValue}"`,
-      });
-    }
-    return filtered;
-  }}
-  getOptionLabel={(option) => {
-    
-    if (typeof option === "string") {
-      return option;
-    }
-    
-    if (option.inputValue) {
-      return option.inputValue;
-    }
-    
-    return option;
-  }}
-  value={form.tags || []}
-  onChange={(_, newValue) => {
-    
-    const tags = newValue.map((v) =>
-      typeof v === "string" ? v : v.inputValue || v
-    );
-    onFormChange((f) => ({ ...f, tags }));
-    
-    tags.forEach((t) => {
-      if (!allTags.includes(t)) {
-        setAllTags((prev) => [...prev, t]);
-      }
-    });
-  }}
-  renderInput={(params) => (
-    <TextField
-      {...params}
-      placeholder="בחר או כתוב תגית חדשה"
-      required
-      InputLabelProps={{ shrink: true }}
-      fullWidth
-      inputProps={{
-        ...params.inputProps,
-        dir: "rtl",
-        style: { textAlign: "right" },
-      }}
-    />
-  )}
-  sx={{ textAlign: "right" }}
-/>
+          <Autocomplete
+            freeSolo
+            multiple
+            options={allTags}
+            filterOptions={(options, params) => {
+              const filtered = filter(options, params);
+              const { inputValue } = params;
+              // new input turns into a new option
+              if (inputValue !== "") {
+                filtered.push({
+                  inputValue,
+                  title: `Add "${inputValue}"`,
+                });
+              }
+              return filtered;
+            }}
+            getOptionLabel={(option) => {
+
+              if (typeof option === "string") {
+                return option;
+              }
+
+              if (option.inputValue) {
+                return option.inputValue;
+              }
+
+              return option;
+            }}
+            value={form.tags || []}
+            onChange={(_, newValue) => {
+
+              const tags = newValue.map((v) =>
+                typeof v === "string" ? v : v.inputValue || v
+              );
+              onFormChange((f) => ({ ...f, tags }));
+
+              tags.forEach((t) => {
+                if (!allTags.includes(t)) {
+                  setAllTags((prev) => [...prev, t]);
+                }
+              });
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="בחר או כתוב תגית חדשה"
+                required
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+                inputProps={{
+                  ...params.inputProps,
+                  dir: "rtl",
+                  style: { textAlign: "right" },
+                }}
+              />
+            )}
+            sx={{ textAlign: "right" }}
+          />
 
           <TextField
             label="תאריך"
@@ -863,18 +856,18 @@ const togglePaid = async (phone) => {
                 fontSize: "0.75rem",
               },
             }}
-            inputProps={{ dir: "rtl", style: { textAlign: "right" }, min:1 }}
+            inputProps={{ dir: "rtl", style: { textAlign: "right" }, min: 1 }}
           />
 
- {/* מחיר עבור חבר 60+ */}
- <TextField
-   label="מחיר עבור חבר 60+"
-   type="number"
-   value={form.priceMember60}
-   onChange={(e) =>
-     onFormChange((f) => ({ ...f, priceMember60: e.target.value }))
-   }
-   fullWidth
+          {/* מחיר עבור חבר 60+ */}
+          <TextField
+            label="מחיר עבור חבר 60+"
+            type="number"
+            value={form.priceMember60}
+            onChange={(e) =>
+              onFormChange((f) => ({ ...f, priceMember60: e.target.value }))
+            }
+            fullWidth
             InputLabelProps={{
               shrink: true,
               sx: {
@@ -887,18 +880,18 @@ const togglePaid = async (phone) => {
                 fontSize: "0.75rem",
               },
             }}
-            inputProps={{ dir: "rtl", style: { textAlign: "right" }, min:0 }}
+            inputProps={{ dir: "rtl", style: { textAlign: "right" }, min: 0 }}
           />
 
- {/* מחיר עבור משתמש רגיל */}
- <TextField
-   label="מחיר עבור משתמש רגיל"
-   type="number"
-   value={form.priceRegular}
-   onChange={(e) =>
-     onFormChange((f) => ({ ...f, priceRegular: e.target.value }))
-   }
-   fullWidth
+          {/* מחיר עבור משתמש רגיל */}
+          <TextField
+            label="מחיר עבור משתמש רגיל"
+            type="number"
+            value={form.priceRegular}
+            onChange={(e) =>
+              onFormChange((f) => ({ ...f, priceRegular: e.target.value }))
+            }
+            fullWidth
             InputLabelProps={{
               shrink: true,
               sx: {
@@ -911,35 +904,35 @@ const togglePaid = async (phone) => {
                 fontSize: "0.75rem",
               },
             }}
-            inputProps={{ dir: "rtl", style: { textAlign: "right" }, min:0 }}
+            inputProps={{ dir: "rtl", style: { textAlign: "right" }, min: 0 }}
           />
 
-         {/* register restriction*/}
-<TextField
-  select
-  label="תנאי הרשמה"
-  value={form.registrationCondition || ""}
-  onChange={(e) =>
-    onFormChange((f) => ({ ...f, registrationCondition: e.target.value }))
-  }
-  fullWidth
-  InputLabelProps={{
-    shrink: true,
-    sx: {
-      position: "absolute",
-      top: "-6px",
-      right: "12px",
-      transform: "none",
-      backgroundColor: "#fff",
-      px: 0.5,
-      fontSize: "0.75rem",
-    },
-  }}
-  inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
->
-  <MenuItem value="member60">חבר מרכז 60+</MenuItem>
-  <MenuItem value="registeredUser">משתמש רשום</MenuItem>
-</TextField>
+          {/* register restriction*/}
+          <TextField
+            select
+            label="תנאי הרשמה"
+            value={form.registrationCondition || ""}
+            onChange={(e) =>
+              onFormChange((f) => ({ ...f, registrationCondition: e.target.value }))
+            }
+            fullWidth
+            InputLabelProps={{
+              shrink: true,
+              sx: {
+                position: "absolute",
+                top: "-6px",
+                right: "12px",
+                transform: "none",
+                backgroundColor: "#fff",
+                px: 0.5,
+                fontSize: "0.75rem",
+              },
+            }}
+            inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
+          >
+            <MenuItem value="member60">חבר מרכז 60+</MenuItem>
+            <MenuItem value="registeredUser">משתמש רשום</MenuItem>
+          </TextField>
 
 
           {/* look for address */}
@@ -952,7 +945,7 @@ const togglePaid = async (phone) => {
               if (e.key === "Enter" && addressQuery.trim()) {
                 const results = await geoProvider.search({ query: addressQuery });
                 if (results.length > 0) {
-                  const typedAddress = addressQuery; 
+                  const typedAddress = addressQuery;
                   const { x: lng, y: lat } = results[0];
 
                   // Keep the input unchanged and save only the user input to form state
@@ -981,23 +974,23 @@ const togglePaid = async (phone) => {
               },
             }}
             inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
-        />
+          />
 
-{/* update map state */}
-<MapContainer
-  center={[31.7683, 35.2137]}
-  zoom={13}
-  style={{ height: 300, width: "100%", marginBottom: 16 }}
-  whenCreated={(map) => (mapRef.current = map)}
->
-  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-  <Recenter center={mapCenter} zoom={mapZoom} />
-  {form.location?.lat && (
-    <Marker position={[form.location.lat, form.location.lng]}>
-      <Popup>{form.location.address}</Popup>
-    </Marker>
-  )}
-</MapContainer>
+          {/* update map state */}
+          <MapContainer
+            center={[31.7683, 35.2137]}
+            zoom={13}
+            style={{ height: 300, width: "100%", marginBottom: 16 }}
+            whenCreated={(map) => (mapRef.current = map)}
+          >
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            <Recenter center={mapCenter} zoom={mapZoom} />
+            {form.location?.lat && (
+              <Marker position={[form.location.lat, form.location.lng]}>
+                <Popup>{form.location.address}</Popup>
+              </Marker>
+            )}
+          </MapContainer>
 
 
           <FormControlLabel
@@ -1142,92 +1135,99 @@ const togglePaid = async (phone) => {
       </Dialog>
 
       {/* dialog for participants */}
-     <Dialog
-   open={Boolean(selAct)}
-   onClose={() => {
-     setSelAct(null);
-     setRegistrantsFilter("");
-   }}
+      <Dialog
+        open={Boolean(selAct)}
+        onClose={() => {
+          setSelAct(null);
+          setRegistrantsFilter("");
+        }}
         fullWidth
         maxWidth="sm"
       >
         <DialogTitle sx={{ textAlign: "right" }}>
           נרשמים – {selAct?.name}
         </DialogTitle>
-<DialogContent dividers sx={{ textAlign: "right" }}>
-  {/* 1. search field */}
-  {selAct?.participants?.length > 0 && (
-    <TextField
-      placeholder="חפש נרשם"
-      value={registrantsFilter}
-      onChange={(e) => setRegistrantsFilter(e.target.value)}
-      fullWidth
-      sx={{ mb: 2 }}
-      inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
-    />
-  )}
-
-  {/* 2. display search results */}
-  {filteredParticipants.length > 0 ? (
-    <>
-      {/* 2a. Checkbox column header “Paid?” only for paid activities */}
-      {(selAct?.priceMember60 > 0 || selAct?.priceRegular > 0) && (
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{ mb: 1 }}
-        >
-          <span style={{ flex: 1 }} />
-          <Typography sx={{ fontWeight: "bold", fontSize: 15 }}>
-            שולם?
-          </Typography>
-          <span style={{ width: 60 }} />
-        </Stack>
-      )}
-
-      {/* 2b. list of filtered participants */}
-      {filteredParticipants.map((p) => (
-        <Stack
-          key={p.phone}
-          direction="row"
-          alignItems="center"
-          justifyContent="flex-end"
-          spacing={1}
-          sx={{ mb: 1 }}
-        >
-          <span style={{ textAlign: "right", flex: 1 }}>
-            {users[p.phone] || p.phone}
-          </span>
-          {(selAct?.priceMember60 > 0 || selAct?.priceRegular > 0) && (
-            <Checkbox
-              checked={p.paid || false}
-              onChange={() => togglePaid(p.phone)}
-              inputProps={{ "aria-label": "שולם?" }}
+        <DialogContent dividers sx={{ textAlign: "right" }}>
+          {/* 1. search field */}
+          {selAct?.participants?.length > 0 && (
+            <TextField
+              placeholder="חפש נרשם"
+              value={registrantsFilter}
+              onChange={(e) => setRegistrantsFilter(e.target.value)}
+              fullWidth
+              sx={{ mb: 2 }}
+              inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
             />
           )}
-          <IconButton onClick={() => kickParticipant(p.phone)}>
-            <DeleteIcon />
-          </IconButton>
-        </Stack>
-      ))}
-    </>
-  ) : (
-    /* 3. no results */
-    "אין תוצאות"
-  )}
-</DialogContent>
 
-    <DialogActions sx={{ justifyContent: "flex-end" }}>
-  <Button
-    onClick={() => {
-      setSelAct(null);
-      setRegistrantsFilter("");
-    }}
-  >
-    סגור
-  </Button>
-</DialogActions>
+          {/* 2. display search results */}
+          {filteredParticipants.length > 0 ? (
+            <>
+              {/* 2a. Checkbox column header “Paid?” only for paid activities */}
+              {(selAct?.priceMember60 > 0 || selAct?.priceRegular > 0) && (
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  sx={{ mb: 1 }}
+                >
+                  <span style={{ flex: 1 }} />
+                  <Typography sx={{ fontWeight: "bold", fontSize: 15 }}>
+                    שולם?
+                  </Typography>
+                  <span style={{ width: 60 }} />
+                </Stack>
+              )}
+
+              {/* 2b. list of filtered participants */}
+              {filteredParticipants.map((p) => (
+                <Stack
+                  key={p.phone}
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="flex-end"
+                  spacing={1}
+                  sx={{ mb: 1 }}
+                >
+                  <span style={{ textAlign: "right", flex: 1 }}>
+                    {users[p.phone] || p.phone}
+                  </span>
+                  {(selAct?.priceMember60 > 0 || selAct?.priceRegular > 0) && (
+                    <Checkbox
+                      checked={p.paid || false}
+                      onChange={() => togglePaid(p.phone)}
+                      inputProps={{ "aria-label": "שולם?" }}
+                    />
+                  )}
+                  <IconButton onClick={() => kickParticipant(p.phone)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </Stack>
+              ))}
+            </>
+          ) : (
+            /* 3. no results */
+            "אין תוצאות"
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ justifyContent: "space-between" }}>
+          <Button
+            onClick={exportParticipantsToExcel}
+            variant="outlined"
+            disabled={!selAct?.participants || selAct.participants.length === 0}
+          >
+            ייצוא לאקסל
+          </Button>
+          <Button
+            onClick={() => {
+              setSelAct(null);
+              setRegistrantsFilter("");
+            }}
+          >
+            סגור
+          </Button>
+        </DialogActions>
 
       </Dialog>
     </Container>

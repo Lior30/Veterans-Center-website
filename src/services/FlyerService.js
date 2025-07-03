@@ -1,15 +1,24 @@
-import { db, storage } from "../firebase";
 import {
-  collection, addDoc, getDocs, query, orderBy,
-  doc, deleteDoc, writeBatch, serverTimestamp, Timestamp, updateDoc
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp, Timestamp, updateDoc,
+  writeBatch
 } from "firebase/firestore";
 import {
-  ref, uploadBytes, getDownloadURL, deleteObject
+  deleteObject,
+  getDownloadURL,
+  ref, uploadBytes
 } from "firebase/storage";
-import { onSnapshot } from "firebase/firestore";
+import { db, storage } from "../firebase";
 
-const FLYERS_COL   = "flyers";
-const ONE_YEAR_MS  = 365 * 24 * 60 * 60 * 1000;
+const FLYERS_COL = "flyers";
+const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
 /* helper */
 function toTimestamp(dateStr, fallback) {
@@ -23,15 +32,15 @@ const FlyerService = {
   async uploadFlyer({ file, name, startDate, endDate, activityId }) {
     const storageRef = ref(storage, `flyers/${Date.now()}_${file.name}`);
     await uploadBytes(storageRef, file, { contentType: file.type });
-    const fileUrl    = await getDownloadURL(storageRef);
+    const fileUrl = await getDownloadURL(storageRef);
     const storagePath = storageRef.fullPath;
 
-    const snap      = await getDocs(collection(db, FLYERS_COL));
+    const snap = await getDocs(collection(db, FLYERS_COL));
     const nextOrder = snap.size;
 
-    const nowTS   = serverTimestamp();
+    const nowTS = serverTimestamp();
     const startTS = toTimestamp(startDate, nowTS);
-    const endTS   = toTimestamp(
+    const endTS = toTimestamp(
       endDate,
       Timestamp.fromMillis(Date.now() + ONE_YEAR_MS)
     );
@@ -45,7 +54,7 @@ const FlyerService = {
       startDate: startTS,
       endDate: endTS,
       filename: file.name,
-      activityId,    
+      activityId,
     });
   },
 
@@ -63,7 +72,7 @@ const FlyerService = {
     const all = await this.getFlyers();
     return all.filter((f) => {
       const start = f.startDate?.toDate?.() ?? new Date(0);
-      const end   = f.endDate?.toDate?.() ?? new Date("9999-12-31");
+      const end = f.endDate?.toDate?.() ?? new Date("9999-12-31");
       return start <= now && now <= end;
     });
   },

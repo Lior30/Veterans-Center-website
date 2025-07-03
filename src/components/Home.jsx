@@ -1,33 +1,33 @@
 // src/components/Home.jsx
-import React, { useState, useEffect } from "react";
 import {
   Box,
-  Container,
-  Grid,
+  Button,
   Card,
   CardActionArea,
   CardContent,
+  Container,
+  Grid,
   Typography,
-  Button,
-  useTheme,
   useMediaQuery,
+  useTheme,
 } from "@mui/material";
+import { useEffect, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 
-import EventIcon        from "@mui/icons-material/Event";
-import LocalOfferIcon   from "@mui/icons-material/LocalOffer";
-import PollIcon         from "@mui/icons-material/Poll";
-import MessageIcon      from "@mui/icons-material/Message";
-import GroupIcon        from "@mui/icons-material/Group";
-import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
-import BarChartIcon     from "@mui/icons-material/BarChart";
-import ContactMailIcon  from "@mui/icons-material/ContactMail";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import ContactMailIcon from "@mui/icons-material/ContactMail";
+import EventIcon from "@mui/icons-material/Event";
+import GroupIcon from "@mui/icons-material/Group";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import MessageIcon from "@mui/icons-material/Message";
+import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
+import PollIcon from "@mui/icons-material/Poll";
 
 import MessageService from "../services/MessageService";
 
 export default function Home() {
-  const theme    = useTheme();
+  const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [messages, setMessages] = useState([]);
@@ -38,14 +38,14 @@ export default function Home() {
   }, []);
 
   const adminItems = [
-    { label: "ניהול פעילויות",    icon: <EventIcon        fontSize="large" />, to: "/activities"       },
-    { label: "ניהול פלאיירים",    icon: <LocalOfferIcon   fontSize="large" />, to: "/flyers"           },
-    { label: "ניהול סקרים",       icon: <PollIcon         fontSize="large" />, to: "/surveys"          },
-    { label: "ניהול הודעות",      icon: <MessageIcon      fontSize="large" />, to: "/messages"         },
-    { label: "ניהול משתמשים",     icon: <GroupIcon        fontSize="large" />, to: "/manage-users"     },
-    { label: "תמונות אווירה",    icon: <PhotoLibraryIcon fontSize="large" />, to: "/HomepageImages"   },
-    { label: "ניתוח נתונים",      icon: <BarChartIcon     fontSize="large" />, to: "/Data-analysis"    },
-    { label: "פרטי קשר",         icon: <ContactMailIcon  fontSize="large" />, to: "/contact-details"  },
+    { label: "ניהול פעילויות", icon: <EventIcon fontSize="large" />, to: "/activities" },
+    { label: "ניהול פלאיירים", icon: <LocalOfferIcon fontSize="large" />, to: "/flyers" },
+    { label: "ניהול סקרים", icon: <PollIcon fontSize="large" />, to: "/surveys" },
+    { label: "ניהול הודעות", icon: <MessageIcon fontSize="large" />, to: "/messages" },
+    { label: "ניהול משתמשים", icon: <GroupIcon fontSize="large" />, to: "/manage-users" },
+    { label: "תמונות אווירה", icon: <PhotoLibraryIcon fontSize="large" />, to: "/HomepageImages" },
+    { label: "ניתוח נתונים", icon: <BarChartIcon fontSize="large" />, to: "/Data-analysis" },
+    { label: "פרטי קשר", icon: <ContactMailIcon fontSize="large" />, to: "/contact-details" },
   ];
 
   const rows = [adminItems.slice(0, 4), adminItems.slice(4, 8)];
@@ -101,7 +101,7 @@ export default function Home() {
               component={RouterLink}
               to="/"
               startIcon={<ArrowBackIosNewIcon />}
-              sx={{ 
+              sx={{
                 fontWeight: 800,  // Increased from 600 to 700 (bold)
                 backgroundColor: 'white',
                 color: '#6A2576'  // Explicit black text for maximum contrast

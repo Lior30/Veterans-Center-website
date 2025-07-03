@@ -1,42 +1,42 @@
 // src/App.jsx
-import React, { useEffect } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
 import "leaflet/dist/leaflet.css";
+import { useEffect } from "react";
+import { Route, Routes, useLocation } from "react-router-dom";
 
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db, auth } from "./firebase";   
+import { auth, db } from "./firebase";
 
-import PrivateRoute from './components/PrivateRoute';
-import NavBar from "./components/NavBar.jsx";
-import LandingPage from "./LandingPage/LandingPage.jsx";
-import IdentifyPage from "./components/IdentificationPage.jsx";
-import Home from "./components/Home.jsx";
-import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import "slick-carousel/slick/slick.css";
+import Home from "./components/Home.jsx";
+import IdentifyPage from "./components/IdentificationPage.jsx";
+import NavBar from "./components/NavBar.jsx";
+import PrivateRoute from './components/PrivateRoute';
+import LandingPage from "./LandingPage/LandingPage.jsx";
 
 import ActivitiesContainer from "./components/ActivitiesContainer.jsx";
 import FlyerManager from "./components/FlyerManager.jsx";
 import HomepageImagesContainer from "./components/HomepageImagesContainer.jsx";
 
-import Surveys from "./components/Surveys.jsx";
-import CreateSurvey from "./components/CreateSurveyContainer.jsx";
-import SurveyResultsList from "./components/SurveyResultsList.jsx";
-import SurveyResultsDetail from "./components/SurveyResultsDetail.jsx";
-import SurveyAnalysisDetail from "./components/SurveyAnalysisDetail";
-import SurveyListContainer from "./components/SurveyListContainer.jsx";
-import SurveyDetailContainer from "./components/SurveyDetailContainer.jsx";
 import CreateSurveyContainer from "./components/CreateSurveyContainer";
+import CreateSurvey from "./components/CreateSurveyContainer.jsx";
+import SurveyAnalysisDetail from "./components/SurveyAnalysisDetail";
+import SurveyDetailContainer from "./components/SurveyDetailContainer.jsx";
+import SurveyListContainer from "./components/SurveyListContainer.jsx";
+import SurveyResultsDetail from "./components/SurveyResultsDetail.jsx";
+import SurveyResultsList from "./components/SurveyResultsList.jsx";
+import Surveys from "./components/Surveys.jsx";
 
-import ManageMessages from "./components/ManageMessages.jsx";
 import CreateMessage from "./components/CreateMessageContainer.jsx";
+import ManageMessages from "./components/ManageMessages.jsx";
 import MessageListContainer from "./components/MessageListContainer.jsx";
 import MessageRepliesContainer from "./components/MessageRepliesContainer.jsx";
 
-import PublicMessageBoardContainer from "./components/PublicMessageBoardContainer.jsx";
-import ManageUsersContainer from "./components/ManageUsersContainer.jsx";
 import AnalyticsDashboard from "./Analytic/AnalyticsDashboard";
-import TagsDetailsPage    from "./Analytic/TagsDetailsPage";
 import SurveyDetailsPage from './Analytic/SurveyDetailsPage';
+import TagsDetailsPage from "./Analytic/TagsDetailsPage";
+import ManageUsersContainer from "./components/ManageUsersContainer.jsx";
+import PublicMessageBoardContainer from "./components/PublicMessageBoardContainer.jsx";
 
 import ContactDetailsAdmin from "./components/ContactDetailsAdmin.jsx";
 
@@ -45,7 +45,7 @@ export default function App({ toggleTheme, mode }) {
   const hiddenRoutes = ["/", "/identificationPage"];
   const showNav = !hiddenRoutes.includes(pathname);
 
-    useEffect(() => {
+  useEffect(() => {
     addDoc(collection(db, "visits"), {
       timestamp: serverTimestamp(),          //  server timestamp
       uid: auth?.currentUser?.uid ?? null,   //  user ID (if logged in)
@@ -61,7 +61,7 @@ export default function App({ toggleTheme, mode }) {
         {/* ✅ Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/identificationPage" element={<IdentifyPage />} />
-          
+
         <Route path="/surveys/list" element={<SurveyListContainer />} />
         <Route path="/surveys/take/:id" element={<SurveyDetailContainer />} />
         <Route path="/messages/board" element={<PublicMessageBoardContainer />} />
@@ -83,11 +83,11 @@ export default function App({ toggleTheme, mode }) {
           <PrivateRoute requireAdmin={true}><AnalyticsDashboard /></PrivateRoute>
         } />
         <Route path="/tags-details" element={
-          <PrivateRoute requireAdmin={true}><TagsDetailsPage/></PrivateRoute>
-       }/>
+          <PrivateRoute requireAdmin={true}><TagsDetailsPage /></PrivateRoute>
+        } />
         <Route path="/survey-details" element={
-          <PrivateRoute requireAdmin={true}><SurveyDetailsPage/></PrivateRoute>
-       }/>
+          <PrivateRoute requireAdmin={true}><SurveyDetailsPage /></PrivateRoute>
+        } />
 
         <Route path="/HomepageImages" element={
           <PrivateRoute requireAdmin={true}><HomepageImagesContainer /></PrivateRoute>

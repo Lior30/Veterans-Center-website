@@ -1,16 +1,16 @@
 // src/components/IdentifyPage.jsx
-import React, { useState, useEffect } from 'react';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import {
-  Container,
-  Typography,
-  TextField,
-  Button,
   Alert,
-  CircularProgress
+  Button,
+  CircularProgress,
+  Container,
+  TextField,
+  Typography
 } from '@mui/material';
-import UserService from '../services/UserService';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { useEffect, useState } from 'react';
 import ContactService from '../services/ContactService';
+import UserService from '../services/UserService';
 
 const auth = getAuth();
 
@@ -65,8 +65,8 @@ export default function IdentifyPage({ onSuccess }) {
         throw new Error('User not found in database and removed from auth');
       }
       else {
-        sessionStorage.setItem("userPhone", trimmed);       
-        sessionStorage.setItem("justIdentified", "true");   
+        sessionStorage.setItem("userPhone", trimmed);
+        sessionStorage.setItem("justIdentified", "true");
       }
 
       setLoading(false);

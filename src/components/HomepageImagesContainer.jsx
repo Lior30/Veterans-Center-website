@@ -1,23 +1,17 @@
 //HomepageImagesContainer.jsx 
-import React, { useState, useEffect, useRef } from "react";
-import HomepageImagesDesign from "./HomepageImagesDesign.jsx";
-import ActionFeedbackDialog from "./ActionFeedbackDialog";
+import {
+  Box,
+  Container,
+  Stack,
+  Typography,
+  useMediaQuery,
+  useTheme
+} from "@mui/material";
+import { useEffect, useRef, useState } from "react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import BannerService from "../services/BannerService.js";
-import {
-  Container,
-  Box,
-  Typography,
-  Stack,
-  useTheme,
-  useMediaQuery,
-  Dialog,
-  DialogContent,
-  DialogActions,
-  DialogTitle,
-  Button,
-} from "@mui/material";
-import { CheckCircle, Error } from "@mui/icons-material";
+import ActionFeedbackDialog from "./ActionFeedbackDialog";
+import HomepageImagesDesign from "./HomepageImagesDesign.jsx";
 
 
 export default function HomepageImagesContainer() {
@@ -27,7 +21,7 @@ export default function HomepageImagesContainer() {
   const [banners, setBanners] = useState([]);
   const dragIndexRef = useRef(null);
 
-  const [message, setMessage] = useState({ open: false, text: '', type: 'success'});
+  const [message, setMessage] = useState({ open: false, text: '', type: 'success' });
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [bannerToDelete, setBannerToDelete] = useState(null);
 
@@ -109,30 +103,30 @@ export default function HomepageImagesContainer() {
 
 
   const handleOrderChange = async (id, newOrder) => {
-  const curr = banners.find((b) => b.id === id);
-  const other = banners.find((b) => b.order === newOrder);
+    const curr = banners.find((b) => b.id === id);
+    const other = banners.find((b) => b.order === newOrder);
 
-  if (!curr || !other || curr.id === other.id) return;
+    if (!curr || !other || curr.id === other.id) return;
 
-  try {
-    await BannerService.updateBanner(curr.id, { order: newOrder });
-    await BannerService.updateBanner(other.id, { order: curr.order });
+    try {
+      await BannerService.updateBanner(curr.id, { order: newOrder });
+      await BannerService.updateBanner(other.id, { order: curr.order });
 
-    // Update local state (optional: for speed before reload)
-    setBanners((prev) =>
-      prev.map((b) =>
-        b.id === curr.id
-          ? { ...b, order: newOrder }
-          : b.id === other.id
-          ? { ...b, order: curr.order }
-          : b
-      )
-    );
-  } catch (err) {
-    alert("שגיאה בשמירת הסדר: " + err.code);
-    load();
-  }
-};
+      // Update local state (optional: for speed before reload)
+      setBanners((prev) =>
+        prev.map((b) =>
+          b.id === curr.id
+            ? { ...b, order: newOrder }
+            : b.id === other.id
+              ? { ...b, order: curr.order }
+              : b
+        )
+      );
+    } catch (err) {
+      alert("שגיאה בשמירת הסדר: " + err.code);
+      load();
+    }
+  };
 
   return (
     <Box

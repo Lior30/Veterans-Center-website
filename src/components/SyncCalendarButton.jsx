@@ -1,8 +1,8 @@
 // src/components/SyncCalendarButton.jsx
-import React, { useState } from "react";
-import { Button, CircularProgress } from "@mui/material";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import { Button, CircularProgress } from "@mui/material";
 import { saveAs } from "file-saver";
+import { useState } from "react";
 
 const pad = (n) => String(n).padStart(2, "0");
 const toICSDate = (date) => {

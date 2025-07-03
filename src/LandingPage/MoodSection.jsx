@@ -1,7 +1,6 @@
 // src/components/MoodSection.jsx
-import React, { useState, useEffect } from "react";
-import { Box, Container, Typography, useTheme, useMediaQuery, Fade } from "@mui/material";
-import SectionTitle from "./SectionTitle";
+import { Box, Container, Fade, Typography, useMediaQuery, useTheme } from "@mui/material";
+import { useEffect, useState } from "react";
 import BannerService from "../services/BannerService";
 
 export default function MoodSection() {
@@ -11,14 +10,14 @@ export default function MoodSection() {
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
 
-  
+
   useEffect(() => {
     BannerService.getBanners()
       .then((items) => setBanners(items))
       .catch((err) => console.error("Error loading banners:", err));
   }, []);
 
-  
+
   useEffect(() => {
     if (!banners.length) return;
     const displayDuration = 5000;    // display every 5 seconds
@@ -53,7 +52,7 @@ export default function MoodSection() {
   return (
     <Box component="section" sx={{ py: { xs: 4, sm: 6 }, bgcolor: "#fafafa" }}>
       <Container maxWidth="md" sx={{ position: "relative" }}>
-       
+
         <Fade in={visible} timeout={800}>
           <Box
             sx={{

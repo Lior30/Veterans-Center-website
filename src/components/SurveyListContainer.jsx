@@ -1,6 +1,6 @@
 // src/components/SurveyListContainer.jsx
-import React, { useState, useEffect } from "react";
-import { collection, getDocs, doc, deleteDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs } from "firebase/firestore";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../firebase.js";
 import SurveyListDesign from "./SurveyListDesign.jsx";

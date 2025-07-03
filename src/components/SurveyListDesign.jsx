@@ -1,14 +1,14 @@
 // src/components/SurveyListDesign.jsx
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import { TextField } from "@mui/material";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function SurveyListDesign({
   surveys,
   onDeleteSurvey,
   onViewResponses,
   onAnalyze,
-}){
+}) {
   console.log("✅ SurveyListDesign rendering", surveys);
   const [search, setSearch] = useState("");
 
@@ -19,8 +19,8 @@ export default function SurveyListDesign({
   return (
     <div style={{ padding: 40, textAlign: "center" }}>
       <div style={{ backgroundColor: 'red', color: 'white', padding: '8px' }}>
-  ✅ SurveyListDesign.jsx is active
-</div>
+        ✅ SurveyListDesign.jsx is active
+      </div>
 
       <h2>סקרים ותשובות</h2>
 

@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
-import FlyerUploader from "./FlyerUploaderArea.jsx";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material";
+import { useEffect, useRef, useState } from "react";
 import FlyerService from "../services/FlyerService.js";
 import ActionFeedbackDialog from "./ActionFeedbackDialog";
 import ConfirmDialog from "./ConfirmDialog";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from "@mui/material";
+import FlyerUploader from "./FlyerUploaderArea.jsx";
 
 export default function FlyerManager() {
   const [flyers, setFlyers] = useState([]);
@@ -191,8 +191,8 @@ export default function FlyerManager() {
                 <button
                   onClick={() => {
                     setEditingFlyer(flyer);
-                    setNewStartDate(flyer.startDate?.toDate ? flyer.startDate.toDate().toISOString().substr(0,10) : "");
-                    setNewEndDate(flyer.endDate?.toDate ? flyer.endDate.toDate().toISOString().substr(0,10) : "");
+                    setNewStartDate(flyer.startDate?.toDate ? flyer.startDate.toDate().toISOString().substr(0, 10) : "");
+                    setNewEndDate(flyer.endDate?.toDate ? flyer.endDate.toDate().toISOString().substr(0, 10) : "");
                   }}
                   style={{
                     background: "#1976d2",

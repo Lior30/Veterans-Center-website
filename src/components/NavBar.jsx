@@ -1,20 +1,17 @@
 // src/components/NavBar.jsx
-import React from "react";
-import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import {
+  ArrowBackIos,
+  Home as HomeIcon
+} from "@mui/icons-material";
 import {
   AppBar,
-  Toolbar,
   Box,
   Button,
   IconButton,
+  Toolbar,
   useTheme,
 } from "@mui/material";
-import {
-  Brightness4,
-  Brightness7,
-  ArrowBackIos,
-  Home as HomeIcon,
-} from "@mui/icons-material";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
 export default function NavBar({ toggleTheme, mode }) {
   const navigate = useNavigate();
@@ -138,5 +135,5 @@ export default function NavBar({ toggleTheme, mode }) {
 
       </Toolbar>
     </AppBar>
-  );
+  );
 }

@@ -1,10 +1,9 @@
-import React from "react";
 import {
+  Button,
   Container,
   Stack,
-  Typography,
   TextField,
-  Button
+  Typography
 } from "@mui/material";
 
 export default function ReplyDesign({
@@ -60,4 +59,5 @@ export default function ReplyDesign({
         </Button>
       </Stack>
     </Container>
-); }
+  );
+}

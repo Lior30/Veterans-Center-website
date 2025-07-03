@@ -1,16 +1,16 @@
 // src/components/SurveyResultsList.jsx
-import CtaButton from "../LandingPage/CtaButton";
-import React, { useState, useEffect } from "react";
+import { TextField } from "@mui/material";
 import {
   collection,
-  getDocs,
   deleteDoc,
   doc,
   getDoc,
+  getDocs,
 } from "firebase/firestore";
-import { db } from "../firebase.js";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { TextField } from "@mui/material";
+import { db } from "../firebase.js";
+import CtaButton from "../LandingPage/CtaButton";
 
 export default function SurveyResultsList() {
   const [surveys, setSurveys] = useState([]);

@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from "react";
+import { Box, Button, TextField } from "@mui/material";
 import {
-  collection,
   addDoc,
-  serverTimestamp,
+  arrayUnion,
+  collection,
   doc,
   getDoc,
+  serverTimestamp,
   updateDoc,
-  arrayUnion,
 } from "firebase/firestore";
+import { useEffect, useState } from "react";
 import { db } from "../firebase.js";
-import { Box, TextField, Button } from "@mui/material";
 
 function ReplyContainer({ messageId, onClose }) {
   const [replyText, setReplyText] = useState("");

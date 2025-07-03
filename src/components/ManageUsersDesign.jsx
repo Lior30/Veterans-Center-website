@@ -1,44 +1,42 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import * as XLSX from "xlsx";           
-import { saveAs } from "file-saver";
-import { db, auth, firebaseConfig  } from "../firebase"; 
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
- deleteUser  } from "firebase/auth";
-import { initializeApp, deleteApp, getApp } from "firebase/app";
-import { generateEmailPassword } from "./IdentificationPage";
-import ActionFeedbackDialog from "./ActionFeedbackDialog";
-import ConfirmDialog from "../components/ConfirmDialog";
-import { collection, collectionGroup, doc, setDoc, getDoc, getDocs, query, where, updateDoc, deleteDoc, writeBatch } from "firebase/firestore";
-import UserService from "../services/UserService";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import EditIcon   from "@mui/icons-material/Edit";
-import CancelIcon from "@mui/icons-material/Cancel";
-import { CheckCircle, Error } from "@mui/icons-material";
 import CloseIcon from "@mui/icons-material/Close";
+import DownloadIcon from "@mui/icons-material/Download";
+import EditIcon from "@mui/icons-material/Edit";
 import {
   Box,
   Button,
-  Typography,
-  TextField,
   Dialog,
-  DialogTitle,
   DialogContent,
+  DialogTitle,
   IconButton,
-  DialogActions,
-  Tabs, Tab,
-  MenuItem
-  
+  MenuItem,
+  Tab,
+  Tabs,
+  TextField,
+  Typography
 } from "@mui/material";
-import DownloadIcon from "@mui/icons-material/Download";
+import { saveAs } from "file-saver";
+import { deleteApp, getApp, initializeApp } from "firebase/app";
+import {
+  createUserWithEmailAndPassword,
+  getAuth
+} from "firebase/auth";
+import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, updateDoc, where, writeBatch } from "firebase/firestore";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import * as XLSX from "xlsx";
+import ConfirmDialog from "../components/ConfirmDialog";
+import { db, firebaseConfig } from "../firebase";
+import UserService from "../services/UserService";
+import ActionFeedbackDialog from "./ActionFeedbackDialog";
+import { generateEmailPassword } from "./IdentificationPage";
 
 
 
-  const palette = {
-    primary:  "#6c5c94",      
-    primaryHL:"#6c5c94",      
-    bgHeader:"#f7f5fb",
-    border:  "#e3dfff",
-  }
+const palette = {
+  primary: "#6c5c94",
+  primaryHL: "#6c5c94",
+  bgHeader: "#f7f5fb",
+  border: "#e3dfff",
+}
 
 async function fixMissingUserFields() {
   const snap = await getDocs(collection(db, "users"));
@@ -58,16 +56,16 @@ async function fixMissingUserFields() {
     }
   }
 
-   await Promise.all(updates);
-    if (updates.length > 0) {
-      setMessage({
-        open: true,
-        type: 'success',
-        text: 'השדות החסרים עודכנו בהצלחה'
-      });
-    }
+  await Promise.all(updates);
+  if (updates.length > 0) {
+    setMessage({
+      open: true,
+      type: 'success',
+      text: 'השדות החסרים עודכנו בהצלחה'
+    });
+  }
 
-}                           
+}
 
 
 fixMissingUserFields();
@@ -76,7 +74,7 @@ fixMissingUserFields();
 
 function formatDate(dateValue) {
   const d = new Date(dateValue);
-  
+
   return d.toLocaleString('he-IL', {
     day: '2-digit',
     month: '2-digit',
@@ -111,82 +109,82 @@ function ensureUserId(u) {
 
 function UserDetails({ user, filter, collapsible = true }) {
   const isActivity = filter === "activity";
-  const isSurvey   = filter === "survey";
-  const isReplies  = filter === "replies";
-  const isBoth     = filter === "both";
+  const isSurvey = filter === "survey";
+  const isReplies = filter === "replies";
+  const isBoth = filter === "both";
   const [openCats, setOpenCats] = React.useState({});
   const toggle = k => setOpenCats(p => ({ ...p, [k]: !p[k] }));
 
   /* all*/
   const CATS = [
-    { key: "activity", label:"פעילויות", names: user.activities, dates: user.activities_date },
-    { key: "survey", label:"סקרים" , names: user.survey,     dates: user.survey_date    },
-    { key: "replies", label:"הודעות" ,   names: user.replies,    dates: user.replies_date   },
+    { key: "activity", label: "פעילויות", names: user.activities, dates: user.activities_date },
+    { key: "survey", label: "סקרים", names: user.survey, dates: user.survey_date },
+    { key: "replies", label: "הודעות", names: user.replies, dates: user.replies_date },
   ].filter(c => {
     if (isActivity) return c.key === "activity";
-    if (isSurvey)   return c.key === "survey";
-    if (isReplies)  return c.key === "replies";
-    if (isBoth)     return c.key === "activity" || c.key === "survey";
-    return true;                     
+    if (isSurvey) return c.key === "survey";
+    if (isReplies) return c.key === "replies";
+    if (isBoth) return c.key === "activity" || c.key === "survey";
+    return true;
   });
 
-return (
-  <div style={{ direction: "rtl" }}>
-    {CATS.map(cat => (
-      <div key={cat.key} style={{ marginBottom: 4 }}>
+  return (
+    <div style={{ direction: "rtl" }}>
+      {CATS.map(cat => (
+        <div key={cat.key} style={{ marginBottom: 4 }}>
 
-        {/*category headline */}
-        {collapsible && (
-          <button
-            onClick={() => toggle(cat.key)}
-            style={{
-              border: "none",
-              background: "none",
-              cursor: "pointer",
-              fontWeight: "bold",
-              width: "100%",
-              textAlign: "right",
-              direction: "rtl",
-              padding: 0,
-            }}
-          >
-            {openCats[cat.key] ? "▼" : "▶"} {cat.label}
-          </button>
-        )}
+          {/*category headline */}
+          {collapsible && (
+            <button
+              onClick={() => toggle(cat.key)}
+              style={{
+                border: "none",
+                background: "none",
+                cursor: "pointer",
+                fontWeight: "bold",
+                width: "100%",
+                textAlign: "right",
+                direction: "rtl",
+                padding: 0,
+              }}
+            >
+              {openCats[cat.key] ? "▼" : "▶"} {cat.label}
+            </button>
+          )}
 
-        {/* open always if there are members */}
-        {(collapsible ? openCats[cat.key] : true) && (
-          <ul
-            style={{
-              margin: "4px 0 0",
-              padding: "0 16px 0 0",
-              listStyle: "disc",
-              direction: "rtl",
-              textAlign: "right",
-            }}
-          >
-            {(cat.names || []).map((name, i) => (
-              <li key={i}>
-                {name}
-                {cat.dates?.[i] && " — " + formatDate(cat.dates[i])}
-              </li>
-            ))}
-            {(!cat.names || cat.names.length === 0) && <li>אין נתונים</li>}
-          </ul>
-        )}
-      </div>
-    ))}
-  </div>
-);
+          {/* open always if there are members */}
+          {(collapsible ? openCats[cat.key] : true) && (
+            <ul
+              style={{
+                margin: "4px 0 0",
+                padding: "0 16px 0 0",
+                listStyle: "disc",
+                direction: "rtl",
+                textAlign: "right",
+              }}
+            >
+              {(cat.names || []).map((name, i) => (
+                <li key={i}>
+                  {name}
+                  {cat.dates?.[i] && " — " + formatDate(cat.dates[i])}
+                </li>
+              ))}
+              {(!cat.names || cat.names.length === 0) && <li>אין נתונים</li>}
+            </ul>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 
 };
 
 /* helper:for phone number updates */
 async function patchPhoneInRefs(oldDigits, newDigits) {
   const changePhone = async (coll) => {
-    const q    = query(collection(db, coll), where("phone", "==", oldDigits));
+    const q = query(collection(db, coll), where("phone", "==", oldDigits));
     const snap = await getDocs(q);
-    const bat  = writeBatch(db);
+    const bat = writeBatch(db);
     snap.forEach(d => bat.update(d.ref, { phone: newDigits }));
     await bat.commit();
   };
@@ -197,10 +195,10 @@ async function patchPhoneInRefs(oldDigits, newDigits) {
   /* replies */
   const msgs = await getDocs(collection(db, "messages"));
   for (const m of msgs.docs) {
-    const q    = query(collection(db, "messages", m.id, "replies"),
-                       where("phone", "==", oldDigits));
+    const q = query(collection(db, "messages", m.id, "replies"),
+      where("phone", "==", oldDigits));
     const snap = await getDocs(q);
-    const bat  = writeBatch(db);
+    const bat = writeBatch(db);
     snap.forEach(d => bat.update(d.ref, { phone: newDigits }));
     await bat.commit();
   }
@@ -228,36 +226,36 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   const [phoneTouched, setPhoneTouched] = useState(false);
   const phoneError = UserService.getPhoneError(newPhone);
   const isPhoneValid = phoneError === null;
-  const [firstTouched,    setFirstTouched]    = useState(false);
-  const [lastTouched,     setLastTouched]     = useState(false);
+  const [firstTouched, setFirstTouched] = useState(false);
+  const [lastTouched, setLastTouched] = useState(false);
   const isRepliesTab = filter === "replies";
 
   const showActions = ["all", "activity", "survey", "replies", "both"]
-  .includes(filter); 
- 
+    .includes(filter);
 
-  const isActivity  = filter === "activity";
-  const isSurvey    = filter === "survey";
-  const isBoth      = false;  
+
+  const isActivity = filter === "activity";
+  const isSurvey = filter === "survey";
+  const isBoth = false;
   const [openRows, setOpenRows] = useState(new Set());
-  const [editUser,  setEditUser]  = useState(null);
+  const [editUser, setEditUser] = useState(null);
   const [openCats, setOpenCats] = useState({});
   const toggle = k => setOpenCats(p => ({ ...p, [k]: !p[k] }));
-  const isReplies    = filter === "replies";
-  const [showExport, setShowExport]   = useState(false);
-  const [exportType, setExportType]   = useState("all");
+  const isReplies = filter === "replies";
+  const [showExport, setShowExport] = useState(false);
+  const [exportType, setExportType] = useState("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(new Set());
-  const [selectMode, setSelectMode] = useState(false); 
-  const [userType, setUserType] = useState("");       
+  const [selectMode, setSelectMode] = useState(false);
+  const [userType, setUserType] = useState("");
   const [address, setAddress] = useState("");
   const [idNumber, setIdNumber] = useState("");
   const [notes, setNotes] = useState("");
   const showPlus = ["replies", "survey", "activity"].includes(filter);
 
   const isFirstValid = newFirstName.trim().length > 0;
-  const isLastValid  = newLastName.trim().length > 0;
-  const isTypeValid  = userType !== "";
+  const isLastValid = newLastName.trim().length > 0;
+  const isTypeValid = userType !== "";
 
   const [allUsers, setAllUsers] = useState([]);
 
@@ -268,28 +266,28 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   });
 
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [onConfirmAction, setOnConfirmAction] = useState(() => () => {});
-  const editPhoneError   = editUser
-  ? UserService.getPhoneError(editUser.phone || "")
-  : null;   
+  const [onConfirmAction, setOnConfirmAction] = useState(() => () => { });
+  const editPhoneError = editUser
+    ? UserService.getPhoneError(editUser.phone || "")
+    : null;
   const isEditPhoneValid = editPhoneError === null;
   const firstRef = useRef(null);
-  const lastRef  = useRef(null);
+  const lastRef = useRef(null);
   const phoneRef = useRef(null);
-  const idRef    = useRef(null);
+  const idRef = useRef(null);
   const addressRef = useRef(null);
-  const notesRef   = useRef(null);
-  const eFirstRef   = useRef(null);
-  const eLastRef    = useRef(null);
-  const ePhoneRef   = useRef(null);
-  const eIdRef      = useRef(null);
+  const notesRef = useRef(null);
+  const eFirstRef = useRef(null);
+  const eLastRef = useRef(null);
+  const ePhoneRef = useRef(null);
+  const eIdRef = useRef(null);
   const eAddressRef = useRef(null);
-  const eNotesRef   = useRef(null);
-  const eSaveRef    = useRef(null);  
+  const eNotesRef = useRef(null);
+  const eSaveRef = useRef(null);
 
 
 
-  
+
 
   async function handleAddUser() {
     if (!isFirstValid || !isLastValid || !isPhoneValid || !isTypeValid) return;
@@ -388,8 +386,8 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     }
   }
 
-  function toggleSelect(user) {                 
-    const id = ensureUserId(user);              
+  function toggleSelect(user) {
+    const id = ensureUserId(user);
     setSelected(prev => {
       const s = new Set(prev);
       s.has(id) ? s.delete(id) : s.add(id);
@@ -422,7 +420,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
       for (const id of selected) {
         const u = allUsers.find(x => ensureUserId(x) === id);
         if (u) {
-          promises.push(deleteUserCore(u, { skipMessage: true })); 
+          promises.push(deleteUserCore(u, { skipMessage: true }));
         }
       }
 
@@ -454,12 +452,12 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
 
 
-   
+
   function exportToExcel(type = "all") {
     // ➊ filters
     const data = allUsers.filter(u => {
       if (type === "registered") return u.is_registered && !u.is_club_60;
-      if (type === "senior")     return u.is_club_60;
+      if (type === "senior") return u.is_club_60;
       return true;               // all
     });
 
@@ -470,15 +468,15 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
     // ➋ create a "flat" array of objects – only the columns we want in the sheet
     const rows = data.map(u => ({
-      "שם פרטי"  : u.first_name  || "",
-      "שם משפחה" : u.last_name   || "",
-      "שם מלא"   : u.fullname    || `${u.first_name||""} ${u.last_name||""}`.trim(),
-      "טלפון"     : u.phone       || "",
-      "רשום?"     : u.is_registered ? "כן" : "לא",
-      "חבר 60+"   : u.is_club_60    ? "כן" : "לא",
-      "פעילויות"  : Array.isArray(u.activities) ? u.activities.length : 0,
-      "סקרים"     : Array.isArray(u.survey)     ? u.survey.length     : 0,
-      "תגובות"    : Array.isArray(u.replies)    ? u.replies.length    : 0,
+      "שם פרטי": u.first_name || "",
+      "שם משפחה": u.last_name || "",
+      "שם מלא": u.fullname || `${u.first_name || ""} ${u.last_name || ""}`.trim(),
+      "טלפון": u.phone || "",
+      "רשום?": u.is_registered ? "כן" : "לא",
+      "חבר 60+": u.is_club_60 ? "כן" : "לא",
+      "פעילויות": Array.isArray(u.activities) ? u.activities.length : 0,
+      "סקרים": Array.isArray(u.survey) ? u.survey.length : 0,
+      "תגובות": Array.isArray(u.replies) ? u.replies.length : 0,
     }));
 
     // ➌ SheetJS: convert to worksheet and workbook
@@ -490,8 +488,8 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     const wbBlob = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     const fileName =
       type === "registered" ? "משתמשים_רשומים.xlsx" :
-      type === "senior"     ? "חברי_60+.xlsx"       :
-                              "כל_המשתמשים.xlsx";
+        type === "senior" ? "חברי_60+.xlsx" :
+          "כל_המשתמשים.xlsx";
 
     saveAs(
       new Blob([wbBlob], { type: "application/octet-stream" }),
@@ -501,8 +499,8 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
 
   const requests = useMemo(
-  () => allUsers.filter(u => !u.is_registered && !u.is_club_60),
-  [allUsers]
+    () => allUsers.filter(u => !u.is_registered && !u.is_club_60),
+    [allUsers]
   );
 
   useEffect(() => {
@@ -515,28 +513,28 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     fetchUsers();
   }, []);
 
-  
+
   useEffect(() => {
     const t = search.trim().toLowerCase();
-    if (!t) return;                     
+    if (!t) return;
 
     /*  60+? */
     let foundRegistered = false;
-    let foundSenior     = false;
+    let foundSenior = false;
 
     for (const u of allUsers) {
       const match =
-        (u.fullname  || "").toLowerCase().includes(t) ||
+        (u.fullname || "").toLowerCase().includes(t) ||
         (u.last_name || "").toLowerCase().includes(t) ||
-        (u.phone     || "").includes(t);
+        (u.phone || "").includes(t);
 
       if (!match) continue;
 
       if (u.is_registered && !u.is_club_60) foundRegistered = true;
-      if (u.is_club_60)                     foundSenior     = true;
+      if (u.is_club_60) foundSenior = true;
     }
 
-    
+
 
     /* if there is a match between registered and senior */
     if (foundSenior && !foundRegistered && activeTab !== "senior") {
@@ -550,42 +548,42 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
   // activeTab is used to filter users based on their type
   const matchesTab = u => {
-      /* search */
+    /* search */
     if (activeTab === "registered") return u.is_registered && !u.is_club_60;
-    if (activeTab === "senior")     return u.is_club_60;
-    return true; 
+    if (activeTab === "senior") return u.is_club_60;
+    return true;
   }
 
   useEffect(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return;          
+    if (!term) return;
 
-    
+
     const foundRegistered = allUsers.some(u =>
       u.is_registered && !u.is_club_60 &&
       (
-        (u.fullname  || "").toLowerCase().includes(term) ||
+        (u.fullname || "").toLowerCase().includes(term) ||
         (u.last_name || "").toLowerCase().includes(term) ||
-        (u.phone     || "").includes(term)
+        (u.phone || "").includes(term)
       )
     );
 
-    
+
     const foundSenior = allUsers.some(u =>
       u.is_club_60 &&
       (
-        (u.fullname  || "").toLowerCase().includes(term) ||
+        (u.fullname || "").toLowerCase().includes(term) ||
         (u.last_name || "").toLowerCase().includes(term) ||
-        (u.phone     || "").includes(term)
+        (u.phone || "").includes(term)
       )
     );
 
-    
+
     if (activeTab === "registered" && !foundRegistered && foundSenior) {
       setActiveTab("senior");
     }
 
-    
+
     if (activeTab === "senior" && !foundSenior && foundRegistered) {
       setActiveTab("registered");
     }
@@ -593,27 +591,27 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
 
 
- 
+
   const rowsActivities = allUsers
     .filter(u => Array.isArray(u.activities) && u.activities.length > 0)
     .filter(matchesTab)
     .map(u => ({
-      user:  u,
+      user: u,
       count: u.activities.length,
     }));
 
-  
+
   const rowsSurveys = allUsers
     .filter(u => Array.isArray(u.survey) && u.survey.length > 0)
     .filter(matchesTab)
     .map(u => ({
-      user:  u,
+      user: u,
       count: u.survey.length,
     }));
 
   const rowsAll = allUsers.filter(u => {
     if (activeTab === "registered") return u.is_registered && !u.is_club_60;
-    if (activeTab === "senior")     return u.is_club_60;
+    if (activeTab === "senior") return u.is_club_60;
     return true;
   });
 
@@ -622,7 +620,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     .filter(u => Array.isArray(u.replies) && u.replies.length > 0)
     .filter(matchesTab)
     .map(u => ({
-      user:  u,
+      user: u,
       count: u.replies.length,
     }));
 
@@ -637,9 +635,9 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   let rowsToShow = [];
   if (filter === "activity") rowsToShow = rowsActivities;
   else if (filter === "replies") rowsToShow = rowsReplies;
-  else if (filter === "survey")   rowsToShow = rowsSurveys;
-  else if (filter === "replies")  rowsToShow = rowsReplies;
-  else                             rowsToShow = rowsAllWithShape;
+  else if (filter === "survey") rowsToShow = rowsSurveys;
+  else if (filter === "replies") rowsToShow = rowsReplies;
+  else rowsToShow = rowsAllWithShape;
 
   rowsToShow = (rowsToShow || []).filter(r => r && r.user);
 
@@ -648,16 +646,16 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     rowsToShow = rowsToShow.filter(r => {
       const u = r.user;
       return (
-        (u.fullname  || "").toLowerCase().includes(term) ||
+        (u.fullname || "").toLowerCase().includes(term) ||
         (u.last_name || "").toLowerCase().includes(term) ||
-        (u.phone     || "").includes(term)
+        (u.phone || "").includes(term)
       );
     });
   }
 
-  
+
   async function deleteUserSilent(user) {
-    const phone   = user.phone || "";
+    const phone = user.phone || "";
     const user_id = ensureUserId(user);
 
     /* users  */
@@ -670,7 +668,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
     /* activityRegistrations / surveyResponses */
     const COLL = [
       { path: "activityRegistrations", field: ["phone", phone] },
-      { path: "surveyResponses",       field: ["phone", phone] }
+      { path: "surveyResponses", field: ["phone", phone] }
     ];
     for (const { path, field } of COLL) {
       const [f, val] = field;
@@ -693,7 +691,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
 
   async function deleteUserCore(user, options = {}) {
-    const phone   = user.phone || "";
+    const phone = user.phone || "";
     const user_id = ensureUserId(user);
 
     try {
@@ -877,7 +875,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
   async function updateUserType(user, newType) {
     const is_registered = newType === "registered";
-    const is_club_60    = newType === "senior";
+    const is_club_60 = newType === "senior";
 
     const userId = user.id || user.user_id;
     const docRef = doc(db, "users", userId);
@@ -904,7 +902,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
     } catch (error) {
       console.error("שגיאה בעדכון סוג המשתמש:", error);
-      
+
       setMessage({
         open: true,
         type: 'error',
@@ -917,65 +915,67 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
 
   async function acknowledgeRow(row, type) {
-    const u        = row.user;
-    const userId   = ensureUserId(u);
-    const docRef   = doc(db, "users", userId);
+    const u = row.user;
+    const userId = ensureUserId(u);
+    const docRef = doc(db, "users", userId);
     // first read 
-    const snap     = await getDocs(query(collection(db, "users"), where("user_id", "==", userId)));
+    const snap = await getDocs(query(collection(db, "users"), where("user_id", "==", userId)));
     if (snap.empty) return;
-    const data     = snap.docs[0].data();
+    const data = snap.docs[0].data();
 
     // new arrays to hold updated data
-    let newActivities     = data.activities     || [];
-    let newActivitiesDate = data.activities_date|| [];
-    let newSurvey         = data.survey         || [];
-    let newSurveyDate     = data.survey_date    || [];
-    let newReplies        = data.replies        || [];
-    let newRepliesDate    = data.replies_date   || [];
+    let newActivities = data.activities || [];
+    let newActivitiesDate = data.activities_date || [];
+    let newSurvey = data.survey || [];
+    let newSurveyDate = data.survey_date || [];
+    let newReplies = data.replies || [];
+    let newRepliesDate = data.replies_date || [];
 
     if (type === "activity") {
-      const idx = newActivities.findIndex((a,i) => a === row.activityName && newActivitiesDate[i] === row.activityDate);
+      const idx = newActivities.findIndex((a, i) => a === row.activityName && newActivitiesDate[i] === row.activityDate);
       if (idx >= 0) {
         newActivities.splice(idx, 1);
         newActivitiesDate.splice(idx, 1);
       }
     }
     else if (type === "survey") {
-      const idx = newSurvey.findIndex((s,i) => s === row.surveyName && newSurveyDate[i] === row.surveyDate);
+      const idx = newSurvey.findIndex((s, i) => s === row.surveyName && newSurveyDate[i] === row.surveyDate);
       if (idx >= 0) {
-        newSurvey.splice(idx,1);
-        newSurveyDate.splice(idx,1);
+        newSurvey.splice(idx, 1);
+        newSurveyDate.splice(idx, 1);
       }
     }
     else if (type === "replies") {
-      const idx = newReplies.findIndex((t,i) => t === row.title && newRepliesDate[i] === row.date);
+      const idx = newReplies.findIndex((t, i) => t === row.title && newRepliesDate[i] === row.date);
       if (idx >= 0) {
-        newReplies.splice(idx,1);
-        newRepliesDate.splice(idx,1);
+        newReplies.splice(idx, 1);
+        newRepliesDate.splice(idx, 1);
       }
     }
 
     // firebase update
     await updateDoc(docRef, {
-      activities:      newActivities,
+      activities: newActivities,
       activities_date: newActivitiesDate,
-      survey:          newSurvey,
-      survey_date:     newSurveyDate,
-      replies:         newReplies,
-      replies_date:    newRepliesDate
+      survey: newSurvey,
+      survey_date: newSurveyDate,
+      replies: newReplies,
+      replies_date: newRepliesDate
     });
 
     // update state to reflect changes
     setAllUsers(prev =>
       prev.map(u0 =>
         ensureUserId(u0) === userId
-          ? { ...u0,
-              activities:      newActivities,
-              activities_date: newActivitiesDate,
-              survey:          newSurvey,
-              survey_date:     newSurveyDate,
-              replies:         newReplies,
-              replies_date:    newRepliesDate }
+          ? {
+            ...u0,
+            activities: newActivities,
+            activities_date: newActivitiesDate,
+            survey: newSurvey,
+            survey_date: newSurveyDate,
+            replies: newReplies,
+            replies_date: newRepliesDate
+          }
           : u0
       )
     );
@@ -990,701 +990,701 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
   //   </button>
 
 
-      function toggleRow(id, cat = "all") {
-        const key = `${id}|${cat}`;
-        setOpenRows(prev => {
-          const s = new Set(prev);
-          s.has(key) ? s.delete(key) : s.add(key);
-          return s;
-        });
-        }
+  function toggleRow(id, cat = "all") {
+    const key = `${id}|${cat}`;
+    setOpenRows(prev => {
+      const s = new Set(prev);
+      s.has(key) ? s.delete(key) : s.add(key);
+      return s;
+    });
+  }
 
 
 
   return (
     <>
-    <Box sx={{
-      maxWidth: "1200px",
-      margin: "0 auto",
-      padding: 4,
-      background:"#fff",
-      borderRadius:"12px",
-      boxShadow:"0 2px 6px rgba(0,0,0,.05)"
-    }}>
-    {/* ◄◄ personal details ►► */}
-    <div style={{
-      display:"flex",
-      justifyContent:"space-between",
-      alignItems:"center",
-      width:"100%",
-      marginBottom:30    
-    }}>
-      {/* (RTL) */}
-      {/* <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 4, mb: 2 }}> */}
-
-      <Typography variant="h4" component="h1">
-        משתמשים
-      </Typography>
-            
-
-
-      <IconButton
-        onClick={() => setShowExport(true)}
-        sx={{ border:`1px solid ${palette.primary}`, color:palette.primary }}
-      >
-        <DownloadIcon fontSize="small" />
-      </IconButton>
-
-      {/* </Box> */}
-
-    </div>
-
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        marginBottom: 16        
-      }}
-    ></div>
-
-
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 2 }}>
-  <Typography sx={{ fontWeight: 600, minWidth: 48 }}>חיפוש:</Typography>
-
-  <TextField
-    size="small"
-    placeholder="שם / משפחה / טלפון"
-    value={search}
-    onChange={e => setSearch(e.target.value)}
-    sx={{
-      width: 220,
-      
-      "& .MuiOutlinedInput-root": {
-        borderRadius: "8px",
-        "& fieldset": { borderColor: palette.primary },
-        "&:hover fieldset": { borderColor: palette.primaryHL },
-        "&.Mui-focused fieldset": { borderColor: palette.primary }
-      },
-      
-      "& input": { direction: "rtl" }
-    }}
-  />
-</Box>
-    
-
-
-      {/* this line is for the user search */}
-      <div
-        style={{
-          position: "relative",
+      <Box sx={{
+        maxWidth: "1200px",
+        margin: "0 auto",
+        padding: 4,
+        background: "#fff",
+        borderRadius: "12px",
+        boxShadow: "0 2px 6px rgba(0,0,0,.05)"
+      }}>
+        {/* ◄◄ personal details ►► */}
+        <div style={{
           display: "flex",
-          alignItems: "center",
           justifyContent: "space-between",
+          alignItems: "center",
           width: "100%",
-          marginBottom: 16,
-          height: "40px",
-          marginTop: 16,
-        }}
-        >
+          marginBottom: 30
+        }}>
+          {/* (RTL) */}
+          {/* <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 4, mb: 2 }}> */}
 
-          {/* 1. Add User */}
-           {/* ❶ “choose user” */}
-        <div style={{ display: "flex", gap: 4 }}>
+          <Typography variant="h4" component="h1">
+            משתמשים
+          </Typography>
+
+
+
+          <IconButton
+            onClick={() => setShowExport(true)}
+            sx={{ border: `1px solid ${palette.primary}`, color: palette.primary }}
+          >
+            <DownloadIcon fontSize="small" />
+          </IconButton>
+
+          {/* </Box> */}
+
         </div>
 
-        
-        {/* SHOW */}
-
-        <Box
-          sx={{
-            position: "absolute",
-            right: 0,
+        <div
+          style={{
             display: "flex",
             alignItems: "center",
-            gap: 1
+            gap: 8,
+            marginBottom: 16
           }}
-        >
-          <Typography sx={{ fontWeight: 600, minWidth: 36 }}>הצג:</Typography>
+        ></div>
+
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 2 }}>
+          <Typography sx={{ fontWeight: 600, minWidth: 48 }}>חיפוש:</Typography>
 
           <TextField
-            select
             size="small"
-            value={filter}
-            onChange={e => onFilterChange(e.target.value)}
+            placeholder="שם / משפחה / טלפון"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
             sx={{
-              minWidth: 130,
-              // purple border
+              width: 220,
+
               "& .MuiOutlinedInput-root": {
                 borderRadius: "8px",
                 "& fieldset": { borderColor: palette.primary },
                 "&:hover fieldset": { borderColor: palette.primaryHL },
                 "&.Mui-focused fieldset": { borderColor: palette.primary }
-              }
+              },
+
+              "& input": { direction: "rtl" }
             }}
-            SelectProps={{
-              native: true,      
-              sx: {
-                "& option": { direction: "rtl" } 
-              }
-            }}
-          >
-            <option value="all">כל המשתמשים</option>
-            <option value="activity">נרשמים</option>
-            <option value="survey">סקרים</option>
-            <option value="replies">תגובות</option>
-          </TextField>
+          />
         </Box>
 
-        {/* centered tabs*/}
 
-        
-        {/*  new tabs */}
-        <Tabs
-          value={activeTab}
-          onChange={(e, newValue) => setActiveTab(newValue)}
-          sx={{ minHeight:42, ".MuiTabs-indicator":{ backgroundColor: palette.primary } }}
-          textColor="inherit"
-          TabIndicatorProps={{ style:{ height:3 } }}
+
+        {/* this line is for the user search */}
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            width: "100%",
+            marginBottom: 16,
+            height: "40px",
+            marginTop: 16,
+          }}
         >
-          <Tab
-            label="רשומים"
-            value="registered"
+
+          {/* 1. Add User */}
+          {/* ❶ “choose user” */}
+          <div style={{ display: "flex", gap: 4 }}>
+          </div>
+
+
+          {/* SHOW */}
+
+          <Box
             sx={{
-              minHeight:42,
-              fontWeight:600,
-              color: activeTab==="registered"?palette.primary:"#666"
+              position: "absolute",
+              right: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: 1
             }}
-          />
-          <Tab
-            label="חברי מרכז 60+"
-            value="senior"
-            sx={{
-              minHeight:42,
-              fontWeight:600,
-              color: activeTab==="senior"?palette.primary:"#666"
-            }}
-          />
-        </Tabs>
+          >
+            <Typography sx={{ fontWeight: 600, minWidth: 36 }}>הצג:</Typography>
+
+            <TextField
+              select
+              size="small"
+              value={filter}
+              onChange={e => onFilterChange(e.target.value)}
+              sx={{
+                minWidth: 130,
+                // purple border
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "8px",
+                  "& fieldset": { borderColor: palette.primary },
+                  "&:hover fieldset": { borderColor: palette.primaryHL },
+                  "&.Mui-focused fieldset": { borderColor: palette.primary }
+                }
+              }}
+              SelectProps={{
+                native: true,
+                sx: {
+                  "& option": { direction: "rtl" }
+                }
+              }}
+            >
+              <option value="all">כל המשתמשים</option>
+              <option value="activity">נרשמים</option>
+              <option value="survey">סקרים</option>
+              <option value="replies">תגובות</option>
+            </TextField>
+          </Box>
+
+          {/* centered tabs*/}
+
+
+          {/*  new tabs */}
+          <Tabs
+            value={activeTab}
+            onChange={(e, newValue) => setActiveTab(newValue)}
+            sx={{ minHeight: 42, ".MuiTabs-indicator": { backgroundColor: palette.primary } }}
+            textColor="inherit"
+            TabIndicatorProps={{ style: { height: 3 } }}
+          >
+            <Tab
+              label="רשומים"
+              value="registered"
+              sx={{
+                minHeight: 42,
+                fontWeight: 600,
+                color: activeTab === "registered" ? palette.primary : "#666"
+              }}
+            />
+            <Tab
+              label="חברי מרכז 60+"
+              value="senior"
+              sx={{
+                minHeight: 42,
+                fontWeight: 600,
+                color: activeTab === "senior" ? palette.primary : "#666"
+              }}
+            />
+          </Tabs>
 
         </div>
 
 
-          {/* Add User Button */}
+        {/* Add User Button */}
         {/* Add User Button */}
 
 
-  {/* add user */}
-<Box
-  sx={{
-    display: "flex",
-    gap: 1.5,          
-    alignItems: "center",
-    mb: 2              
-  }}
->
-  {/* choose and un choose*/}
-  <Button
-  variant="outlined"
-  size="small"
-  onClick={toggleSelectMode}
-  sx={{
-    minWidth: 86,
-    
-    color:        palette.primary,
-    borderColor:  palette.primary,
-   
-    "&:hover": {
-      borderColor: palette.primary,
-      backgroundColor: "transparent"
-    }
-  }}
->
-  {selectMode ? "בטל בחירה" : "בחר"}
-</Button>
-
-
-  {/* delete selected */}
-  {selectMode && (
-    <Button
-      variant="outlined"
-      color="error"
-      size="small"
-      disabled={selected.size === 0}
-      onClick={deleteSelected}
-      sx={{ minWidth: 100 }}
-    >
-      מחק נבחרים
-    </Button>
-  )}
-
-  {/* add user*/}
-  <Button
-    variant="contained"
-    size="small"
-    onClick={() => setShowModal(true)}
-    sx={{
-      minWidth: 110,
-      px: 2,                      
-      backgroundColor: palette.primary,
-      boxShadow: "0 2px 4px rgba(0,0,0,.08)",
-      fontWeight: 600,
-      "&:hover": { backgroundColor: palette.primaryHL }
-    }}
-  >
-    הוסף משתמש
-  </Button>
-</Box>
-
-
-
-
-
-
-      {showModal && (
-  <div style={{
-    position: "fixed",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    background: "#fff",
-    borderRadius: 12,
-    padding: 24,
-    width: "90%",
-    maxWidth: 400,
-    boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-    zIndex: 1300,
-    direction: "rtl"
-  }}>
-    {/* Close button */}
-    <button
-      onClick={() => setShowModal(false)}
-      style={{
-        position: "absolute",
-        top: 10,
-        left: 10,
-        background: "transparent",
-        border: "none",
-        fontSize: 22,
-        cursor: "pointer",
-        color: "#666"
-      }}
-      aria-label="סגור"
-    >
-      ×
-    </button>
-
-    <h2 style={{ textAlign: "center", marginBottom: 20 }}>הוספת משתמש</h2>
-
-    {/* Field: First Name */}
-    <div style={{ marginBottom: 16 }}>
-      <input
-        ref={firstRef}
-        type="text"
-        placeholder="שם פרטי"
-        value={newFirstName}
-        onChange={e => {
-          setNewFirstName(e.target.value);
-          setFirstTouched(true);
-        }}
-        onKeyDown={focusNext(lastRef)}
-        onBlur={() => setFirstTouched(true)}
-        style={{
-          width: "100%",
-          padding: "10px 12px",
-          borderRadius: 8,
-          border: "1px solid #ccc",
-          fontSize: 16,
-          direction: "rtl",
-          textAlign: "right"
-        }}
-      />
-      {firstTouched && !isFirstValid && (
-        <div style={{ color: "red", fontSize: 14, marginTop: 4 }}>יש להזין שם פרטי</div>
-      )}
-    </div>
-
-    {/* Field: Last Name */}
-    <div style={{ marginBottom: 16 }}>
-      <input
-        ref={lastRef}
-        type="text"
-        placeholder="שם משפחה"
-        value={newLastName}
-        onChange={e => {
-          setNewLastName(e.target.value);
-          setLastTouched(true);
-        }}
-        onKeyDown={focusNext(phoneRef)}
-        onBlur={() => setLastTouched(true)}
-        style={{
-          width: "100%",
-          padding: "10px 12px",
-          borderRadius: 8,
-          border: "1px solid #ccc",
-          fontSize: 16,
-          direction: "rtl",
-          textAlign: "right"
-        }}
-      />
-      {lastTouched && !isLastValid && (
-        <div style={{ color: "red", fontSize: 14, marginTop: 4 }}>יש להזין שם משפחה</div>
-      )}
-    </div>
-
-    {/* Field: Phone */}
-    <div style={{ marginBottom: 16 }}>
-      <input
-        type="text"
-        inputMode="numeric"      
-        pattern="[0-9]*"       
-        maxLength={10}     
-        ref={phoneRef}     
-        placeholder="מספר טלפון"
-        value={newPhone}
-        onChange={e => {
-          const digits = e.target.value.replace(/\D/g, '');
-          setNewPhone(digits);
-          setPhoneTouched(true);
-        }}
-        onKeyDown={focusNext(idRef)}
-        style={{
-          width: "100%",
-          padding: "10px 12px",
-          borderRadius: 8,
-          border: "1px solid #ccc",
-          fontSize: 16,
-          direction: "rtl",
-          textAlign: "right"
-        }}
-      />
-      {phoneTouched && phoneError && (
-        <div style={{ color: "red", fontSize: 14, marginTop: 4 }}>{phoneError}</div>
-      )}
-    </div>
-
-    {/* Field: ID Number */}
-    <div style={{ marginBottom: 16 }}>
-      <input
-        ref={idRef}
-        type="text"
-        placeholder="תעודת זהות"
-        value={idNumber}
-        onChange={e => setIdNumber(e.target.value)}
-        onKeyDown={focusNext(addressRef)}
-        style={{
-          width: "100%",
-          padding: "10px 12px",
-          borderRadius: 8,
-          border: "1px solid #ccc",
-          fontSize: 16,
-          direction: "rtl",
-          textAlign: "right"
-        }}
-      />
-    </div>
-
-    {/* Field: Address */}
-    <div style={{ marginBottom: 16 }}>
-      <input
-      ref={addressRef}
-        type="text"
-        placeholder="כתובת"
-        value={address}
-        onChange={e => setAddress(e.target.value)}
-        onKeyDown={focusNext(notesRef)}
-        style={{
-          width: "100%",
-          padding: "10px 12px",
-          borderRadius: 8,
-          border: "1px solid #ccc",
-          fontSize: 16,
-          direction: "rtl",
-          textAlign: "right"
-        }}
-      />
-    </div>
-
-    {/* Field: Notes */}
-    <div style={{ marginBottom: 16 }}>
-      <textarea
-      ref={notesRef}
-        placeholder="הערות"
-        value={notes}
-        onChange={e => setNotes(e.target.value)}
-         onKeyDown={e => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              typeRef.current?.focus();
-            }
+        {/* add user */}
+        <Box
+          sx={{
+            display: "flex",
+            gap: 1.5,
+            alignItems: "center",
+            mb: 2
           }}
-        rows={3}
-        style={{
-          width: "100%",
-          padding: "10px 12px",
-          borderRadius: 8,
-          border: "1px solid #ccc",
-          fontSize: 16,
-          direction: "rtl",
-          textAlign: "right"
-        }}
-      />
-    </div>
-
-    {/* Field: User Type */}
-    <div style={{ marginBottom: 24 }}>
-      <select
-        value={userType}
-        onChange={e => setUserType(e.target.value)}
-        style={{
-          width: "100%",
-          padding: "10px 12px",
-          borderRadius: 8,
-          border: "1px solid #ccc",
-          fontSize: 16,
-          direction: "rtl",
-          textAlign: "right"
-        }}
-      >
-        <option value="" disabled>בחר סוג משתמש</option>
-        <option value="registered">משתמש רשום</option>
-        <option value="senior">חברי מרכז ה־60 פלוס</option>
-      </select>
-    </div>
-
-    {/* Add Button */}
-    <button
-      onClick={handleAddUser}
-      disabled={!isPhoneValid || !isFirstValid || !isLastValid || !isTypeValid}
-      style={{
-        width: "100%",
-        padding: "12px",
-        backgroundColor: palette.primary,
-        color: "#fff",
-        border: "none",
-        borderRadius: 8,
-        fontSize: 18,
-        fontWeight: 600,
-        cursor: isPhoneValid ? "pointer" : "not-allowed",
-        opacity: isPhoneValid ? 1 : 0.5,
-        transition: "all 0.3s ease"
-      }}
-    >
-      הוספה
-    </button>
-  </div>
-)}
-
-
-
-
-
-{/* Users table */}
-<table style={{ width: "100%", borderCollapse: "collapse" }}>
-  <thead>
-    <tr>
-      {/* select all */}
-      {selectMode && (
-        <th style={th}>
-          <input
-            type="checkbox"
-            checked={selected.size === rowsToShow.length && rowsToShow.length > 0}
-            ref={el => {
-              if (el)
-                el.indeterminate =
-                  selected.size > 0 && selected.size < rowsToShow.length;
-            }}
-            onChange={e => selectAllRows(e.target.checked)}
-          />
-        </th>
-      )}
-      <th style={th}>שם מלא</th>
-      <th style={th}>מספר טלפון</th>
-      <th style={th}>תעודת זהות</th>
-      <th style={th}>כתובת</th>
-      <th style={th}>הערות</th>
-
-
-
-      {filter === "activity" && <th style={th}>כמות פעילויות</th>}
-      {filter === "survey"   && <th style={th}>כמות סקרים</th>}
-      {filter === "replies"  && <th style={th}>כמות תגובות</th>}
-
-      
-      <th style={th}>פעולות</th>
-    </tr>
-  </thead>
-<tbody>
-  {rowsToShow.map((row /* , idx */) => {
-    const u = row.user;
-    const checked = selected.has(ensureUserId(u));
-
-  return (
-    <React.Fragment key={ensureUserId(u)}>
-      {/*main row */}
-       <tr
-          style={{ transition:"background .15s" }}
-          onMouseEnter={e=>e.currentTarget.style.background="#faf8ff"}
-          onMouseLeave={e=>e.currentTarget.style.background="transparent"}
         >
-        {/* select mode */}
-        {selectMode && (
-          <td style={td}>
-            <input
-              type="checkbox"
-              checked={checked}
-              onChange={() => toggleSelect(u)}
-            />
+          {/* choose and un choose*/}
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={toggleSelectMode}
+            sx={{
+              minWidth: 86,
 
-          </td>
-        )}
+              color: palette.primary,
+              borderColor: palette.primary,
 
-        {/* full name */}
-        <td>
-          {filter === "all" && (
-            <button
-              style={{ border: "none", background: "transparent", cursor: "pointer" }}
-              onClick={() => toggleRow(u.user_id)}
-            >
-              ⋯
-            </button>
-          )}
-          {u.fullname}
-        </td>
-
-        {/* phone */}
-        <td style={td}>{u.phone}</td>
-        <td style={td}>{u.id_number || ""}</td>
-        <td style={td}>{u.address || ""}</td>
-        <td style={td}>{u.notes || ""}</td>
-
-        {isActivity && (
-          <td
-            onClick={() => toggleRow(u.user_id, "activity")}
-            style={{ cursor: "pointer", userSelect: "none" }}
-          >
-            {row.count}
-            {showPlus && <span style={plusStyle}>➕</span>}
-          </td>
-        )}
-
-        {isSurvey && (
-          <td
-            onClick={() => toggleRow(u.user_id, "survey")}
-            style={{ cursor: "pointer", userSelect: "none" }}
-          >
-            {row.count}
-            {showPlus && <span style={plusStyle}>➕</span>}
-          </td>
-        )}
-
-        {isReplies && (
-          <td
-            onClick={() => toggleRow(u.user_id, "replies")}
-            style={{ cursor: "pointer", userSelect: "none" }}
-          >
-            {row.count}
-            {showPlus && <span style={plusStyle}>➕</span>}
-          </td>
-        )}
-
-
-        {isBoth && (
-          <>
-            <td style={{ cursor: "pointer" }}
-                onClick={() => toggleRow(u.user_id, "activity")}>
-              ➕ {u.activities?.length || 0}
-            </td>
-            <td style={{ cursor: "pointer" }}
-                onClick={() => toggleRow(u.user_id, "survey")}>
-              ➕ {u.survey?.length || 0}
-            </td>
-          </>
-        )}
-      
-          <td style={{ ...td, position: "relative" }}>
-            <div style={{ display: "flex", gap: 4 }}>
-              <IconButton
-                size="small"
-                title="עריכת שם"
-                onClick={() => setEditUser({ ...u, originalPhone: u.phone })}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-
-              {activeTab === "registered" && (
-                <button
-                  type="button"
-                  style={actionButtonStyle}
-                  onClick={() => updateUserType(u, "senior")}
-                >
-                  הוסף לחברי מרכז ה-60+
-                </button>
-              )}
-
-              {activeTab === "senior" && (
-                <button
-                  type="button"
-                  style={actionButtonStyle}
-                  onClick={() => updateUserType(u, "registered")}
-                >
-                  הוסף לרשומים
-                </button>
-              )}
-
-              <button
-                type="button"
-                style={deleteButtonStyle}
-                onClick={() => deleteUser(u)}
-              >
-                מחק
-              </button>
-            </div>
-          </td>
-
-      </tr>
-
-      {/* details row */}
-      {Array.from(openRows).some(k => k.startsWith(u.user_id)) && (
-        <tr style={{ background: "#fafafa" }}>
-          {/* empty cell */}
-          {selectMode && <td></td>}
-          {/* empty cell under name column */}
-          <td></td>
-
-          <td
-            colSpan={1}
-            style={{ padding: "4px 8px" }}
-          >
-            <UserDetails
-              user={u}
-              filter={
-                isBoth
-                  ? (openRows.has(`${u.user_id}|activity`) ? "activity"
-                    : openRows.has(`${u.user_id}|survey`) ? "survey"
-                    : filter)
-                  : filter
+              "&:hover": {
+                borderColor: palette.primary,
+                backgroundColor: "transparent"
               }
-              collapsible={["both","all"].includes(filter)} 
-            />
-          </td>
-        </tr>
-      )}
-    </React.Fragment>
-  );
-})}
-</tbody>
+            }}
+          >
+            {selectMode ? "בטל בחירה" : "בחר"}
+          </Button>
+
+
+          {/* delete selected */}
+          {selectMode && (
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              disabled={selected.size === 0}
+              onClick={deleteSelected}
+              sx={{ minWidth: 100 }}
+            >
+              מחק נבחרים
+            </Button>
+          )}
+
+          {/* add user*/}
+          <Button
+            variant="contained"
+            size="small"
+            onClick={() => setShowModal(true)}
+            sx={{
+              minWidth: 110,
+              px: 2,
+              backgroundColor: palette.primary,
+              boxShadow: "0 2px 4px rgba(0,0,0,.08)",
+              fontWeight: 600,
+              "&:hover": { backgroundColor: palette.primaryHL }
+            }}
+          >
+            הוסף משתמש
+          </Button>
+        </Box>
+
+
+
+
+
+
+        {showModal && (
+          <div style={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            background: "#fff",
+            borderRadius: 12,
+            padding: 24,
+            width: "90%",
+            maxWidth: 400,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+            zIndex: 1300,
+            direction: "rtl"
+          }}>
+            {/* Close button */}
+            <button
+              onClick={() => setShowModal(false)}
+              style={{
+                position: "absolute",
+                top: 10,
+                left: 10,
+                background: "transparent",
+                border: "none",
+                fontSize: 22,
+                cursor: "pointer",
+                color: "#666"
+              }}
+              aria-label="סגור"
+            >
+              ×
+            </button>
+
+            <h2 style={{ textAlign: "center", marginBottom: 20 }}>הוספת משתמש</h2>
+
+            {/* Field: First Name */}
+            <div style={{ marginBottom: 16 }}>
+              <input
+                ref={firstRef}
+                type="text"
+                placeholder="שם פרטי"
+                value={newFirstName}
+                onChange={e => {
+                  setNewFirstName(e.target.value);
+                  setFirstTouched(true);
+                }}
+                onKeyDown={focusNext(lastRef)}
+                onBlur={() => setFirstTouched(true)}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  border: "1px solid #ccc",
+                  fontSize: 16,
+                  direction: "rtl",
+                  textAlign: "right"
+                }}
+              />
+              {firstTouched && !isFirstValid && (
+                <div style={{ color: "red", fontSize: 14, marginTop: 4 }}>יש להזין שם פרטי</div>
+              )}
+            </div>
+
+            {/* Field: Last Name */}
+            <div style={{ marginBottom: 16 }}>
+              <input
+                ref={lastRef}
+                type="text"
+                placeholder="שם משפחה"
+                value={newLastName}
+                onChange={e => {
+                  setNewLastName(e.target.value);
+                  setLastTouched(true);
+                }}
+                onKeyDown={focusNext(phoneRef)}
+                onBlur={() => setLastTouched(true)}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  border: "1px solid #ccc",
+                  fontSize: 16,
+                  direction: "rtl",
+                  textAlign: "right"
+                }}
+              />
+              {lastTouched && !isLastValid && (
+                <div style={{ color: "red", fontSize: 14, marginTop: 4 }}>יש להזין שם משפחה</div>
+              )}
+            </div>
+
+            {/* Field: Phone */}
+            <div style={{ marginBottom: 16 }}>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={10}
+                ref={phoneRef}
+                placeholder="מספר טלפון"
+                value={newPhone}
+                onChange={e => {
+                  const digits = e.target.value.replace(/\D/g, '');
+                  setNewPhone(digits);
+                  setPhoneTouched(true);
+                }}
+                onKeyDown={focusNext(idRef)}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  border: "1px solid #ccc",
+                  fontSize: 16,
+                  direction: "rtl",
+                  textAlign: "right"
+                }}
+              />
+              {phoneTouched && phoneError && (
+                <div style={{ color: "red", fontSize: 14, marginTop: 4 }}>{phoneError}</div>
+              )}
+            </div>
+
+            {/* Field: ID Number */}
+            <div style={{ marginBottom: 16 }}>
+              <input
+                ref={idRef}
+                type="text"
+                placeholder="תעודת זהות"
+                value={idNumber}
+                onChange={e => setIdNumber(e.target.value)}
+                onKeyDown={focusNext(addressRef)}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  border: "1px solid #ccc",
+                  fontSize: 16,
+                  direction: "rtl",
+                  textAlign: "right"
+                }}
+              />
+            </div>
+
+            {/* Field: Address */}
+            <div style={{ marginBottom: 16 }}>
+              <input
+                ref={addressRef}
+                type="text"
+                placeholder="כתובת"
+                value={address}
+                onChange={e => setAddress(e.target.value)}
+                onKeyDown={focusNext(notesRef)}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  border: "1px solid #ccc",
+                  fontSize: 16,
+                  direction: "rtl",
+                  textAlign: "right"
+                }}
+              />
+            </div>
+
+            {/* Field: Notes */}
+            <div style={{ marginBottom: 16 }}>
+              <textarea
+                ref={notesRef}
+                placeholder="הערות"
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    typeRef.current?.focus();
+                  }
+                }}
+                rows={3}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  border: "1px solid #ccc",
+                  fontSize: 16,
+                  direction: "rtl",
+                  textAlign: "right"
+                }}
+              />
+            </div>
+
+            {/* Field: User Type */}
+            <div style={{ marginBottom: 24 }}>
+              <select
+                value={userType}
+                onChange={e => setUserType(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  border: "1px solid #ccc",
+                  fontSize: 16,
+                  direction: "rtl",
+                  textAlign: "right"
+                }}
+              >
+                <option value="" disabled>בחר סוג משתמש</option>
+                <option value="registered">משתמש רשום</option>
+                <option value="senior">חברי מרכז ה־60 פלוס</option>
+              </select>
+            </div>
+
+            {/* Add Button */}
+            <button
+              onClick={handleAddUser}
+              disabled={!isPhoneValid || !isFirstValid || !isLastValid || !isTypeValid}
+              style={{
+                width: "100%",
+                padding: "12px",
+                backgroundColor: palette.primary,
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                fontSize: 18,
+                fontWeight: 600,
+                cursor: isPhoneValid ? "pointer" : "not-allowed",
+                opacity: isPhoneValid ? 1 : 0.5,
+                transition: "all 0.3s ease"
+              }}
+            >
+              הוספה
+            </button>
+          </div>
+        )}
+
+
+
+
+
+        {/* Users table */}
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              {/* select all */}
+              {selectMode && (
+                <th style={th}>
+                  <input
+                    type="checkbox"
+                    checked={selected.size === rowsToShow.length && rowsToShow.length > 0}
+                    ref={el => {
+                      if (el)
+                        el.indeterminate =
+                          selected.size > 0 && selected.size < rowsToShow.length;
+                    }}
+                    onChange={e => selectAllRows(e.target.checked)}
+                  />
+                </th>
+              )}
+              <th style={th}>שם מלא</th>
+              <th style={th}>מספר טלפון</th>
+              <th style={th}>תעודת זהות</th>
+              <th style={th}>כתובת</th>
+              <th style={th}>הערות</th>
+
+
+
+              {filter === "activity" && <th style={th}>כמות פעילויות</th>}
+              {filter === "survey" && <th style={th}>כמות סקרים</th>}
+              {filter === "replies" && <th style={th}>כמות תגובות</th>}
+
+
+              <th style={th}>פעולות</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rowsToShow.map((row /* , idx */) => {
+              const u = row.user;
+              const checked = selected.has(ensureUserId(u));
+
+              return (
+                <React.Fragment key={ensureUserId(u)}>
+                  {/*main row */}
+                  <tr
+                    style={{ transition: "background .15s" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#faf8ff"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                  >
+                    {/* select mode */}
+                    {selectMode && (
+                      <td style={td}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleSelect(u)}
+                        />
+
+                      </td>
+                    )}
+
+                    {/* full name */}
+                    <td>
+                      {filter === "all" && (
+                        <button
+                          style={{ border: "none", background: "transparent", cursor: "pointer" }}
+                          onClick={() => toggleRow(u.user_id)}
+                        >
+                          ⋯
+                        </button>
+                      )}
+                      {u.fullname}
+                    </td>
+
+                    {/* phone */}
+                    <td style={td}>{u.phone}</td>
+                    <td style={td}>{u.id_number || ""}</td>
+                    <td style={td}>{u.address || ""}</td>
+                    <td style={td}>{u.notes || ""}</td>
+
+                    {isActivity && (
+                      <td
+                        onClick={() => toggleRow(u.user_id, "activity")}
+                        style={{ cursor: "pointer", userSelect: "none" }}
+                      >
+                        {row.count}
+                        {showPlus && <span style={plusStyle}>➕</span>}
+                      </td>
+                    )}
+
+                    {isSurvey && (
+                      <td
+                        onClick={() => toggleRow(u.user_id, "survey")}
+                        style={{ cursor: "pointer", userSelect: "none" }}
+                      >
+                        {row.count}
+                        {showPlus && <span style={plusStyle}>➕</span>}
+                      </td>
+                    )}
+
+                    {isReplies && (
+                      <td
+                        onClick={() => toggleRow(u.user_id, "replies")}
+                        style={{ cursor: "pointer", userSelect: "none" }}
+                      >
+                        {row.count}
+                        {showPlus && <span style={plusStyle}>➕</span>}
+                      </td>
+                    )}
+
+
+                    {isBoth && (
+                      <>
+                        <td style={{ cursor: "pointer" }}
+                          onClick={() => toggleRow(u.user_id, "activity")}>
+                          ➕ {u.activities?.length || 0}
+                        </td>
+                        <td style={{ cursor: "pointer" }}
+                          onClick={() => toggleRow(u.user_id, "survey")}>
+                          ➕ {u.survey?.length || 0}
+                        </td>
+                      </>
+                    )}
+
+                    <td style={{ ...td, position: "relative" }}>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <IconButton
+                          size="small"
+                          title="עריכת שם"
+                          onClick={() => setEditUser({ ...u, originalPhone: u.phone })}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+
+                        {activeTab === "registered" && (
+                          <button
+                            type="button"
+                            style={actionButtonStyle}
+                            onClick={() => updateUserType(u, "senior")}
+                          >
+                            הוסף לחברי מרכז ה-60+
+                          </button>
+                        )}
+
+                        {activeTab === "senior" && (
+                          <button
+                            type="button"
+                            style={actionButtonStyle}
+                            onClick={() => updateUserType(u, "registered")}
+                          >
+                            הוסף לרשומים
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          style={deleteButtonStyle}
+                          onClick={() => deleteUser(u)}
+                        >
+                          מחק
+                        </button>
+                      </div>
+                    </td>
+
+                  </tr>
+
+                  {/* details row */}
+                  {Array.from(openRows).some(k => k.startsWith(u.user_id)) && (
+                    <tr style={{ background: "#fafafa" }}>
+                      {/* empty cell */}
+                      {selectMode && <td></td>}
+                      {/* empty cell under name column */}
+                      <td></td>
+
+                      <td
+                        colSpan={1}
+                        style={{ padding: "4px 8px" }}
+                      >
+                        <UserDetails
+                          user={u}
+                          filter={
+                            isBoth
+                              ? (openRows.has(`${u.user_id}|activity`) ? "activity"
+                                : openRows.has(`${u.user_id}|survey`) ? "survey"
+                                  : filter)
+                              : filter
+                          }
+                          collapsible={["both", "all"].includes(filter)}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
         </table>
 
         {/* ✦outtoxl */}
         <Dialog open={showExport} onClose={() => setShowExport(false)} maxWidth="xs" fullWidth
           PaperProps={{
             sx: {
-              p: 4,                         
-              borderRadius: 3,              
+              p: 4,
+              borderRadius: 3,
               bgcolor: '#ffffff',
               boxShadow: '0 4px 16px rgba(0,0,0,.12)',
-              direction: 'rtl',             
+              direction: 'rtl',
             }
           }}
         >
@@ -1709,7 +1709,7 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
             </IconButton>
           </DialogTitle>
 
-          <DialogContent sx={{ display:"flex", flexDirection:"column", gap:2 }}>
+          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Typography sx={{ fontWeight: 600, mb: 1, textAlign: 'right' }}>
               בחר קבוצה:
             </Typography>
@@ -1723,9 +1723,9 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
               sx={{
                 direction: 'rtl',
                 "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,                     
-                  "& fieldset":        { borderColor: palette.border },
-                  "&:hover fieldset":  { borderColor: palette.primaryHL },
+                  borderRadius: 2,
+                  "& fieldset": { borderColor: palette.border },
+                  "&:hover fieldset": { borderColor: palette.primaryHL },
                   "&.Mui-focused fieldset": { borderColor: palette.primary }
                 }
               }}
@@ -1762,151 +1762,151 @@ export default function ManageUsersDesign({ users, filter, onFilterChange, manua
 
 
         {/* ✎ Modal */}
-{editUser && (
-  <Dialog open onClose={() => setEditUser(null)} maxWidth="xs" fullWidth>
-    <DialogTitle
-      sx={{
-        position: "relative",
-        textAlign: "center",
-        fontSize: "1.5rem",
-        fontWeight: 600,
-        mb: 2, mt: 5,
-        pr: 4          
-      }}
-    >
-      עריכת משתמש
+        {editUser && (
+          <Dialog open onClose={() => setEditUser(null)} maxWidth="xs" fullWidth>
+            <DialogTitle
+              sx={{
+                position: "relative",
+                textAlign: "center",
+                fontSize: "1.5rem",
+                fontWeight: 600,
+                mb: 2, mt: 5,
+                pr: 4
+              }}
+            >
+              עריכת משתמש
 
-      {/* X */}
-      <IconButton
-        aria-label="סגור"
-        onClick={() => setEditUser(null)}
-        sx={{ position: "absolute", top: 8, left: 8, color: "grey.500" }}
-      >
-        <CloseIcon fontSize="small" />
-      </IconButton>
-    </DialogTitle>
+              {/* X */}
+              <IconButton
+                aria-label="סגור"
+                onClick={() => setEditUser(null)}
+                sx={{ position: "absolute", top: 8, left: 8, color: "grey.500" }}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </DialogTitle>
 
-    <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-      <TextField
-        inputRef={eFirstRef}
-        placeholder="שם פרטי"
-        value={editUser.first_name || ""}
-        onChange={e => setEditUser(prev => ({ ...prev, first_name: e.target.value }))}
-        onKeyDown={focusNext(eLastRef)}
-        sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
-        fullWidth
+            <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+              <TextField
+                inputRef={eFirstRef}
+                placeholder="שם פרטי"
+                value={editUser.first_name || ""}
+                onChange={e => setEditUser(prev => ({ ...prev, first_name: e.target.value }))}
+                onKeyDown={focusNext(eLastRef)}
+                sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
+                fullWidth
+              />
+              <TextField
+                inputRef={eLastRef}
+                placeholder="שם משפחה"
+                value={editUser.last_name || ""}
+                onChange={e => setEditUser(prev => ({ ...prev, last_name: e.target.value }))}
+                onKeyDown={focusNext(ePhoneRef)}
+                sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
+                fullWidth
+              />
+              <TextField
+                inputRef={ePhoneRef}
+                placeholder="מספר טלפון"
+                value={editUser.phone || ""}
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 10 }}
+                onChange={e => {
+                  const digits = e.target.value.replace(/\D/g, '');
+                  setEditUser(prev => ({ ...prev, phone: digits }));
+                }}
+                onKeyDown={focusNext(eIdRef)}
+                sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
+                fullWidth
+              />
+
+              <TextField
+                inputRef={eIdRef}
+                placeholder="תעודת זהות"
+                value={editUser.id_number || ""}
+                onChange={e => setEditUser(prev => ({ ...prev, id_number: e.target.value }))}
+                onKeyDown={focusNext(eAddressRef)}
+                sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
+                fullWidth
+              />
+              <TextField
+                inputRef={eAddressRef}
+                placeholder="כתובת"
+                value={editUser.address || ""}
+                onChange={e => setEditUser(prev => ({ ...prev, address: e.target.value }))}
+                onKeyDown={focusNext(eNotesRef)}
+                sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
+                fullWidth
+              />
+              <TextField
+                inputRef={eNotesRef}
+                placeholder="הערות"
+                value={editUser.notes || ""}
+                onChange={e => setEditUser(prev => ({ ...prev, notes: e.target.value }))}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    eSaveRef.current?.focus();
+                  }
+                }}
+                multiline
+                rows={3}
+                sx={{ textarea: { direction: 'rtl', textAlign: 'right' } }}
+                fullWidth
+              />
+
+              <Button
+                variant="contained"
+                fullWidth
+                disableElevation
+                onClick={() => saveEditedUser(editUser)}
+                disabled={!isEditPhoneValid}
+                sx={{
+                  width: "100%",
+                  padding: "12px",
+                  backgroundColor: palette.primary,
+                  borderRadius: "8px",
+                  fontSize: "18px",
+                  fontWeight: 600,
+                  color: "#fff",
+                  textTransform: "none",
+                  "&:hover": {
+                    backgroundColor: palette.primary
+                  }
+                }}
+              >
+                שמירה
+              </Button>
+
+
+            </DialogContent>
+          </Dialog>
+
+
+        )}
+
+
+      </Box>
+      <ActionFeedbackDialog
+        open={message.open}
+        type={message.type}
+        text={message.text}
+        onClose={() => setMessage(prev => ({ ...prev, open: false }))}
       />
-      <TextField
-        inputRef={eLastRef}
-        placeholder="שם משפחה"
-        value={editUser.last_name || ""}
-        onChange={e => setEditUser(prev => ({ ...prev, last_name: e.target.value }))}
-        onKeyDown={focusNext(ePhoneRef)}
-        sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
-        fullWidth
-      />
-      <TextField
-        inputRef={ePhoneRef}
-        placeholder="מספר טלפון"
-        value={editUser.phone || ""}
-        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 10 }}
-        onChange={e => {
-          const digits = e.target.value.replace(/\D/g, '');
-          setEditUser(prev => ({ ...prev, phone: digits }));
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          onConfirmAction();
         }}
-        onKeyDown={focusNext(eIdRef)}
-        sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
-        fullWidth
+        title="אישור מחיקה"
+        text="האם אתה בטוח שברצונך למחוק משתמש זה?"
+        confirmText="מחק"
+        cancelText="ביטול"
+        confirmColor="error"
       />
-
-      <TextField
-        inputRef={eIdRef}
-        placeholder="תעודת זהות"
-        value={editUser.id_number || ""}
-        onChange={e => setEditUser(prev => ({ ...prev, id_number: e.target.value }))}
-        onKeyDown={focusNext(eAddressRef)}
-        sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
-        fullWidth
-      />
-      <TextField
-        inputRef={eAddressRef}
-        placeholder="כתובת"
-        value={editUser.address || ""}
-        onChange={e => setEditUser(prev => ({ ...prev, address: e.target.value }))}
-        onKeyDown={focusNext(eNotesRef)}
-        sx={{ input: { direction: 'rtl', textAlign: 'right' } }}
-        fullWidth
-      />
-      <TextField
-        inputRef={eNotesRef}
-        placeholder="הערות"
-        value={editUser.notes || ""}
-        onChange={e => setEditUser(prev => ({ ...prev, notes: e.target.value }))}
-        onKeyDown={e => {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            eSaveRef.current?.focus();  
-          }
-        }}
-        multiline
-        rows={3}
-        sx={{ textarea: { direction: 'rtl', textAlign: 'right' } }}
-        fullWidth
-      />
-
-      <Button
-        variant="contained"          
-        fullWidth
-        disableElevation 
-        onClick={() => saveEditedUser(editUser)}
-        disabled={!isEditPhoneValid}
-        sx={{
-          width: "100%",
-          padding: "12px",
-          backgroundColor: palette.primary,
-          borderRadius: "8px",
-          fontSize: "18px",
-          fontWeight: 600,
-          color: "#fff", 
-          textTransform: "none", 
-          "&:hover": {
-            backgroundColor: palette.primary 
-          }
-        }}
-      >
-        שמירה
-      </Button>
-
-
-    </DialogContent>
-  </Dialog>
-
-
-)}
-
-
-     </Box>
-    <ActionFeedbackDialog
-      open={message.open}
-      type={message.type}
-      text={message.text}
-      onClose={() => setMessage(prev => ({ ...prev, open: false }))}
-    />
-    <ConfirmDialog
-      open={confirmOpen}
-      onClose={() => setConfirmOpen(false)}
-      onConfirm={() => {
-        setConfirmOpen(false);
-        onConfirmAction();
-      }}
-      title="אישור מחיקה"
-      text="האם אתה בטוח שברצונך למחוק משתמש זה?"
-      confirmText="מחק"
-      cancelText="ביטול"
-      confirmColor="error"
-    />
-        </>
-  ); 
+    </>
+  );
 }
 
 const th = {
@@ -1986,7 +1986,7 @@ const plusBtnStyle = {
   gap: 4,
 };
 
-  // render
+// render
 const plusStyle = {
   marginInlineStart: 4,
   color: "#7b35ff",

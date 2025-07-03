@@ -1,17 +1,17 @@
 // ✅ הקובץ HomepageImagesDesign.jsx לאחר הסרה של שדה הסדר ותמיכה רק בגרירה
-import React, { useState, useRef } from "react";
+import {
+  Box,
+  Button,
+  Container,
+  Grid,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { useRef, useState } from "react";
 import CtaButton from "../LandingPage/CtaButton";
 import BannerService from "../services/BannerService.js";
-import {
-  Container,
-  Paper,
-  Typography,
-  TextField,
-  Stack,
-  Box,
-  Grid,
-  Button,
-} from "@mui/material";
 
 function BannerUploader({ onUpload, setMessage }) {
   const [title, setTitle] = useState("");
@@ -101,7 +101,7 @@ function BannerUploader({ onUpload, setMessage }) {
   );
 }
 
-export default function HomepageImagesDesign({ banners, onUpload, onDelete, onDragStart, onDragEnter, setMessage  }) {
+export default function HomepageImagesDesign({ banners, onUpload, onDelete, onDragStart, onDragEnter, setMessage }) {
   return (
     <Container maxWidth="lg">
       <BannerUploader onUpload={onUpload} setMessage={setMessage} />

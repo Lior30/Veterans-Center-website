@@ -1,37 +1,37 @@
 // src/components/SurveyAnalysisDetail.jsx
-import React, { useState, useEffect, useRef } from "react";
-import { toPng } from "html-to-image";
+import BarChartIcon from "@mui/icons-material/BarChart";
 import DownloadIcon from "@mui/icons-material/Download";
-import { useParams, useNavigate } from "react-router-dom";
-import { db } from "../firebase";
-import { generateSummaryWithCohere } from "../services/AIService";
-import {
-  doc,
-  getDoc,
-  collection,
-  getDocs,
-} from "firebase/firestore";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Legend
-} from "recharts";
+import PieChartIcon from "@mui/icons-material/PieChart";
 import {
   Box,
-  Typography,
   Button,
   IconButton,
+  Typography,
   useMediaQuery
 } from "@mui/material";
-import BarChartIcon from "@mui/icons-material/BarChart";
-import PieChartIcon from "@mui/icons-material/PieChart";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+} from "firebase/firestore";
+import { toPng } from "html-to-image";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  Bar,
+  BarChart,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
+} from "recharts";
+import { db } from "../firebase";
+import { generateSummaryWithCohere } from "../services/AIService";
 
 const COLORS = [
   "#0088FE", "#00C49F", "#FFBB28", "#FF8042",
@@ -89,19 +89,19 @@ export default function SurveyAnalysisDetail() {
   };
 
   const summarizeAnswers = async (questionId, questionText) => {
-  const validAnswers = getValidOpenAnswers(questionId);
-  setLoadingSummaries(prev => ({ ...prev, [questionId]: true }));
+    const validAnswers = getValidOpenAnswers(questionId);
+    setLoadingSummaries(prev => ({ ...prev, [questionId]: true }));
 
-  try {
-    const summary = await generateSummaryWithCohere(questionText, validAnswers);
-    setSummaries(prev => ({ ...prev, [questionId]: summary }));
-  } catch (e) {
-    console.error("❌ Cohere error:", e);
-    setSummaries(prev => ({ ...prev, [questionId]: "שגיאה בסיכום התשובות." }));
-  } finally {
-    setLoadingSummaries(prev => ({ ...prev, [questionId]: false }));
-  }
-};
+    try {
+      const summary = await generateSummaryWithCohere(questionText, validAnswers);
+      setSummaries(prev => ({ ...prev, [questionId]: summary }));
+    } catch (e) {
+      console.error("❌ Cohere error:", e);
+      setSummaries(prev => ({ ...prev, [questionId]: "שגיאה בסיכום התשובות." }));
+    } finally {
+      setLoadingSummaries(prev => ({ ...prev, [questionId]: false }));
+    }
+  };
 
   return (
     <Box sx={{ p: 4, maxWidth: "1200px", margin: "0 auto", direction: "rtl" }}>
@@ -246,13 +246,13 @@ export default function SurveyAnalysisDetail() {
                 ) : isLoading ? (
                   <Box display="flex" alignItems="center" sx={{ mt: 2 }}>
                     <Box sx={{ width: 48, height: 48 }}>
-  <svg
-    width="64"
-    height="64"
-    viewBox="0 0 64 64"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <style>{`
+                      <svg
+                        width="64"
+                        height="64"
+                        viewBox="0 0 64 64"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <style>{`
       @keyframes shootUp {
         0% { transform: translateY(20px); opacity: 0; }
         50% { transform: translateY(-4px); opacity: 1; }
@@ -269,20 +269,20 @@ export default function SurveyAnalysisDetail() {
       }
     `}</style>
 
-    <polygon
-      className="big"
-      points="32,16 36,28 48,32 36,36 32,48 28,36 16,32 28,28"
-    />
-    <polygon
-      className="small1"
-      points="20,12 22,18 28,20 22,22 20,28 18,22 12,20 18,18"
-    />
-    <polygon
-      className="small2"
-      points="20,36 22,42 28,44 22,46 20,52 18,46 12,44 18,42"
-    />
-  </svg>
-</Box>
+                        <polygon
+                          className="big"
+                          points="32,16 36,28 48,32 36,36 32,48 28,36 16,32 28,28"
+                        />
+                        <polygon
+                          className="small1"
+                          points="20,12 22,18 28,20 22,22 20,28 18,22 12,20 18,18"
+                        />
+                        <polygon
+                          className="small2"
+                          points="20,36 22,42 28,44 22,46 20,52 18,46 12,44 18,42"
+                        />
+                      </svg>
+                    </Box>
 
                     <Typography sx={{ ml: 3 }}>המערכת מסכמת תשובות…</Typography>
                   </Box>

@@ -1,11 +1,9 @@
 // src/components/ActivitiesContainer.jsx
-import React, { useState, useEffect } from "react";
-import ActivityService from "../services/ActivityService";
-import ActivitiesMap from "./ActivitiesMap";
-import { Box, TextField } from "@mui/material";
+import { useEffect, useState } from "react";
 import usePublicHolidays from "../hooks/usePublicHolidays";
-import ActivitiesDesign from "./ActivitiesDesign";
+import ActivityService from "../services/ActivityService";
 import ActionFeedbackDialog from "./ActionFeedbackDialog";
+import ActivitiesDesign from "./ActivitiesDesign";
 import ConfirmDialog from "./ConfirmDialog";
 
 
@@ -19,7 +17,7 @@ const initialForm = {
   capacity: "",
   flyerId: "",
   recurring: false,
-  weekdays: [],     
+  weekdays: [],
   participants: [],
   registrationCondition: "",
   tags: [],
@@ -165,38 +163,38 @@ export default function ActivitiesContainer() {
 
   return (
     <>
-    <ActivitiesDesign
-      tab={tab}
-      activities={activities}
-      holidays={holidays}
-      dialogOpen={dialogOpen}
-      form={form}
-      onTabChange={setTab}
-      onNew={handleNew}
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-      onDateClick={handleDateClick}
-      onEventClick={handleEventClick}
-      onFormChange={setForm}
-      onSave={handleSave}
-      onClose={() => setDialogOpen(false)}
-    />
+      <ActivitiesDesign
+        tab={tab}
+        activities={activities}
+        holidays={holidays}
+        dialogOpen={dialogOpen}
+        form={form}
+        onTabChange={setTab}
+        onNew={handleNew}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onDateClick={handleDateClick}
+        onEventClick={handleEventClick}
+        onFormChange={setForm}
+        onSave={handleSave}
+        onClose={() => setDialogOpen(false)}
+      />
 
-    {/* Dialogs below */}
-    <ActionFeedbackDialog
-      open={message.open}
-      type={message.type}
-      text={message.text}
-      onClose={() => setMessage((prev) => ({ ...prev, open: false }))}
-    />
+      {/* Dialogs below */}
+      <ActionFeedbackDialog
+        open={message.open}
+        type={message.type}
+        text={message.text}
+        onClose={() => setMessage((prev) => ({ ...prev, open: false }))}
+      />
 
-    <ConfirmDialog
-      open={confirmOpen}
-      onClose={() => setConfirmOpen(false)}
-      onConfirm={confirmDelete}
-      title="אישור מחיקה"
-      text={`האם למחוק את הפעילות?`}
-    />
-  </>
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={confirmDelete}
+        title="אישור מחיקה"
+        text={`האם למחוק את הפעילות?`}
+      />
+    </>
   );
 }

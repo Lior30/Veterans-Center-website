@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
 import {
+  collection,
+  deleteDoc,
   doc,
   getDoc,
-  collection,
-  getDocs,
-  deleteDoc
+  getDocs
 } from "firebase/firestore";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../firebase.js";
 
 export default function SurveyResultsDetail() {
-  const { id } = useParams();           
+  const { id } = useParams();
   const navigate = useNavigate();
   const [survey, setSurvey] = useState(null);
   const [responses, setResponses] = useState([]);
@@ -51,7 +51,7 @@ export default function SurveyResultsDetail() {
         <p>No responses yet.</p>
       ) : (
         responses.map((resp) => {
-          const name  = `${resp.answers.firstName || ""} ${resp.answers.lastName || ""}`.trim();
+          const name = `${resp.answers.firstName || ""} ${resp.answers.lastName || ""}`.trim();
           const phone = resp.answers.phone || "";
 
           return (
@@ -71,12 +71,12 @@ export default function SurveyResultsDetail() {
               </h3>
 
               {/* show the other questions/answers */}
-                  {survey.questions.map((q) => (
-                  <p key={q.id}>
+              {survey.questions.map((q) => (
+                <p key={q.id}>
                   <strong>{q.text}</strong>
                   <br />
                   {resp.answers[q.id]}
-              </p>
+                </p>
               ))}
 
               <button onClick={() => handleDeleteResponse(resp.id)}>

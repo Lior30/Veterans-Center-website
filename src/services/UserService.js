@@ -1,16 +1,15 @@
 // src/services/UserService.js
-import { db } from "../firebase";
 import {
+  arrayRemove,
+  arrayUnion,
+  collection,
   doc,
   getDoc,
+  onSnapshot,
   setDoc,
   updateDoc,
-  arrayRemove,
-  collection,
-  onSnapshot,
-  
-  arrayUnion,
 } from "firebase/firestore";
+import { db } from "../firebase";
 
 
 /**
@@ -27,28 +26,28 @@ export default class UserService {
     return snap.exists() ? { id: snap.id, ...snap.data() } : null;
   }
 
-   
+
   static isValidPhone(phone) {
     return /^05\d{8}$/.test(phone.replace(/\D/g, ""));
   }
 
-  
-static async removeActivity(phone, activityName) {
-  const ref = doc(db, UserService.COL, phone);
-  await updateDoc(ref, {
-    activities: arrayRemove(activityName),
-  });
-}
 
-static async addActivity(phone, activityName) {
-  const ref = doc(db, UserService.COL, phone);
-  await updateDoc(ref, {
-    activities: arrayUnion(activityName),
-  });
-}
+  static async removeActivity(phone, activityName) {
+    const ref = doc(db, UserService.COL, phone);
+    await updateDoc(ref, {
+      activities: arrayRemove(activityName),
+    });
+  }
+
+  static async addActivity(phone, activityName) {
+    const ref = doc(db, UserService.COL, phone);
+    await updateDoc(ref, {
+      activities: arrayUnion(activityName),
+    });
+  }
 
 
-  
+
   static isValidName(name) {
     return /^[א-תA-Za-z]{2,}(?: [א-תA-Za-z]{2,})*$/.test(name.trim());
   }
@@ -65,7 +64,7 @@ static async addActivity(phone, activityName) {
       const data = snap.data();
       if (
         (firstName && data.firstName !== firstName) ||
-        (lastName  && data.lastName  !== lastName)
+        (lastName && data.lastName !== lastName)
       ) {
         await setDoc(ref, { firstName, lastName }, { merge: true });
       }
@@ -78,34 +77,34 @@ static async addActivity(phone, activityName) {
 
 
 
-    static getPhoneError(phoneRaw) {
-      const digits = phoneRaw.replace(/\D/g, "");      
+  static getPhoneError(phoneRaw) {
+    const digits = phoneRaw.replace(/\D/g, "");
 
-      
-      if (digits.length !== 10) {
-        return "מספר טלפון צריך להכיל בדיוק 10 ספרות";
-      }
 
-     
-      if (!/^05[01234578]\d{7}$/.test(digits)) {
-        return "הקידומת שהוקלדה אינה נתמכת";
-      }
-
-      return null;   
-
+    if (digits.length !== 10) {
+      return "מספר טלפון צריך להכיל בדיוק 10 ספרות";
     }
 
-  
+
+    if (!/^05[01234578]\d{7}$/.test(digits)) {
+      return "הקידומת שהוקלדה אינה נתמכת";
+    }
+
+    return null;
+
+  }
+
+
   static isValidPhone(phone) {
     return UserService.getPhoneError(phone) === null;
   }
 
-  
+
   static isValidName(name) {
     return /^[א-תA-Za-z]{2,}(?: [א-תA-Za-z]{2,})*$/.test(name.trim());
   }
 
-  
+
   static subscribe(callback) {
     const colRef = collection(db, UserService.COL);
     return onSnapshot(colRef, (snap) => {

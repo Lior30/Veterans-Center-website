@@ -1,21 +1,21 @@
 //src/components/MessageOrderManager.jsx
-import React, { useEffect, useState } from "react";
 import {
-  Container,
-  Typography,
   Card,
   CardContent,
   CircularProgress,
+  Container,
+  Typography,
 } from "@mui/material";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { useEffect, useState } from "react";
+import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 
 import MessageService from "../services/MessageService.js";
 
 export default function MessageOrderManager() {
-  const [loading, setLoading]   = useState(true);
+  const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState([]);
 
-  
+
   useEffect(() => {
     MessageService.list().then((ms) => {
       ms.sort((a, b) => a.order - b.order);

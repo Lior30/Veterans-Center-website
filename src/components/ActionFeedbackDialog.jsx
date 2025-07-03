@@ -1,14 +1,13 @@
 // ActionFeedbackDialog.jsx
-import React from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
-  Box,
-} from "@mui/material";
 import { CheckCircle, Error as ErrorIcon, Info } from "@mui/icons-material";
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  Typography,
+} from "@mui/material";
 
 export default function ActionFeedbackDialog({ open, type, text, onClose }) {
   const icon =
@@ -48,15 +47,15 @@ export default function ActionFeedbackDialog({ open, type, text, onClose }) {
     type === "success"
       ? "primary.main"
       : type === "error"
-      ? "error.main"
-      : "info.main";
+        ? "error.main"
+        : "info.main";
 
   const titleColor =
     type === "success"
       ? "primary.main"
       : type === "error"
-      ? "error.main"
-      : "info.main";
+        ? "error.main"
+        : "info.main";
 
   return (
     <Dialog

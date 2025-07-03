@@ -20,10 +20,12 @@ body,
 }
 
 /* 3. Default font and heading font */
-body {
-  /* כאן ניתן להוסיף font-family גלובלי */
-}
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: 'Secular One', sans-serif;
 }
 
@@ -31,6 +33,7 @@ h1, h2, h3, h4, h5, h6 {
 .flyer-carousel::-webkit-scrollbar {
   display: none;
 }
+
 .flyer-carousel {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -40,17 +43,30 @@ h1, h2, h3, h4, h5, h6 {
 .fc .fc-daygrid-day.fc-day-today {
   background-color: #ffffff !important;
 }
+
 .custom-event {
   font-weight: bold;
   animation: fadeInEvent 0.4s ease-in;
   padding: 2px 4px;
   border-radius: 4px;
 }
+
 @keyframes fadeInEvent {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.fc-timegrid-slot { height: 2em !important; }
+
+.fc-timegrid-slot {
+  height: 2em !important;
+}
+
 .fc-v-event {
   width: 100% !important;
   margin-bottom: 4px !important;
@@ -100,6 +116,7 @@ h1, h2, h3, h4, h5, h6 {
   font-style: normal;
   font-display: swap;
 }
+
 .dyslexic {
   font-family: 'OpenDyslexic', sans-serif !important;
 }
@@ -115,19 +132,26 @@ h1, h2, h3, h4, h5, h6 {
   z-index: 1000;
   transition: top 0.3s;
 }
+
 .skip-to-content:focus {
   top: 0;
 }
 
 /* Keyboard navigation: clear focus outline when active */
 .keyboard-nav *:focus {
-  outline: 2px dashed #91278F !important; /* החליפי בצבע הסגול של הלוגו אם שונה */
+  outline: 2px dashed #91278F !important;
+  /* החליפי בצבע הסגול של הלוגו אם שונה */
   outline-offset: 2px;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Tooltip exactly above the cursor */
@@ -138,7 +162,8 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 13px;
   line-height: 1.3;
   white-space: nowrap;
-  pointer-events: none;      /* שלא יפריע לריחוף */
+  pointer-events: none;
+  /* שלא יפריע לריחוף */
 }
 
 /* חץ קטן כלפי מטה, ממורכז */
@@ -150,6 +175,5 @@ h1, h2, h3, h4, h5, h6 {
   transform: translateX(-50%);
   border: 6px solid transparent;
   border-top-color: #fff;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,.2));
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .2));
 }
-

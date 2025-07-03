@@ -1,19 +1,18 @@
 // src/components/SurveySection.jsx
-import React from "react";
+import PollIcon from "@mui/icons-material/Poll";
 import {
   Box,
-  Container,
-  Grid,
   Card,
   CardContent,
+  Container,
+  Grid,
   Typography,
   styled,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import PollIcon from "@mui/icons-material/Poll";
-import SectionTitle from "./SectionTitle";
 import CtaButton from "./CtaButton";
+import SectionTitle from "./SectionTitle";
 
 /* survey card */
 const SurveyCard = styled(Card)(({ theme }) => ({
@@ -69,26 +68,26 @@ export default function SurveySection({
         <Grid container spacing={4}>
           {displayed.map((s) => (
             <Grid item xs={12} sm={6} md={3} key={s.id}>
-  <SurveyCard>
-    <CardContent sx={{ p: 2 }}>
-      <Typography
-        variant="h6"
-        fontWeight={600}
-        gutterBottom
-        sx={{ color: theme.palette.primary.dark }}
-        noWrap
-      >
-        {s.headline}
-      </Typography>
+              <SurveyCard>
+                <CardContent sx={{ p: 2 }}>
+                  <Typography
+                    variant="h6"
+                    fontWeight={600}
+                    gutterBottom
+                    sx={{ color: theme.palette.primary.dark }}
+                    noWrap
+                  >
+                    {s.headline}
+                  </Typography>
 
-      {justIdentified && (
-        <CtaButton color="primary" onClick={() => onFillSurvey(s)}>
-          למילוי
-        </CtaButton>
-      )}
-    </CardContent>
-  </SurveyCard>
-</Grid>
+                  {justIdentified && (
+                    <CtaButton color="primary" onClick={() => onFillSurvey(s)}>
+                      למילוי
+                    </CtaButton>
+                  )}
+                </CardContent>
+              </SurveyCard>
+            </Grid>
 
           ))}
         </Grid>

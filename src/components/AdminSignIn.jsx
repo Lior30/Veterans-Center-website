@@ -1,25 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Container,
-  Typography,
-  TextField,
-  Button,
-  CircularProgress,
-  Alert,
-  Box,
-  Link,
-  IconButton,
-  InputAdornment,
-} from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  IconButton,
+  InputAdornment,
+  Link,
+  TextField,
+  Typography,
+} from '@mui/material';
+import {
   getAuth,
-  signInWithEmailAndPassword,
   sendPasswordResetEmail,
+  signInWithEmailAndPassword,
 } from 'firebase/auth';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { app, db } from '../firebase';      // your initialized Firestore as `db`
+import { getFirestore } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { app } from '../firebase'; // your initialized Firestore as `db`
 
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
 
