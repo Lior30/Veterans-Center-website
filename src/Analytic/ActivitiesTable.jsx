@@ -19,7 +19,7 @@ export default function ActivitiesTable() {
     registeredUser: 'משתמש רשום',
     member60: 'חבר מרכז 60+',
     "": 'פתוח לכולם',
-    
+
   };
 
   useEffect(() => {

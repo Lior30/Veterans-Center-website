@@ -46,8 +46,8 @@ function hexToHue(hex) {
   const d = max - min;
   const h =
     max === r ? (g - b) / d + (g < b ? 6 : 0)
-    : max === g ? (b - r) / d + 2
-    : (r - g) / d + 4;
+      : max === g ? (b - r) / d + 2
+        : (r - g) / d + 4;
 
   return h * 60;
 }
@@ -63,37 +63,37 @@ export default function TagsPieChart({ activities = [] }) {
 
   /* Data processing */
   const pieData = useMemo(() => {
-const agg = {};
-  activities.forEach(({ tag, participants = 0, capacity = 0 }) => {
-    if (!capacity) return;                // skip corrupt rows
-    if (!agg[tag]) agg[tag] = { used: 0, cap: 0 };
-    agg[tag].used += participants;
-    agg[tag].cap  += capacity;
-  });
-
-  // demandIndex = Σparticipants / Σcapacity  (0–1)
-  const demand = Object.fromEntries(
-    Object.entries(agg).map(([tag, v]) => [tag, v.used / v.cap])
-  );
-  const sum = Object.values(demand).reduce((s, v) => s + v, 0) || 1;
-
-  return Object.entries(demand)
-    .sort((a, b) => b[1] - a[1])        // high → low
-    .map(([tag, idx], i) => {
-    const pct = (idx / sum) * 100;
-      return {
-        id   : tag,
-        label: tag,
-        value: pct,                       // keeps Nivo happy (used for angles)
-        pct  : pct.toFixed(1),            // string: '14.3'
-        participants: agg[tag].used,      /* optional, est. scale */
-        color: BASE_COLORS[i] ?? pickExtraColor()
-      };
+    const agg = {};
+    activities.forEach(({ tag, participants = 0, capacity = 0 }) => {
+      if (!capacity) return;                // skip corrupt rows
+      if (!agg[tag]) agg[tag] = { used: 0, cap: 0 };
+      agg[tag].used += participants;
+      agg[tag].cap += capacity;
     });
-}, [activities, pickExtraColor]);
+
+    // demandIndex = Σparticipants / Σcapacity  (0–1)
+    const demand = Object.fromEntries(
+      Object.entries(agg).map(([tag, v]) => [tag, v.used / v.cap])
+    );
+    const sum = Object.values(demand).reduce((s, v) => s + v, 0) || 1;
+
+    return Object.entries(demand)
+      .sort((a, b) => b[1] - a[1])        // high → low
+      .map(([tag, idx], i) => {
+        const pct = (idx / sum) * 100;
+        return {
+          id: tag,
+          label: tag,
+          value: pct,                       // keeps Nivo happy (used for angles)
+          pct: pct.toFixed(1),            // string: '14.3'
+          participants: agg[tag].used,      /* optional, est. scale */
+          color: BASE_COLORS[i] ?? pickExtraColor()
+        };
+      });
+  }, [activities, pickExtraColor]);
 
 
- const EMPTY = pieData.length === 0;
+  const EMPTY = pieData.length === 0;
 
   return (
     <div
@@ -120,25 +120,25 @@ const agg = {};
         <>
           {/* Pie chart */}
           <div style={{ flex: 1 }}>
-        <ResponsivePie
-          data={pieData}
-          colors={d => d.data.color}
-          margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
-          innerRadius={0}
-          padAngle={0.5}
-          cornerRadius={3}
-          enableArcLabels={false}
-          enableSliceLabels={false}
-          enableArcLinkLabels={false}
-          animate={false} 
-          borderWidth={1}
-          borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
-          tooltip={({ datum }) => (
-          <div style={{ padding: 8, direction: 'rtl' }}>
-            <strong>{datum.id}</strong><br />
-            {datum.data.pct}%&nbsp;|&nbsp;{datum.data.participants} משתתפים
-          </div>
-        )}
+            <ResponsivePie
+              data={pieData}
+              colors={d => d.data.color}
+              margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
+              innerRadius={0}
+              padAngle={0.5}
+              cornerRadius={3}
+              enableArcLabels={false}
+              enableSliceLabels={false}
+              enableArcLinkLabels={false}
+              animate={false}
+              borderWidth={1}
+              borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
+              tooltip={({ datum }) => (
+                <div style={{ padding: 8, direction: 'rtl' }}>
+                  <strong>{datum.id}</strong><br />
+                  {datum.data.pct}%&nbsp;|&nbsp;{datum.data.participants} משתתפים
+                </div>
+              )}
             />
           </div>
 
@@ -161,7 +161,7 @@ const agg = {};
                 style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}
               >
                 <span
-                 style={{
+                  style={{
                     width: 14,
                     height: 14,
                     borderRadius: '50%',
@@ -186,6 +186,6 @@ const agg = {};
           </div>
         </>
       )}
-      </div>
+    </div>
   );
 }

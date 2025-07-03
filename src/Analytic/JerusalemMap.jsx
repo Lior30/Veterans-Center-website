@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, CircleMarker, useMapEvents } from 'react-leafl
 async function processUserData(userData) {
   // group users by address
   const locationGroups = {}
-  
+
   userData.forEach(user => {
     const address = user.address
     if (address && address.trim()) {
@@ -20,9 +20,9 @@ async function processUserData(userData) {
       locationGroups[address].count += 1
     }
   })
-  
+
   const totalUsers = userData.length
-  
+
   // the structure for the final locations
   const locations = []
   for (const location of Object.values(locationGroups)) {
@@ -36,13 +36,13 @@ async function processUserData(userData) {
       })
     }
   }
-  
+
   return locations
 }
 
 // Nominatim API 
 async function getCoordinatesForAddress(address) {
-  
+
   const knownLocations = {
     'מלחה': [31.7234, 35.1956],
     'בית הכרם': [31.7859, 35.1964],
@@ -69,11 +69,11 @@ async function getCoordinatesForAddress(address) {
     'רמת דניה': [31.8234, 35.2123],
     'פסגת זאב': [31.8456, 35.2234]
   }
-  
+
   if (knownLocations[address]) {
     return knownLocations[address]
   }
-  
+
   // looks for API
   try {
     const searchQuery = `${address}, ירושלים, ישראל`
@@ -81,14 +81,14 @@ async function getCoordinatesForAddress(address) {
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1&bounded=1&viewbox=35.1,31.9,35.3,31.6`
     )
     const data = await response.json()
-    
+
     if (data && data.length > 0) {
       return [parseFloat(data[0].lat), parseFloat(data[0].lon)]
     }
   } catch (error) {
     console.warn(`לא ניתן למצוא קואורדינטות עבור: ${address}`)
   }
-  
+
   return null
 }
 
@@ -106,7 +106,7 @@ const sampleUserData = [
 export default function JerusalemMap({ userData = sampleUserData }) {
   const [locations, setLocations] = useState([])
   const [loading, setLoading] = useState(true)
-  
+
   useState(() => {
     async function loadLocations() {
       setLoading(true)
@@ -116,17 +116,17 @@ export default function JerusalemMap({ userData = sampleUserData }) {
     }
     loadLocations()
   }, [userData])
-  
+
   const [tooltip, setTooltip] = useState(null)
   const maxCount = Math.max(...locations.map(l => l.count), 1)
-  
+
   if (loading) {
     return (
-      <div style={{ 
-        height: 500, 
-        width: '100%', 
-        display: 'flex', 
-        alignItems: 'center', 
+      <div style={{
+        height: 500,
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#f5f5f5',
         borderRadius: '8px',
@@ -136,14 +136,14 @@ export default function JerusalemMap({ userData = sampleUserData }) {
       </div>
     )
   }
-  
+
   if (locations.length === 0) {
     return (
-      <div style={{ 
-        height: 500, 
-        width: '100%', 
-        display: 'flex', 
-        alignItems: 'center', 
+      <div style={{
+        height: 500,
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#f5f5f5',
         borderRadius: '8px',
@@ -170,9 +170,9 @@ export default function JerusalemMap({ userData = sampleUserData }) {
         <MapEventHandler setTooltip={setTooltip} />
 
         {locations.map(loc => (
-          <InteractiveMarker 
-            key={loc.name} 
-            location={loc} 
+          <InteractiveMarker
+            key={loc.name}
+            location={loc}
             maxCount={maxCount}
             setTooltip={setTooltip}
           />
@@ -229,7 +229,7 @@ function InteractiveMarker({ location, maxCount, setTooltip }) {
     const mapPane = e.target._map.getPane('mapPane')
     const mapContainer = e.target._map.getContainer()
     const rect = mapContainer.getBoundingClientRect()
-    
+
     setTooltip({
       x: rect.left + containerPoint.x,
       y: rect.top + containerPoint.y,
@@ -244,7 +244,7 @@ function InteractiveMarker({ location, maxCount, setTooltip }) {
       const containerPoint = e.containerPoint
       const mapContainer = e.target._map.getContainer()
       const rect = mapContainer.getBoundingClientRect()
-      
+
       setTooltip(prev => prev ? {
         ...prev,
         x: rect.left + containerPoint.x,

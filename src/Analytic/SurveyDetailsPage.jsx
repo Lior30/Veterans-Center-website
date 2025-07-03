@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { ResponsiveBar } from '@nivo/bar'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { db } from '../firebase' 
+import { db } from '../firebase'
 import { doc, getDoc } from 'firebase/firestore'
 
 export default function SurveyDetailsPage() {
@@ -46,7 +46,7 @@ export default function SurveyDetailsPage() {
       )
     }
     enrich()
-  }, [baseSurveys]) 
+  }, [baseSurveys])
 
   return (
     <div style={{ padding: 24, minHeight: '100vh', background: '#f8f9fa' }}>
@@ -75,20 +75,20 @@ export default function SurveyDetailsPage() {
         <p style={{ color: '#666' }}>אין נתונים להצגה בסקרים.</p>
       ) : (
         surveys.map((survey, idx) => {
-          const answered   = survey.answered   || 0
+          const answered = survey.answered || 0
           const registered = survey.registered || 0
-          const remaining  = Math.max(registered - answered, 0)
+          const remaining = Math.max(registered - answered, 0)
 
-          
+
           const data = [
             {
               metric: 'ענו',
-              ענו:   answered,
+              ענו: answered,
               נותרו: remaining,
             },
           ]
 
-          
+
           const ticks = Array.from({ length: registered + 1 }, (_, i) => i)
 
           return (
@@ -104,41 +104,41 @@ export default function SurveyDetailsPage() {
               }}
             >
               {/* headline*/}
-               <h2 style={{ fontSize: 18, fontWeight: 600, margin: '0 0 8px' }}>
-                {survey.activityName || 'סקר כללי'}         
+              <h2 style={{ fontSize: 18, fontWeight: 600, margin: '0 0 8px' }}>
+                {survey.activityName || 'סקר כללי'}
                 <span style={{ fontSize: 14, fontWeight: 400, color: '#555' }}>
                   {' '}({survey.name})
                 </span>
-               </h2>
+              </h2>
 
               <div style={{ height: 80 }}>
                 <ResponsiveBar
                   data={data}
-                  keys={['ענו', 'נותרו']}    
+                  keys={['ענו', 'נותרו']}
                   indexBy="id"
                   layout="horizontal"
                   groupMode="stacked"
                   margin={{ top: 10, right: 20, bottom: 30, left: 80 }}
                   padding={0.3}
                   borderRadius={3}
-                  
+
                   colors={({ id }) => (id === 'ענו' ? '#7e64e0' : '#e0e0e0')}
                   colorBy="id"
 
-                  
-                  valueScale={{ type: 'linear', min: 0, max: registered, reverse: true }}
-                  
 
-                  
+                  valueScale={{ type: 'linear', min: 0, max: registered, reverse: true }}
+
+
+
                   enableLabel
                   label={({ id, value }) => (id === 'ענו' ? value : '')}
                   valueFormat=">-.0f"
                   labelTextColor="#212529"
 
-                  
+
                   enableGridX={false}
                   enableGridY={false}
-                  
+
                   axisBottom={{
                     tickSize: 0,
                     tickPadding: 8,
@@ -151,14 +151,16 @@ export default function SurveyDetailsPage() {
                   }}
 
                   tooltip={({ id, value }) => (
-                    <div style={{ direction:'rtl',
-                                  background:'#fff',
-                                  padding:'6px 8px',
-                                  border:'1px solid #ddd',
-                                  borderRadius:4,
-                                  fontSize:13,
-                                  fontWeight:600 }}>
-                      <span style={{ fontWeight:700 }}>{value}</span> {id}
+                    <div style={{
+                      direction: 'rtl',
+                      background: '#fff',
+                      padding: '6px 8px',
+                      border: '1px solid #ddd',
+                      borderRadius: 4,
+                      fontSize: 13,
+                      fontWeight: 600
+                    }}>
+                      <span style={{ fontWeight: 700 }}>{value}</span> {id}
                     </div>
                   )}
 
