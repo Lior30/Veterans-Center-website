@@ -22,7 +22,6 @@ export default function RegistrationsLineChart({ activities = [] }) {
 
   /* ─────────── aggregate once ─────────── */
   const { data, maxY } = useMemo(() => {
-    /* טבלת 0-ים */
     const table = Array(7).fill(null).map(() =>
       HOURS.reduce((m, h) => ({ ...m, [h]: 0 }), {})
     );
@@ -77,9 +76,8 @@ export default function RegistrationsLineChart({ activities = [] }) {
     '#8c564b',
   ];
 
-  // פונקציה לחישוב מיקום הטולטיפ כך שהוא לא יצא מהמסך
   const CustomTooltip = ({ point }) => {
-    return null; // לא נציג טולטיפ כאן, נשתמש בטולטיפ מותאם אישית
+    return null;
   };
 
   /* ---------- render ---------- */

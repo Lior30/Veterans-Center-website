@@ -5,7 +5,7 @@ import { Typography } from '@mui/material';
 export default function CardTitle({ children }) {
   return (
     <Typography
-      variant="subtitle1"       // או "h6" לפי גודל רצוי
+      variant="subtitle1"       
       align="center"
       sx={{
         fontWeight: 600,

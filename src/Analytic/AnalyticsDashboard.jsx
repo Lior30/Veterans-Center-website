@@ -57,7 +57,6 @@ export function getFilteredActivities(activities, filterOption) {
       // Firestore Timestamp
       when = act.timestamp.toDate();
     } else if (act.timestamp instanceof Date) {
-      // plain JS Date that כבר נשמר במסמך
       when = act.timestamp;
     } else {
       // no usable date → skip the record
@@ -107,12 +106,12 @@ export default function AnalyticsDashboard() {
     const acts = getFilteredActivities(allActivities, filterLineChart);
     if (!acts.length) return null;
 
-    const byDay = {};              // סך-הכול ליום
-    const byHour = Array(24).fill(0); // סך-הכול לשעה (0-23)
+    const byDay = {};             
+    const byHour = Array(24).fill(0); 
     let total = 0;
 
     acts.forEach(a => {
-      const cnt = a.participants ?? 0;   // כבר מספר, לא מערך
+      const cnt = a.participants ?? 0;  
       total += cnt;
 
       const when = a.activity_date ? new Date(a.activity_date)
@@ -135,7 +134,7 @@ export default function AnalyticsDashboard() {
     let minHour = 8, minCnt = byHour[8] ?? 0;
     HOURS_RANGE.forEach(h => {
       const c = byHour[h] ?? 0;
-      if (c > 0 && (c < minCnt || minCnt === 0)) {   // הקטן > 0
+      if (c > 0 && (c < minCnt || minCnt === 0)) {   
         minHour = h;
         minCnt = c;
       }
@@ -198,8 +197,8 @@ export default function AnalyticsDashboard() {
 
         actsRows.push({
           date: a.activity_date,
-          activity_time: a.activity_time,   // שומרים בשם האחיד
-          participants: cnt,               // מספר בפועל, לא מערך
+          activity_time: a.activity_time,   
+          participants: cnt,               
           timestamp: ts
         });
       });
@@ -234,7 +233,7 @@ export default function AnalyticsDashboard() {
           id: d.id,
           ...data,
           participants: cnt,
-          activity_time: data.activity_time   // לשם אחיד
+          activity_time: data.activity_time   
         });
       }
 
@@ -246,27 +245,20 @@ export default function AnalyticsDashboard() {
   }, []);
 
 
-  /* -----------------------------------------------------------------------------------------------------------------------*/
-  // תיקון בחלק של חישוב האחוזים ב-useEffect:
-
   useEffect(() => {
     const now = new Date();
 
-    // תחילת היום (00:00)
     const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);
 
-    // תחילת השבוע הנוכחי (ראשון 00:00)
     const weekStart = new Date(todayStart);
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
 
-    // שבוע קודם: מגבול של לפני 7 ימים ועד רגע לפני תחילת השבוע הנוכחי
     const prevWeekEnd = new Date(weekStart.getTime() - 1);
     const prevWeekStart = new Date(prevWeekEnd);
     prevWeekStart.setDate(prevWeekStart.getDate() - 6);
     prevWeekStart.setHours(0, 0, 0, 0);
 
-    // הוספת לוגים לדיבוג
     console.log('Date ranges:', {
       prevWeekStart: prevWeekStart.toLocaleString('he-IL'),
       prevWeekEnd: prevWeekEnd.toLocaleString('he-IL'),
@@ -298,25 +290,20 @@ export default function AnalyticsDashboard() {
         }
       });
 
-      // הוספת לוגים לדיבוג
       console.log('Visit counts:', {
         todayCnt,
         thisWeekCnt,
         lastWeekCnt
       });
 
-      // עדכון ה-state
       setDailyVisitors(todayCnt);
       setWeeklyVisitors(thisWeekCnt);
 
-      // חישוב משופר של אחוז השינוי
       let delta = 0;
 
       if (lastWeekCnt === 0) {
-        // אם לא היו ביקורים בשבוע שעבר אבל יש השבוע
         delta = thisWeekCnt > 0 ? 100 : 0;
       } else {
-        // חישוב רגיל של אחוז השינוי
         delta = Math.round(((thisWeekCnt - lastWeekCnt) / lastWeekCnt) * 100);
       }
 
@@ -326,12 +313,6 @@ export default function AnalyticsDashboard() {
 
     return () => unsubscribe();
   }, []);
-
-  // גם וודאי שהרכיב WeeklyVisitsCard מציג נכון את הערך:
-  // אם יש לך גישה לקוד של WeeklyVisitsCard, ודאי שהוא לא מגביל את הערך
-
-
-
 
   useEffect(() => {
     (async () => {
@@ -642,8 +623,8 @@ export default function AnalyticsDashboard() {
             ...cardStyle,
             gridColumn: 1,
             gridRow: 1,
-            position: 'relative',    // כדי שה-tooltip ידע למקם את עצמו יחסית לדיב
-            overflow: 'visible',     // מאפשר לטיפ להיזרח מעבר לגבולות הקליפ
+            position: 'relative',   
+            overflow: 'visible',   
           }}
         >
           <CardTitle>ביקוש לפי יום בשבוע ושעת פעילות</CardTitle>
