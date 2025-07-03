@@ -22,7 +22,7 @@ export default function LineTimeFilter({ value, onChange, hideWeek = false }) {
 
   const HEB_QUARTERS = ['ראשון', 'שני', 'שלישי', 'רביעי'];
   const showQuarterSelector = type === 'quarter';
-  const CUR_YEAR            = new Date().getFullYear()
+  const CUR_YEAR = new Date().getFullYear()
   const getCurrentQuarter = () => Math.floor(new Date().getMonth() / 3)
 
   /** Render week selector only when relevant */
@@ -33,20 +33,20 @@ export default function LineTimeFilter({ value, onChange, hideWeek = false }) {
       <label>סינון לפי טווח זמן:&nbsp;</label>
 
       {/* main type selector */}
-       <select
+      <select
         value={type}
         onChange={e =>
-        set({
+          set({
             type: e.target.value,
             week: undefined,
             month: undefined,
             quarter:
-            e.target.value === 'quarter'
+              e.target.value === 'quarter'
                 ? (quarter ?? getCurrentQuarter())
                 : undefined
-        })
+          })
         }
-    >
+      >
 
         <option value="quarter">רבעון</option>
         <option value="year">שנה אחרונה</option>

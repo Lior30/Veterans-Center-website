@@ -14,7 +14,7 @@ const DonutChart = memo(function DonutChart({ title, data, size = 200, children 
     { id: 'Loading...', value: 100, color: '#e9ecef' }
   ];
 
-   const total = useMemo(
+  const total = useMemo(
     () => displayData.reduce((s, d) => s + (d.value ?? 0), 0) || 1,
     [displayData]
   );
@@ -22,26 +22,26 @@ const DonutChart = memo(function DonutChart({ title, data, size = 200, children 
   return (
     <div
       style={{
-        background   : '#fff',
-        border       : '1px solid #e9ecef',
-        borderRadius : 12,
-        boxShadow    : '0 2px 12px rgba(0,0,0,.08)',
-        padding      : 20,
-        width        : 220,
-        height       : size + 90,
-        display      : 'flex',
+        background: '#fff',
+        border: '1px solid #e9ecef',
+        borderRadius: 12,
+        boxShadow: '0 2px 12px rgba(0,0,0,.08)',
+        padding: 20,
+        width: 220,
+        height: size + 90,
+        display: 'flex',
         flexDirection: 'column',
-        alignItems   : 'right'
+        alignItems: 'right'
       }}
     >
 
       {/* ───────── Title ───────── */}
       <div style={{
         fontWeight: 600,
-        fontSize  : 16,
+        fontSize: 16,
         marginBottom: 8,
-        textAlign : 'right',
-        color     : '#495057'
+        textAlign: 'right',
+        color: '#495057'
       }}>
         {title}
       </div>
@@ -62,13 +62,13 @@ const DonutChart = memo(function DonutChart({ title, data, size = 200, children 
           isInteractive={true}
           tooltip={({ datum }) => (
             <div style={{
-              padding   : 8,
-              fontSize  : 14,
+              padding: 8,
+              fontSize: 14,
               lineHeight: 1.4,
-              direction : 'rtl',
-              textAlign : 'right'
+              direction: 'rtl',
+              textAlign: 'right'
             }}>
-              <strong style={{ fontSize: 15 }}>{datum.id}</strong><br/>
+              <strong style={{ fontSize: 15 }}>{datum.id}</strong><br />
               {((datum.value / total) * 100).toFixed(1)}%
               <span style={{ fontWeight: 600, margin: '0 4px' }}>|</span>
               {datum.value} משתתפים
@@ -78,14 +78,14 @@ const DonutChart = memo(function DonutChart({ title, data, size = 200, children 
       </div>
 
       {/* ───────── Legend and optional button in one row ───────── */}
-      {/* Legend + button */} 
+      {/* Legend + button */}
       <div style={{
-        marginTop      : 12,
-        display        : 'flex',
-        justifyContent : 'space-between',
-        alignItems     : 'center',
-        width          : '100%',
-        pointerEvents  : 'none'   /* ←  NEW */
+        marginTop: 12,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+        pointerEvents: 'none'   /* ←  NEW */
       }}>
 
         {/* Legend on the right side */}
@@ -95,17 +95,17 @@ const DonutChart = memo(function DonutChart({ title, data, size = 200, children 
           gap: 4
         }}>
           {displayData.map((d, index) => (
-            <div key={`${d.id}-${index}`} style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 6 
+            <div key={`${d.id}-${index}`} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6
             }}>
               <span style={{
                 width: 12,
                 height: 12,
                 borderRadius: '50%',
                 background: d.color
-              }}/>
+              }} />
               <span style={{ fontSize: 13, color: '#495057' }}>{d.id}</span>
             </div>
           ))}
@@ -113,7 +113,7 @@ const DonutChart = memo(function DonutChart({ title, data, size = 200, children 
 
         {/* Optional button (children) on the left side */}
         {children && (
-          <div style={{ pointerEvents:'auto' }}>
+          <div style={{ pointerEvents: 'auto' }}>
             {children}
           </div>
         )}

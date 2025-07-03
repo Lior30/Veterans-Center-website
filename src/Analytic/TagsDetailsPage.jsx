@@ -1,12 +1,12 @@
 // src/components/TagsDetailsPage.jsx
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs }       from 'firebase/firestore';
-import { db }                        from '../firebase';
-import DonutChart                    from './DonutChart';
-import { Link }                      from 'react-router-dom';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
+import DonutChart from './DonutChart';
+import { Link } from 'react-router-dom';
 
 export default function TagsDetailsPage() {
-  const [byTag, setByTag]         = useState({}); // { tag: [activities...] }
+  const [byTag, setByTag] = useState({}); // { tag: [activities...] }
   const [activeTag, setActiveTag] = useState(null);
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export default function TagsDetailsPage() {
   }, []);
 
   // If no tags are available, show a message
-  const tags       = Object.keys(byTag);
+  const tags = Object.keys(byTag);
   const activities = activeTag ? byTag[activeTag] : [];
 
   return (
@@ -109,7 +109,7 @@ export default function TagsDetailsPage() {
                     title=""
                     data={[
                       { id: 'נרשמים', value: act.participants, color: '#7e64e0' },
-                      { id: 'פנויים',  value: free,            color: '#ffe87e' }
+                      { id: 'פנויים', value: free, color: '#ffe87e' }
                     ]}
                     size={120}
                     colors={['#7e64e0', '#ffd400']}
