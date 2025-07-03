@@ -1,16 +1,16 @@
 // ============  src/components/PublicMessageBoardContainer.js  ============
-import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
+  Button,
   Card,
   CardContent,
-  Typography,
-  Button,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
+  DialogContent,
+  DialogTitle,
+  Typography,
 } from "@mui/material";
+import { useEffect, useRef, useState } from "react";
 
 import MessageService from "../services/MessageService.js";
 import ReplyContainer from "./ReplyContainer.jsx";
@@ -21,7 +21,7 @@ import ReplyContainer from "./ReplyContainer.jsx";
 export default function PublicMessageBoardContainer() {
   const [messages, setMessages] = useState([]);
   const [selectedMsg, setSelectedMsg] = useState(null);
-  const dragIndexRef = useRef(null); 
+  const dragIndexRef = useRef(null);
 
   /* load messages*/
   useEffect(() => {

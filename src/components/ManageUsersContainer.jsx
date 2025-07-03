@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
 import {
   collection,
-  collectionGroup,
-  onSnapshot,
   doc,
-  setDoc,
+  onSnapshot,
+  setDoc
 } from "firebase/firestore";
+import { useEffect, useState } from "react";
 import { db } from "../firebase.js";
 import ManageUsersDesign from "./ManageUsersDesign";
 
@@ -18,28 +17,28 @@ function ensureUserId(u) {
 }
 
 function normalizeUser(raw) {
-  const src   = raw.user ?? raw;
-  const first = src.first_name  ?? "";
-  const last  = src.last_name   ?? "";
-  const fn    = (src.fullname || src.fullName || `${first} ${last}`.trim())
-                  .trim() || "—";
+  const src = raw.user ?? raw;
+  const first = src.first_name ?? "";
+  const last = src.last_name ?? "";
+  const fn = (src.fullname || src.fullName || `${first} ${last}`.trim())
+    .trim() || "—";
   return {
-    fullName:      fn,
-    phone:         (src.phone || src.phoneNumber || "").trim(),
+    fullName: fn,
+    phone: (src.phone || src.phoneNumber || "").trim(),
     is_registered: src.is_registered ?? false,
-    is_club_60:    src.is_club_60    ?? false,
-    first_name:    first,
-    last_name:     last,
-    user_id:       src.user_id || "",
+    is_club_60: src.is_club_60 ?? false,
+    first_name: first,
+    last_name: last,
+    user_id: src.user_id || "",
   };
 }
 
 export default function ManageUsersContainer() {
-  const [regs,    setRegs]    = useState([]);
+  const [regs, setRegs] = useState([]);
   const [surveys, setSurveys] = useState([]);
   const [replies, setReplies] = useState([]);
-  const [manual,  setManual]  = useState([]);
-  const [filter,  setFilter]  = useState("all");
+  const [manual, setManual] = useState([]);
+  const [filter, setFilter] = useState("all");
   const [deletedPhones, setDeletedPhones] = useState(new Set());
 
   useEffect(() => {
@@ -66,18 +65,18 @@ export default function ManageUsersContainer() {
             setDoc(
               doc(db, "users", docId),
               {
-                user_id:      docId,
-                first_name:   u.first_name,
-                last_name:    u.last_name,
-                phone:        u.phone,
-                fullname:     u.fullName,
-                is_registered:false,
-                is_club_60:   false,
+                user_id: docId,
+                first_name: u.first_name,
+                last_name: u.last_name,
+                phone: u.phone,
+                fullname: u.fullName,
+                is_registered: false,
+                is_club_60: false,
               },
               { merge: true }
             )
-            .then(() => console.log("   → wrote user from message:", id))
-            .catch(console.error);
+              .then(() => console.log("   → wrote user from message:", id))
+              .catch(console.error);
           }
         });
       },
@@ -92,14 +91,14 @@ export default function ManageUsersContainer() {
       console.error
     );
 
-    
+
     return () => {
       unsubRegs();
       unsubMsgs();
       unsubUsers();
     };
   }, []);
-  
+
 
   // key: "phone" is used to deduplicate users
   const allMap = [...regs, ...surveys, ...replies, ...manual]
@@ -112,26 +111,26 @@ export default function ManageUsersContainer() {
       return acc;
     }, {});
   const allUsers = Object.values(allMap);
-  
 
-  const inAct = new Set(regs   .map(u => u.phone));
+
+  const inAct = new Set(regs.map(u => u.phone));
   const inSur = new Set(surveys.map(u => u.phone));
   const inRep = new Set(replies.map(u => u.phone));
 
   const filtered = allUsers.filter(u => {
     if (deletedPhones.has(u.phone)) return false;
-    const a = inAct .has(u.phone),
-          s = inSur .has(u.phone),
-          r = inRep .has(u.phone);
+    const a = inAct.has(u.phone),
+      s = inSur.has(u.phone),
+      r = inRep.has(u.phone);
     switch (filter) {
       case "activity": return a && !s && !r;
-      case "survey":   return s && !a && !r;
-      case "replies":  return r && !a && !s;
-      case "both":     return a && s && !r;
-      default:         return true;
+      case "survey": return s && !a && !r;
+      case "replies": return r && !a && !s;
+      case "both": return a && s && !r;
+      default: return true;
     }
   });
-  
+
 
   return (
     <ManageUsersDesign

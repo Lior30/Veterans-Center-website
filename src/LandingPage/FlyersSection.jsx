@@ -1,23 +1,20 @@
 // src/components/FlyersSection.jsx
 // Responsive‑only tweaks – no logic changes
-import React from "react";
-import Slider from "react-slick";
-import {
-  Box,
-  Container,
-  Card,
-  CardActionArea,
-  CardMedia,
-  CardContent,
-  Typography,
-  useTheme,
-  styled,
-  IconButton,
-} from "@mui/material";
-import SectionTitle from "./SectionTitle";
-import EventIcon from "@mui/icons-material/Event";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import {
+  Box,
+  Card,
+  CardActionArea,
+  CardContent,
+  CardMedia,
+  Container,
+  IconButton,
+  styled,
+  Typography,
+  useTheme,
+} from "@mui/material";
+import Slider from "react-slick";
 
 /* dd\MM\yyyy */
 const formatDateNumeric = (isoDate) => {
@@ -25,7 +22,7 @@ const formatDateNumeric = (isoDate) => {
   const day = String(d.getDate()).padStart(2, "0");
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const year = d.getFullYear();
-return `${day}/${month}/${year}`;
+  return `${day}/${month}/${year}`;
 
 };
 
@@ -43,7 +40,7 @@ const ArrowBtn = styled(IconButton)(({ theme }) => ({
   background: "linear-gradient(135deg,#8e24aa 0%,#6a1b9a 100%)",
   boxShadow: "0 3px 10px rgba(106,27,154,.4)",
   "&:hover": { background: "linear-gradient(135deg,#7b1fa2 0%,#4a148c 100%)" },
-  "&::before": {               
+  "&::before": {
     content: "none",
   },
   "&.slick-disabled": {        // when disabled 
@@ -104,17 +101,17 @@ export default function FlyersSection({ flyers, activities, openDialog }) {
   };
 
   return (
-<Box
-  component="section"
-  sx={{
-    pt: { xs: 6, sm: 10 },  // מרווח למעלה
-    pb: { xs: 6, sm: 10 },  // מרווח למטה
-    background: `linear-gradient(180deg,#ffffff 0%, ${theme.palette.primary.vlight} 100%)`,
-  }}
->
+    <Box
+      component="section"
+      sx={{
+        pt: { xs: 6, sm: 10 },  // מרווח למעלה
+        pb: { xs: 6, sm: 10 },  // מרווח למטה
+        background: `linear-gradient(180deg,#ffffff 0%, ${theme.palette.primary.vlight} 100%)`,
+      }}
+    >
 
 
-      <Container maxWidth="lg" sx={{  }}>
+      <Container maxWidth="lg" sx={{}}>
         {/* TITLE */}
 
         <Box sx={{ position: "relative", mt: 2 }}>
@@ -139,28 +136,28 @@ export default function FlyersSection({ flyers, activities, openDialog }) {
                     />
                     <CardContent sx={{ p: { xs: 1.25, sm: 2 }, textAlign: "center" }}>
                       <Box display="flex" justifyContent="center" alignItems="center" gap={1}>
-  <Typography
-    variant="subtitle2"
-    fontWeight={600}
-    noWrap
-    sx={{ fontSize: { xs: "0.85rem", sm: "0.9rem" } }}
-  >
-    {activities.find((a) => a.id === f.activityId)?.name || f.name}
-  </Typography>
+                        <Typography
+                          variant="subtitle2"
+                          fontWeight={600}
+                          noWrap
+                          sx={{ fontSize: { xs: "0.85rem", sm: "0.9rem" } }}
+                        >
+                          {activities.find((a) => a.id === f.activityId)?.name || f.name}
+                        </Typography>
 
-  {/* icon for 60+*/}
-  {activities.find((a) => a.id === f.activityId)?.registrationCondition === "member60" && (
-    <Box
-      component="img"
-      src="/assets/Club60.png"
-      alt="מועדון 60+"
-      sx={{
-        width: 30,
-        height: 30,
-      }}
-    />
-  )}
-</Box>
+                        {/* icon for 60+*/}
+                        {activities.find((a) => a.id === f.activityId)?.registrationCondition === "member60" && (
+                          <Box
+                            component="img"
+                            src="/assets/Club60.png"
+                            alt="מועדון 60+"
+                            sx={{
+                              width: 30,
+                              height: 30,
+                            }}
+                          />
+                        )}
+                      </Box>
 
                       <Typography
                         variant="caption"

@@ -1,21 +1,17 @@
 // src/components/ContactDetailsAdmin.jsx
-import { useState, useEffect } from "react";
 import {
+  Box,
+  Button,
   Container,
+  Divider,
   List,
   ListItemButton,
   ListItemText,
-  TextField,
-  Button,
-  Typography,
-  Box,
   Paper,
-  Divider,
-  Dialog,
-  DialogContent,
-  DialogActions,
+  TextField,
+  Typography
 } from "@mui/material";
-import { CheckCircle, Error, Close } from "@mui/icons-material";
+import { useEffect, useState } from "react";
 import ContactService from "../services/ContactService";
 import ActionFeedbackDialog from "./ActionFeedbackDialog";
 
@@ -68,17 +64,17 @@ export default function ContactDetailsAdmin() {
     try {
       await ContactService.update(values);
       setOriginalValues(values);
-      setMessage({ 
-        open: true, 
-        text: 'השינויים נשמרו בהצלחה במערכת', 
+      setMessage({
+        open: true,
+        text: 'השינויים נשמרו בהצלחה במערכת',
         type: 'success',
         title: 'פעולה הושלמה בהצלחה'
       });
     } catch (err) {
       console.error(err);
-      setMessage({ 
-        open: true, 
-        text: 'אירעה שגיאה בשמירת השינויים. אנא נסה שוב', 
+      setMessage({
+        open: true,
+        text: 'אירעה שגיאה בשמירת השינויים. אנא נסה שוב',
         type: 'error',
         title: 'שגיאה בשמירה'
       });

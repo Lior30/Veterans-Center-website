@@ -1,12 +1,12 @@
-import { styled, Button } from "@mui/material";
+import { Button, styled } from "@mui/material";
 
 /*  button Call-To-Action  */
 const CtaButton = styled(Button)(({ theme, color = "primary" }) => {
   /* choose color */
-  const pal      = theme.palette[color] || theme.palette.primary;
-  const main     = pal.main;
-  const dark     = pal.dark  || theme.palette[color]?.dark  || main;
-  const light    = pal.light || theme.palette[color]?.light || main;
+  const pal = theme.palette[color] || theme.palette.primary;
+  const main = pal.main;
+  const dark = pal.dark || theme.palette[color]?.dark || main;
+  const light = pal.light || theme.palette[color]?.light || main;
 
   return {
     position: "relative",

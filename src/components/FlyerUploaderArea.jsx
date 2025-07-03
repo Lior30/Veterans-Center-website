@@ -1,21 +1,21 @@
 // src/components/FlyerUploaderArea.jsx
-import React, { useState, useRef, useEffect } from "react";
-import FlyerService from "../services/FlyerService.js";
-import ActivityService from "../services/ActivityService";
-import CtaButton from "../LandingPage/CtaButton";
-import ActionFeedbackDialog from "./ActionFeedbackDialog";
 import {
   Box,
-  Typography,
-  TextField,
   FormControl,
   InputLabel,
-  Select,
   MenuItem,
+  Select,
   Stack,
-  useTheme,
+  TextField,
+  Typography,
   useMediaQuery,
+  useTheme,
 } from "@mui/material";
+import { useEffect, useRef, useState } from "react";
+import CtaButton from "../LandingPage/CtaButton";
+import ActivityService from "../services/ActivityService";
+import FlyerService from "../services/FlyerService.js";
+import ActionFeedbackDialog from "./ActionFeedbackDialog";
 
 export default function FlyerUploaderArea({ onUpload }) {
   const theme = useTheme();

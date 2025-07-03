@@ -1,21 +1,21 @@
 // src/components/MessagesSection.jsx
-import React, { useState, useRef } from "react";
-import {
-  Box,
-  Container,
-  Card,
-  CardContent,
-  Typography,
-  IconButton,
-  useTheme,
-  useMediaQuery,
-  styled,
-} from "@mui/material";
 import ArticleIcon from "@mui/icons-material/Article";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import SectionTitle from "./SectionTitle";
+import {
+  Box,
+  Card,
+  CardContent,
+  Container,
+  IconButton,
+  styled,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import React, { useRef, useState } from "react";
 import CtaButton from "./CtaButton";
+import SectionTitle from "./SectionTitle";
 
 /* — MESSAGE CARD — */
 const UpdateCard = styled(Card)(({ theme }) => ({
@@ -107,7 +107,7 @@ export default function MessagesSection({ messages, openDialog, justIdentified }
       sx={{
         "--msg-card-width": `${cardWidth}px`,
         py: { xs: 3, sm: 5 },
-backgroundColor: "#fff",
+        backgroundColor: "#fff",
       }}
     >
       <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>

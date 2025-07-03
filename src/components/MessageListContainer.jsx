@@ -1,36 +1,36 @@
 //src/components/MessageListContainer.jsx
-import React, { useState, useEffect, useRef } from "react";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import {
-  collection,
-  getDocs,
-  writeBatch,
-  doc,
-  deleteDoc,
-  updateDoc,
-  Timestamp,
-} from "firebase/firestore";
-import {
+  Button,
   Container,
-  Typography,
-  Paper,
+  FormControl,
   IconButton,
-  Tooltip,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
   Stack,
   TextField,
-  Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
+  Tooltip,
+  Typography,
 } from "@mui/material";
-import ActionFeedbackDialog from "./ActionFeedbackDialog";
-import ConfirmDialog from "../components/ConfirmDialog";
-import ArrowUpwardIcon   from "@mui/icons-material/ArrowUpward";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import DeleteIcon        from "@mui/icons-material/Delete";
-import EditIcon          from "@mui/icons-material/Edit";
-import { db } from "../firebase";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  Timestamp,
+  updateDoc,
+  writeBatch,
+} from "firebase/firestore";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import ConfirmDialog from "../components/ConfirmDialog";
+import { db } from "../firebase";
+import ActionFeedbackDialog from "./ActionFeedbackDialog";
 
 /* ────────────────  Helpers  ──────────────── */
 // hebrew date formatting
@@ -57,14 +57,14 @@ const toInputDate = (ts) => {
 
 
 export default function MessageListContainer() {
-  const [messages, setMessages]           = useState([]);
-  const [loading, setLoading]             = useState(true);
-  const [editingId, setEditingId]         = useState(null);
-  const [editTitle, setEditTitle]         = useState("");
-  const [editBody, setEditBody]           = useState("");
-  const [editActivity, setEditActivity]   = useState("");
-  const [editStartDate, setEditStartDate] = useState(""); 
-  const [editEndDate, setEditEndDate]     = useState(""); 
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const [editActivity, setEditActivity] = useState("");
+  const [editStartDate, setEditStartDate] = useState("");
+  const [editEndDate, setEditEndDate] = useState("");
   const dragIndexRef = useRef(null);
   const [search, setSearch] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -91,7 +91,7 @@ export default function MessageListContainer() {
           ...data,
           // date normalization
           startDate: data.startDate,
-          endDate  : data.endDate,
+          endDate: data.endDate,
         };
       });
 
@@ -214,17 +214,17 @@ export default function MessageListContainer() {
         prev.map((m) =>
           m.id === editingId
             ? {
-                ...m,
-                title: editTitle,
-                body: editBody,
-                activity: editActivity,
-                startDate: editStartDate
-                  ? Timestamp.fromDate(new Date(editStartDate))
-                  : null,
-                endDate: editEndDate
-                  ? Timestamp.fromDate(new Date(editEndDate))
-                  : null,
-              }
+              ...m,
+              title: editTitle,
+              body: editBody,
+              activity: editActivity,
+              startDate: editStartDate
+                ? Timestamp.fromDate(new Date(editStartDate))
+                : null,
+              endDate: editEndDate
+                ? Timestamp.fromDate(new Date(editEndDate))
+                : null,
+            }
             : m
         )
       );
@@ -256,7 +256,7 @@ export default function MessageListContainer() {
       <TextField
         placeholder="חיפוש לפי כותרת"
         fullWidth
-        sx={{ 
+        sx={{
           mb: 3,
           '& .MuiInputBase-input': {
             direction: 'rtl',
@@ -270,8 +270,8 @@ export default function MessageListContainer() {
       {messages.filter((m) => m.title?.toLowerCase().includes(search.toLowerCase())).map((m, idx) => (
         <Paper
           key={m.id}
-          sx={{ 
-            p: 3, 
+          sx={{
+            p: 3,
             mb: 2,
             border: '1px solid',
             borderColor: 'custom.outline'  // Uses the outline color from your theme
@@ -425,7 +425,7 @@ export default function MessageListContainer() {
           )}
         </Paper>
       ))}
-      
+
       <ActionFeedbackDialog
         open={message.open}
         type={message.type}

@@ -15,13 +15,13 @@ export function getDesignTheme(mode = "light") {
 
   /*  Logo‑purple scale  */
   const logo = {
-    50:  "#F6EFFB",
+    50: "#F6EFFB",
     100: "#EAD9F5",
     200: "#D5B2EB",
     300: "#C08BE1",
     400: "#AB63D7",
-    500: "#9B3FAF",   
-    600: "#842F93",   
+    500: "#9B3FAF",
+    600: "#842F93",
     700: "#6A2576",
     contrastText: "#FFFFFF",
   };
@@ -29,13 +29,13 @@ export function getDesignTheme(mode = "light") {
   const lilac = {
     100: "#F0E6FA",
     300: "#D8C6F0",
-    500: "#BFA5D2",   
-    600: "#9678A6",   
+    500: "#BFA5D2",
+    600: "#9678A6",
   };
 
-  const surface     = dark ? "#20182A" : "#FFFFFF";
-  const background  = dark ? "#14101B" : "#F8F6FA";
-  const outline     = dark ? "#50485F" : "#D5D0E5";
+  const surface = dark ? "#20182A" : "#FFFFFF";
+  const background = dark ? "#14101B" : "#F8F6FA";
+  const outline = dark ? "#50485F" : "#D5D0E5";
 
   return createTheme({
     direction: "rtl",
@@ -44,25 +44,25 @@ export function getDesignTheme(mode = "light") {
       mode,
       primary: {
         light: logo[300],
-        main:  logo[500],
-        dark:  logo[600],
-        
+        main: logo[500],
+        dark: logo[600],
+
         vlight: logo[50],
-        
+
         lightblue: "#E0FFFF",
         contrastText: logo.contrastText,
       },
       secondary: {
         light: lilac[300],
-        main:  lilac[500],
-        dark:  lilac[600],
+        main: lilac[500],
+        dark: lilac[600],
         contrastText: "#FFFFFF",
       },
 
       /* Status colours tuned to muted purples  */
-      info:    { main: lilac[500], contrastText: "#FFFFFF" },   
-      warning: { main: lilac[600], contrastText: "#FFFFFF" },   
-      error:   { main: "#D77A94", contrastText: "#FFFFFF" },   
+      info: { main: lilac[500], contrastText: "#FFFFFF" },
+      warning: { main: lilac[600], contrastText: "#FFFFFF" },
+      error: { main: "#D77A94", contrastText: "#FFFFFF" },
       success: { main: "#7CBF9E", contrastText: "#FFFFFF" },
 
       background: { default: background, paper: surface },
@@ -75,16 +75,16 @@ export function getDesignTheme(mode = "light") {
 
     /* Typography  */
     typography: {
-fontFamily: "'Rubik', 'Arial', sans-serif",
+      fontFamily: "'Rubik', 'Arial', sans-serif",
       h1: { fontWeight: 600, fontSize: "clamp(2.6rem, 6vw, 3.2rem)", lineHeight: 1.15 },
       h2: { fontWeight: 600, fontSize: "clamp(2.1rem, 5vw, 2.7rem)", lineHeight: 1.2 },
       h3: { fontWeight: 500, fontSize: "clamp(1.7rem, 4vw, 2.2rem)", lineHeight: 1.25 },
       h4: { fontWeight: 500, fontSize: "1.55rem" },
       h5: { fontWeight: 500, fontSize: "1.25rem" },
       h6: { fontWeight: 500, fontSize: "1.05rem" },
-      body1:{ fontSize: "1.04rem", lineHeight: 1.6 },
-      body2:{ fontSize: "0.95rem", lineHeight: 1.55 },
-      button:{ fontWeight: 600, textTransform: "none" },
+      body1: { fontSize: "1.04rem", lineHeight: 1.6 },
+      body2: { fontSize: "0.95rem", lineHeight: 1.55 },
+      button: { fontWeight: 600, textTransform: "none" },
     },
 
     /* Shape & Shadows  */
@@ -108,15 +108,15 @@ fontFamily: "'Rubik', 'Arial', sans-serif",
             fontWeight: 600,
             transition: "all 150ms",
           },
-          containedPrimary:{
+          containedPrimary: {
             backgroundColor: logo[500],
             "&:hover": { backgroundColor: logo[600] },
           },
-          containedInfo:{
+          containedInfo: {
             backgroundColor: lilac[500],
             "&:hover": { backgroundColor: lilac[600] },
           },
-          containedWarning:{
+          containedWarning: {
             backgroundColor: lilac[600],
             "&:hover": { backgroundColor: lilac[700] },
           },

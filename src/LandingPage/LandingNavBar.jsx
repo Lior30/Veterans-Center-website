@@ -1,29 +1,29 @@
 // src/components/LandingNavBar.jsx
 // Desktop: one row · Mobile: two rows (social+logo, nav buttons)
-import React, { useState, useEffect } from "react";
+import FacebookIcon from "@mui/icons-material/Facebook";
+import PhoneIcon from "@mui/icons-material/Phone";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import {
   Box,
-  IconButton,
   Button,
-  useTheme,
+  IconButton,
   useMediaQuery,
+  useTheme,
 } from "@mui/material";
-import FacebookIcon from "@mui/icons-material/Facebook";
-import WhatsAppIcon from "@mui/icons-material/WhatsApp";
-import PhoneIcon from "@mui/icons-material/Phone";
-import AccessibilityWidget from "./AccessibilityWidget";
+import { useEffect, useState } from "react";
 import ContactService from "../services/ContactService";
+import AccessibilityWidget from "./AccessibilityWidget";
 
 export default function LandingNavBar({
   onScrollToFlyers,
   onScrollToMessages,
   onScrollToActivities,
   onScrollToSurveys,
-  justIdentified = false,         
+  justIdentified = false,
 }) {
-  const theme    = useTheme();
+  const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const purple   = theme.palette.primary.main;
+  const purple = theme.palette.primary.main;
 
   /* sticky state */
   const [isSticky, setIsSticky] = useState(false);
@@ -46,16 +46,16 @@ export default function LandingNavBar({
 
   /* navigation buttons */
   const navButtons = [
-    ...(justIdentified ? [{ label: "סקרים",     onClick: onScrollToSurveys   }] : []),
-    { label: "לוח שנה",  onClick: onScrollToActivities },
-     { label: "פעילויות", onClick: onScrollToFlyers     },
-    { label: "הודעות",   onClick: onScrollToMessages   },
-   
+    ...(justIdentified ? [{ label: "סקרים", onClick: onScrollToSurveys }] : []),
+    { label: "לוח שנה", onClick: onScrollToActivities },
+    { label: "פעילויות", onClick: onScrollToFlyers },
+    { label: "הודעות", onClick: onScrollToMessages },
+
   ];
 
   const socialBtnStyle = {
     color: "#fff",
-    width:  isMobile ? 30 : 36,
+    width: isMobile ? 30 : 36,
     height: isMobile ? 30 : 36,
   };
 
@@ -111,7 +111,7 @@ export default function LandingNavBar({
           width: "100%",
           zIndex: theme.zIndex.appBar,
           backdropFilter: "blur(10px)",
-background: "rgba(245, 245, 245, 0.85)",
+          background: "rgba(245, 245, 245, 0.85)",
           boxShadow: isSticky
             ? "0 4px 12px rgba(0,0,0,.15)"
             : "0 1px 4px rgba(0,0,0,.08)",

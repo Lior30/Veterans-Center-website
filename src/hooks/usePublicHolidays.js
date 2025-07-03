@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * Fetch Jewish holidays from Hebcal for years [currentYear - 1] to 2030,
@@ -19,7 +19,7 @@ export default function usePublicHolidays() {
       years.map((year) =>
         fetch(
           `https://www.hebcal.com/hebcal?v=1&cfg=json&year=${year}` +
-            `&month=all&geo=IL&maj=on&min=on&mod=on&nx=on&locale=he`
+          `&month=all&geo=IL&maj=on&min=on&mod=on&nx=on&locale=he`
         ).then((res) => res.json())
       )
     )
@@ -28,9 +28,9 @@ export default function usePublicHolidays() {
           (data.items || [])
             .filter((item) => item.category === "holiday")
             .map((item) => ({
-              date: item.date, 
+              date: item.date,
               title: item.hebrew || item.title,
-              name: item.hebrew || item.title, 
+              name: item.hebrew || item.title,
             }))
         );
         setHolidays(combined);

@@ -1,8 +1,8 @@
 // src/firebase.js
 import { initializeApp } from "firebase/app";
-import { getFirestore }  from "firebase/firestore";
-import { getStorage }    from "firebase/storage";
 import { getAuth } from 'firebase/auth';
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 export const firebaseConfig = {
   apiKey:               import.meta.env.VITE_FIREBASE_API_KEY,
@@ -18,5 +18,5 @@ const db      = getFirestore(app);
 const storage = getStorage(app);
 
 // Export the services you need to use in other parts of your app:
-export { db, storage, app };
+export { app, db, storage };
 export const auth = getAuth(app);

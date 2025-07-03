@@ -1,20 +1,20 @@
 // src/components/AccessibilityWidget.jsx
-import React, { useState, useEffect, useRef } from "react";
-import {
-  useTheme,
-  Box,
-  IconButton,
-  Drawer,
-  Typography,
-  Button,
-  Divider,
-  Stack,
-  Switch,
-  FormControlLabel,
-  styled,
-} from "@mui/material";
 import AccessibilityNewIcon from "@mui/icons-material/AccessibilityNew";
 import CloseIcon from "@mui/icons-material/Close";
+import {
+  Box,
+  Button,
+  Divider,
+  Drawer,
+  FormControlLabel,
+  IconButton,
+  Stack,
+  styled,
+  Switch,
+  Typography,
+  useTheme,
+} from "@mui/material";
+import { useEffect, useRef, useState } from "react";
 
 export default function AccessibilityWidget() {
   const theme = useTheme();
@@ -153,7 +153,7 @@ export default function AccessibilityWidget() {
       document.getElementById("main-content") ||
       document.getElementById("calendar-view");
     if (target) {
-      target.setAttribute("tabindex", "-1"); 
+      target.setAttribute("tabindex", "-1");
       target.focus({ preventScroll: false });
     }
   };
@@ -215,21 +215,21 @@ export default function AccessibilityWidget() {
         ModalProps={{ keepMounted: true }}
       >
         <DrawerContent>
-  {/* ruler with close option*/}
-  <Box display="flex" alignItems="center" justifyContent="space-between">
-    <Typography variant="h6">נגישות</Typography>
+          {/* ruler with close option*/}
+          <Box display="flex" alignItems="center" justifyContent="space-between">
+            <Typography variant="h6">נגישות</Typography>
 
-    <IconButton
-      aria-label="סגור"
-      size="small"
-      onClick={() => setOpen(false)}
-      sx={{ color: theme.palette.text.secondary }}
-    >
-      <CloseIcon fontSize="small" />
-    </IconButton>
-  </Box>
+            <IconButton
+              aria-label="סגור"
+              size="small"
+              onClick={() => setOpen(false)}
+              sx={{ color: theme.palette.text.secondary }}
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
 
-  <Divider />
+          <Divider />
 
 
           <Button
@@ -238,7 +238,7 @@ export default function AccessibilityWidget() {
             sx={{ borderRadius: 2 }}
             onClick={skipToContent}
           >
-דלג ללוח הפעילויות          </Button>
+            דלג ללוח הפעילויות          </Button>
 
           {/*font size*/}
           <SectionCaption variant="subtitle2">גודל גופן</SectionCaption>

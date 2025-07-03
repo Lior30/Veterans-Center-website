@@ -1,18 +1,18 @@
 // src/components/FooterSection.jsx
-import React, { useState, useEffect } from "react";
+import HomeIcon from "@mui/icons-material/Home";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import MailIcon from "@mui/icons-material/Mail";
+import PhoneIcon from "@mui/icons-material/Phone";
 import {
   Box,
+  Button,
   Container,
   Grid,
-  Typography,
-  Button,
   styled,
+  Typography,
   useTheme,
 } from "@mui/material";
-import HomeIcon from "@mui/icons-material/Home";
-import PhoneIcon from "@mui/icons-material/Phone";
-import MailIcon from "@mui/icons-material/Mail";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
+import { useEffect, useState } from "react";
 import ContactService from "../services/ContactService";
 
 /* backround for flyer*/

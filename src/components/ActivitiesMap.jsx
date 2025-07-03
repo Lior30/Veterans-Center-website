@@ -1,15 +1,14 @@
 // src/src/components/ActivitiesMap.jsx
-import React from "react";
-import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
 import { getDistance } from "geolib";
+import { Circle, MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 
 export default function ActivitiesMap({ activities, center, radius }) {
   const visible = activities.filter((a) =>
     a.location?.lat
       ? getDistance(
-          { latitude: center.lat, longitude: center.lng },
-          { latitude: a.location.lat, longitude: a.location.lng }
-        ) <= radius
+        { latitude: center.lat, longitude: center.lng },
+        { latitude: a.location.lat, longitude: a.location.lng }
+      ) <= radius
       : false
   );
 

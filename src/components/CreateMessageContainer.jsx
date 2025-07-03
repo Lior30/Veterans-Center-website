@@ -1,40 +1,39 @@
 //src/components/CreateMessageContainer.jsx
-import { useState, useEffect } from "react";
-import CreateMessageDesign   from "./CreateMessageDesign.jsx";
-import MessageService        from "../services/MessageService.js";
-import ActivityService       from "../services/ActivityService.js";
+import { useEffect, useState } from "react";
+import ActivityService from "../services/ActivityService.js";
+import MessageService from "../services/MessageService.js";
 import ActionFeedbackDialog from "./ActionFeedbackDialog";
-import { Snackbar, Alert }   from "@mui/material";
+import CreateMessageDesign from "./CreateMessageDesign.jsx";
 
 export default function CreateMessageContainer() {
   const [activities, setActivities] = useState([]);
 
   const [values, setValues] = useState({
-    title     : "",
-    body      : "",
+    title: "",
+    body: "",
     activityId: "",
-    startDate : "",   
-    endDate   : "",
+    startDate: "",
+    endDate: "",
   });
 
-  const [errors,  setErrors]  = useState({});
+  const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(false);
 
-  
+
   useEffect(() => {
     const unsub = ActivityService.subscribe(setActivities);
     return () => unsub();   // cleanup 
   }, []);
 
-  
+
   const onChange = (e) =>
     setValues({ ...values, [e.target.name]: e.target.value });
 
-  
+
   const onSubmit = async () => {
     const errs = {};
     if (!values.title.trim()) errs.title = "יש להזין כותרת";
-    if (!values.body.trim())  errs.body  = "יש להזין תוכן";
+    if (!values.body.trim()) errs.body = "יש להזין תוכן";
     if (values.endDate && values.startDate && values.endDate < values.startDate)
       errs.endDate = "תאריך סיום חייב להיות אחרי תאריך התחלה";
 
@@ -43,11 +42,11 @@ export default function CreateMessageContainer() {
     try {
       await MessageService.create(values);
       setValues({
-        title     : "",
-        body      : "",
+        title: "",
+        body: "",
         activityId: "",
-        startDate : "",
-        endDate   : "",
+        startDate: "",
+        endDate: "",
       });
       setSuccess(true);
     } catch (err) {

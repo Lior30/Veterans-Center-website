@@ -1,25 +1,24 @@
 // src/services/ActivityService.js
 import {
-  collection,
   addDoc,
-  updateDoc,
-  doc,
-   query,
-  where,
-  onSnapshot,
-  getDoc,
-  runTransaction,
   arrayUnion,
-  arrayRemove,
+  collection,
   deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  query,
+  runTransaction,
+  updateDoc,
+  where
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { getDocs } from "firebase/firestore"; 
 import FlyerService from "./FlyerService";
 
 export default class ActivityService {
   /* collection constants */
-  static COL    = "activities";
+  static COL = "activities";
   static colRef = collection(db, ActivityService.COL);
 
 
@@ -46,21 +45,21 @@ export default class ActivityService {
     return onSnapshot(
       ActivityService.colRef,
       (snap) =>
-      callback(
-        snap.docs.map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
-            ...data,
-            weekdays:     data.weekdays     || [],
-            participants: data.participants || [],
-            tags:         data.tags         || [],
-            registrants:  Array.isArray(data.participants)
-                     ? data.participants.map(p => p.phone)
-                          : [],
-          };
-        })
-      ),
+        callback(
+          snap.docs.map((d) => {
+            const data = d.data();
+            return {
+              id: d.id,
+              ...data,
+              weekdays: data.weekdays || [],
+              participants: data.participants || [],
+              tags: data.tags || [],
+              registrants: Array.isArray(data.participants)
+                ? data.participants.map(p => p.phone)
+                : [],
+            };
+          })
+        ),
       console.error
     );
   }
@@ -121,7 +120,7 @@ export default class ActivityService {
    * @param {{name: string, phone: string}} user  
    */
   static async registerUser(activityId, user) {
-    
+
     if (!activityId) {
       throw new Error("MISSING_ACTIVITY_ID");
     }
@@ -133,7 +132,7 @@ export default class ActivityService {
     if (!normalizedPhone) {
       throw new Error("USER_PHONE_INVALID");
     }
-    
+
     const usersCol = collection(db, "users");
     const userQuery = query(usersCol, where("phone", "==", normalizedPhone));
     const userSnap = await getDocs(userQuery);
@@ -160,9 +159,9 @@ export default class ActivityService {
           const todayYMD = new Date().toISOString().split("T")[0]; // e.g., "2025-07-02"
 
           if (activityYMD < todayYMD) {
-            return { 
-              success: false, 
-              reason: "PAST_ACTIVITY", 
+            return {
+              success: false,
+              reason: "PAST_ACTIVITY",
               message: "תאריך הפעילות עבר, לא ניתן להירשם.",
               title: "הרשמה לא אושרה"
             };
@@ -174,9 +173,9 @@ export default class ActivityService {
 
         // check for 60+
         if (data.registrationCondition === 'member60' && !userData.is_club_60) {
-          return { 
-            success: false, 
-            reason: "CONDITION_NOT_MET", 
+          return {
+            success: false,
+            reason: "CONDITION_NOT_MET",
             message: "פעילות זו מיועדת לחברי מרכז 60+ בלבד",
             title: "הרשמה לא אושרה"
           };
@@ -198,7 +197,7 @@ export default class ActivityService {
               };
             }
           })
-          .filter((p) => p.phone); 
+          .filter((p) => p.phone);
 
         // Already-registered?
         if (participants.some((p) => p.phone === normalizedPhone)) {
@@ -206,10 +205,10 @@ export default class ActivityService {
         }
         // Capacity check
         if (capacity && participants.length >= capacity) {
-          return { 
-            success: false, 
-            reason: "FULL", 
-            message: "אין עוד מקומות פנויים בפעילות זו", 
+          return {
+            success: false,
+            reason: "FULL",
+            message: "אין עוד מקומות פנויים בפעילות זו",
             title: "הפעילות מלאה"
           };
         }
@@ -228,18 +227,18 @@ export default class ActivityService {
           activities_date: arrayUnion(new Date().toISOString()),
         });
 
-        return { 
-          success: true, 
-          reason: "OK", 
-          message: "נרשמת לפעילות בהצלחה!", 
+        return {
+          success: true,
+          reason: "OK",
+          message: "נרשמת לפעילות בהצלחה!",
           title: "הרשמה הושלמה בהצלחה"
         };
       });
-      
-      return result ?? { 
-        success: false, 
-        reason: "ERROR", 
-        message: "אירעה שגיאה במהלך ההרשמה. אנא נסה שוב", 
+
+      return result ?? {
+        success: false,
+        reason: "ERROR",
+        message: "אירעה שגיאה במהלך ההרשמה. אנא נסה שוב",
         title: "שגיאה בהרשמה"
       };
     } catch (err) {
@@ -269,15 +268,15 @@ export default class ActivityService {
     });
   }
 
-/** reterns activeties */
-static async getUserActivities(phone) {
-  const digits = phone.replace(/\D/g, "");
-  const snap = await getDocs(ActivityService.colRef);
-  const results = [];
+  /** reterns activeties */
+  static async getUserActivities(phone) {
+    const digits = phone.replace(/\D/g, "");
+    const snap = await getDocs(ActivityService.colRef);
+    const results = [];
 
-  snap.forEach((docSnap) => {
-    const data = docSnap.data();
-    const participants = data.participants || [];
+    snap.forEach((docSnap) => {
+      const data = docSnap.data();
+      const participants = data.participants || [];
 
       if (participants.some((p) => p.phone === digits)) {
         // make sure to return only relevant fields
@@ -285,14 +284,14 @@ static async getUserActivities(phone) {
           id: docSnap.id,
           name: data.name,
           date: data.date,
-          time: data.starttime,            
+          time: data.starttime,
           location: data.location,
           description: data.description,
         });
       }
-  });
+    });
 
-  return results;
-}
+    return results;
+  }
 
 }

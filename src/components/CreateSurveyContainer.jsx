@@ -1,11 +1,10 @@
 // src/components/CreateSurveyContainer.jsx
+import { doc, getDoc } from "firebase/firestore";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../firebase";
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import CreateSurveyDesign from "./CreateSurveyDesign.jsx";
 import SurveyService from "../services/SurveyService.js";
-import { getDoc, doc } from "firebase/firestore";
-import { useParams } from "react-router-dom";
+import CreateSurveyDesign from "./CreateSurveyDesign.jsx";
 
 export default function CreateSurveyContainer() {
   const { id } = useParams(); // check if editing
@@ -17,25 +16,25 @@ export default function CreateSurveyContainer() {
   const navigate = useNavigate();
 
   const [questions, setQuestions] = useState([]);
-  
+
   const [headline, setHeadline] = useState("");
 
   const [hasExpiration, setHasExpiration] = useState(true);
 
   const [expiresAt, setExpiresAt] = useState(() => {
-  const now = new Date();
-  now.setSeconds(0, 0); 
+    const now = new Date();
+    now.setSeconds(0, 0);
 
-  const pad = (n) => n.toString().padStart(2, "0");
+    const pad = (n) => n.toString().padStart(2, "0");
 
-  const year = now.getFullYear();
-  const month = pad(now.getMonth() + 1);
-  const day = pad(now.getDate());
-  const hour = pad(now.getHours());
-  const minute = pad(now.getMinutes());
+    const year = now.getFullYear();
+    const month = pad(now.getMonth() + 1);
+    const day = pad(now.getDate());
+    const hour = pad(now.getHours());
+    const minute = pad(now.getMinutes());
 
-  return `${year}-${month}-${day}T${hour}:${minute}`;
-});
+    return `${year}-${month}-${day}T${hour}:${minute}`;
+  });
 
 
   // track which activity this survey is linked to
@@ -44,25 +43,25 @@ export default function CreateSurveyContainer() {
   const [activities, setActivities] = useState([]);
 
   useEffect(() => {
-  async function loadForEdit() {
-    if (!id) return;
-    const snap = await getDoc(doc(db, "surveys", id));
-    if (!snap.exists()) return;
-    const data = snap.data();
+    async function loadForEdit() {
+      if (!id) return;
+      const snap = await getDoc(doc(db, "surveys", id));
+      if (!snap.exists()) return;
+      const data = snap.data();
 
-    setHeadline(data.headline || "");
-    setActivityId(data.of_activity || "general");
-    setQuestions(data.questions || []);
-    if (data.expires_at) {
-      setHasExpiration(true);
-      setExpiresAt(new Date(data.expires_at).toISOString().slice(0, 16)); // adjust for input format
-    } else {
-      setHasExpiration(false);
+      setHeadline(data.headline || "");
+      setActivityId(data.of_activity || "general");
+      setQuestions(data.questions || []);
+      if (data.expires_at) {
+        setHasExpiration(true);
+        setExpiresAt(new Date(data.expires_at).toISOString().slice(0, 16)); // adjust for input format
+      } else {
+        setHasExpiration(false);
+      }
     }
-  }
 
-  loadForEdit();
-}, [id]);
+    loadForEdit();
+  }, [id]);
 
 
   // Load all activities once (for the dropdown)
@@ -79,17 +78,17 @@ export default function CreateSurveyContainer() {
   const handleActivityChange = (e) => setActivityId(e.target.value);
 
   const handleAddQuestion = () =>
-  setQuestions((qs) => [
-    ...qs,
-    {
-      id: `q_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
-      text: "",
-      type: "open",
-      options: [],
-      mandatory: false,
-      fixed: false,
-    },
-  ]);
+    setQuestions((qs) => [
+      ...qs,
+      {
+        id: `q_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+        text: "",
+        type: "open",
+        options: [],
+        mandatory: false,
+        fixed: false,
+      },
+    ]);
 
   const handleRemoveQuestion = (id) =>
     setQuestions((qs) => qs.filter((q) => q.id !== id));
@@ -127,11 +126,11 @@ export default function CreateSurveyContainer() {
       qs.map((q) =>
         q.id === qid
           ? {
-              ...q,
-              options: q.options.map((opt, i) =>
-                i === idx ? value : opt
-              ),
-            }
+            ...q,
+            options: q.options.map((opt, i) =>
+              i === idx ? value : opt
+            ),
+          }
           : q
       )
     );
@@ -146,33 +145,33 @@ export default function CreateSurveyContainer() {
 
 
     const payload = {
-  headline: title,
-  questions,
-  of_activity: activityId === "general" ? "כללי" : activityId,
-};
+      headline: title,
+      questions,
+      of_activity: activityId === "general" ? "כללי" : activityId,
+    };
 
-if (hasExpiration && expiresAt) {
-    payload.expires_at = new Date(expiresAt).toISOString();
-  }
+    if (hasExpiration && expiresAt) {
+      payload.expires_at = new Date(expiresAt).toISOString();
+    }
 
 
     if (id) {
-  await SurveyService.update(id, payload);
-} else {
-  await SurveyService.create(payload);
-}
+      await SurveyService.update(id, payload);
+    } else {
+      await SurveyService.create(payload);
+    }
 
     navigate("/surveys");
   };
 
   const handleCancel = () => {
-  const message = isEditing
-    ? "ביטול עריכת הסקר?"
-    : "בטל יצירת סקר ותאבדו את כל השינויים?";
-  if (window.confirm(message)) {
-    navigate("/surveys");
-  }
-};
+    const message = isEditing
+      ? "ביטול עריכת הסקר?"
+      : "בטל יצירת סקר ותאבדו את כל השינויים?";
+    if (window.confirm(message)) {
+      navigate("/surveys");
+    }
+  };
 
 
   return (
@@ -194,9 +193,9 @@ if (hasExpiration && expiresAt) {
       activities={activities}
       activityId={activityId}
       onActivityChange={handleActivityChange}
-      expiresAt={expiresAt}                   
+      expiresAt={expiresAt}
       onExpiresAtChange={(e) => setExpiresAt(e.target.value)}
-      hasExpiration={hasExpiration}                    
+      hasExpiration={hasExpiration}
       onHasExpirationChange={(e) => setHasExpiration(e.target.checked)}
     />
   );

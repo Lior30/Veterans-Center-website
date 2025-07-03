@@ -1,11 +1,10 @@
 import CtaButton from "../LandingPage/CtaButton";
 // src/components/Surveys.jsx
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import SurveyResultsList from "../components/SurveyResultsList";
 
 export default function Surveys() {
-   const navigate = useNavigate();
+  const navigate = useNavigate();
 
   return (
     <div style={{ padding: "40px", maxWidth: 1000, margin: "0 auto", direction: "rtl" }}>
