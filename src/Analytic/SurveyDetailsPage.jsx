@@ -10,13 +10,10 @@ export default function SurveyDetailsPage() {
   const location = useLocation()
   const baseSurveys = location.state?.surveyDetails || []    /* + */
 
-  /* state עם סקרים “מעושרים” בשם-פעילות */
   const [surveys, setSurveys] = useState(baseSurveys)        /* + */
 
-  /* ── מביאים שמות-פעילות לפעם אחת ── */
   useEffect(() => {                                          /* + */
     async function enrich() {
-      /* מזהים כל activity-id שאינו "כללי" */
       const ids = [
         ...new Set(
           baseSurveys
@@ -25,7 +22,6 @@ export default function SurveyDetailsPage() {
         ),
       ]
 
-      /* מביאים name מכל activity */
       const id2name = {}
       await Promise.all(
         ids.map(async id => {
@@ -34,7 +30,6 @@ export default function SurveyDetailsPage() {
         })
       )
 
-      /* מוסיפים activityName לכל סקר */
       setSurveys(
         baseSurveys.map(s => ({
           ...s,

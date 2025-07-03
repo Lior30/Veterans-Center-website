@@ -1,5 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { MapContainer, TileLayer, CircleMarker, useMapEvents } from 'react-leaflet'
+import { getDocs, collection } from 'firebase/firestore'
+import { db } from '../firebase'
 
 // function to process user data and group by address
 async function processUserData(userData) {
@@ -69,10 +71,13 @@ async function getCoordinatesForAddress(address) {
     'רמת דניה': [31.8234, 35.2123],
     'פסגת זאב': [31.8456, 35.2234]
   }
-
-  if (knownLocations[address]) {
-    return knownLocations[address]
+  
+for (const known in knownLocations) {
+  if (address.includes(known)) {
+    return knownLocations[known]
   }
+}
+
 
   // looks for API
   try {
@@ -92,22 +97,12 @@ async function getCoordinatesForAddress(address) {
   return null
 }
 
-// data for example usage
-const sampleUserData = [
-  { address: 'מלחה', first_name: 'בדיקה', last_name: 'אפס', phone: '0500534560' },
-  { address: 'בית הכרם', first_name: 'יוסי', last_name: 'כהן', phone: '0501234567' },
-  { address: 'מלחה', first_name: 'שרה', last_name: 'לוי', phone: '0502345678' },
-  { address: 'נחלת שלמה', first_name: 'דוד', last_name: 'ישראל', phone: '0503456789' },
-  { address: 'בית הכרם', first_name: 'רחל', last_name: 'אברהם', phone: '0504567890' },
-  { address: 'מעלה אדומים', first_name: 'משה', last_name: 'יעקב', phone: '0505678901' },
-  { address: 'מעלה אדומים', first_name: 'אברהם', last_name: 'לוי', phone: '0506789012' }
-]
-
-export default function JerusalemMap({ userData = sampleUserData }) {
+export default function JerusalemMap() {
+  const [userData, setUserData] = useState([])
   const [locations, setLocations] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useState(() => {
+  useEffect(() => {
     async function loadLocations() {
       setLoading(true)
       const processedLocations = await processUserData(userData)
@@ -116,6 +111,15 @@ export default function JerusalemMap({ userData = sampleUserData }) {
     }
     loadLocations()
   }, [userData])
+
+  useEffect(() => {
+  async function fetchUsers() {
+    const usersSnapshot = await getDocs(collection(db, 'users'))
+    const users = usersSnapshot.docs.map(doc => doc.data())
+    setUserData(users)
+  }
+  fetchUsers()
+}, [])
 
   const [tooltip, setTooltip] = useState(null)
   const maxCount = Math.max(...locations.map(l => l.count), 1)

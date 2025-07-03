@@ -98,11 +98,11 @@ export default function TagsPieChart({ activities = [] }) {
   return (
     <div
       style={{
-        height: 300,                             /* גובה קשיח ל-Nivo */
+        height: 300,                           
         display: 'flex',
-        columnGap: EMPTY ? 0 : 24,               /* אין רווח כשאין אגדה */
+        columnGap: EMPTY ? 0 : 24,               
         direction: 'ltr',
-        alignItems: EMPTY ? 'center' : 'stretch',/* יישור-מרכז רק במצב ריק */
+        alignItems: EMPTY ? 'center' : 'stretch',
         justifyContent: EMPTY ? 'center' : 'flex-start'
       }}
     >
