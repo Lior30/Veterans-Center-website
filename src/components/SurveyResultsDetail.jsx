@@ -8,6 +8,7 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../firebase.js";
+import CtaButton from "../LandingPage/CtaButton";
 
 export default function SurveyResultsDetail() {
   const { id } = useParams();
@@ -41,14 +42,14 @@ export default function SurveyResultsDetail() {
     setResponses(rSnap.docs.map(d => ({ id: d.id, ...d.data() })));
   };
 
-  if (!survey) return <p>Loading…</p>;
+  if (!survey) return <p>טוען...</p>;
 
   return (
     <div style={{ padding: 40, maxWidth: 800, margin: "0 auto" }}>
-      <h2>Survey: {survey.headline}</h2>
+      <h2>{survey.headline}</h2>
 
       {responses.length === 0 ? (
-        <p>No responses yet.</p>
+        <p>לא נמצאו תשובות</p>
       ) : (
         responses.map((resp) => {
           const name = `${resp.answers.firstName || ""} ${resp.answers.lastName || ""}`.trim();
@@ -79,15 +80,23 @@ export default function SurveyResultsDetail() {
                 </p>
               ))}
 
-              <button onClick={() => handleDeleteResponse(resp.id)}>
-                Delete This Response
-              </button>
+              <CtaButton
+                onClick={() => handleDeleteResponse(resp.id)} 
+                style={{ marginRight: 8 }}
+              >
+                מחק תשובה זו
+              </CtaButton>
             </div>
           );
         })
       )}
 
-      <button onClick={() => navigate(-1)}>← Back</button>
+              <CtaButton
+                onClick={() => navigate(-1)} 
+                style={{ marginRight: 8 }}
+              >
+                חזור
+              </CtaButton>
     </div>
   );
 }

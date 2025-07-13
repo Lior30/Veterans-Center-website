@@ -156,9 +156,9 @@ export default function SurveyResultsList() {
                 style={{ marginRight: 8 }}
               >
                 הצג תשובות
-              </CtaButton>
+              </CtaButton> 
               <CtaButton
-                onClick={() => navigate(`/surveys/analysis/${s.id}`)}
+                onClick={() => navigate(`/surveys/analysis/${s.id}`)} 
                 style={{ marginRight: 8 }}
               >
                 ניתוח סקר
@@ -178,10 +178,6 @@ export default function SurveyResultsList() {
           );
         })
       )}
-
-      <div style={{ marginTop: 20 }}>
-        <Link to="/surveys">← חזרה לניהול סקרים</Link>
-      </div>
     </div>
   );
 }
