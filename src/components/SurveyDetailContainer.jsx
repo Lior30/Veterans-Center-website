@@ -166,6 +166,12 @@ export default function SurveyDetailContainer({ surveyId, onClose }) {
 
   const handleSubmit = async () => {
     const isValid = validate();
+
+  if (!isValid || blocked) {
+    console.warn("⛔ Submission blocked by validation or duplicate detection.");
+  return;
+}
+
     if (!isValid || blocked) {
       console.warn("⛔ Submission blocked by validation or duplicate detection.");
       return;
