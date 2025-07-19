@@ -20,18 +20,12 @@ import { getFirestore } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { app } from '../firebase'; // your initialized Firestore as `db`
-
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
+import { browserSessionPersistence, setPersistence } from 'firebase/auth';
 
 // CAPTCHA callback (same as before)…
 function onCaptchaVerify(token) {
   window.dispatchEvent(new CustomEvent('captcha-verified', { detail: token }));
 }
-
-export const generatePassword = (password) => {
-  const generatedPassword = `website_Admin!${password}#2025`;
-  return { password: generatedPassword };
-};
 
 const AdminSignIn = () => {
   const [email, setEmail] = useState('');
@@ -79,38 +73,28 @@ const AdminSignIn = () => {
     }
     setLoading(true);
     try {
-      const { password: genPwd } = generatePassword(password);
-      await signInWithEmailAndPassword(auth, email, genPwd);
-
+      await setPersistence(auth, browserSessionPersistence);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       navigate('/home');
-    } catch {
+    } catch (err) {
       setErrorMsg('אימייל או סיסמא שגויים');
     } finally {
       setLoading(false);
     }
   };
 
-  // — Forgot password —
+
   const handleForgot = async (e) => {
     e.preventDefault();
     setErrorMsg('');
     setInfoMsg('');
 
-    // 1) Check they entered the correct admin email:
-    if (resetEmail.trim() !== ADMIN_EMAIL) {
-      setErrorMsg('כתובת האימייל לא נכונה');
-      return;
-    }
-
     setLoading(true);
     try {
-      // 2) Send the password-reset email:
       await sendPasswordResetEmail(auth, resetEmail);
       setInfoMsg('נשלח קישור לאיפוס הסיסמה');
     } catch (err) {
-      console.error('Error sending reset email:', err);
-      // Note: with Email Enumeration Protection on, Firebase won't throw if email/user not found
-      setErrorMsg('שגיאה בשליחת המייל, נסה שוב מאוחר יותר');
+      setErrorMsg(`שגיאה: ${err.code || 'לא ידוע'}`);
     } finally {
       setLoading(false);
     }
