@@ -1,12 +1,24 @@
-# React + Vite
+# Veterans Center Website
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project is a website for the veterans center in Beit Hakerem neighberhood.
+The purpose of the website is to provide easy access to activities, surveys, content, and updates, while encouraging community engagement, maintaining ongoing contact with participants, and offering digital tools tailored to the needs of the senior population.
+In addition, the website provides the center's manager with an advanced and comprehensive management interface for all operational aspects, enabling organized work, time savings, a complete overview of the center’s activities, and data analysis capabilities that support data‑driven decision-making and adjustment of activities to participants' evolving needs.
 
-Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Developers:
+Lior Kimhi
 
-## Expanding the ESLint configuration
+Yogev Solomon
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Ariel Valdman
+
+Gal Aharon
+
+Adi Meroz
+
+Shira Biton
+
+### Installation instructions:
+See 'README' in the wiki.
+
+### Created by students at Azrieli College - an engineering college in Jerusalem.
