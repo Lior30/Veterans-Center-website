@@ -16,7 +16,7 @@ import {
   Tooltip,
   Typography,
   useMediaQuery,
-  useTheme
+  useTheme,
 } from "@mui/material";
 
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
@@ -54,7 +54,8 @@ export default function CalendarPreview({
     });
   }, [currentDate]);
 
-  const calendarMinWidth = isMobile && view === "timeGridDay" ? "100%" : isMobile ? 650 : "auto";
+  const calendarMinWidth =
+    isMobile && view === "timeGridDay" ? "100%" : isMobile ? 650 : "auto";
 
   const [tag, setTag] = useState("ALL");
   const holidays = usePublicHolidays();
@@ -62,25 +63,25 @@ export default function CalendarPreview({
   // build tag list
   const tags = useMemo(() => {
     const s = new Set();
-    activities.forEach(a => (a.tags || []).forEach(t => s.add(t)));
+    activities.forEach((a) => (a.tags || []).forEach((t) => s.add(t)));
     return ["ALL", ...Array.from(s)];
   }, [activities]);
 
   // build events: activities + holidays
   const events = useMemo(() => {
-    const toDateTime = (a) => new Date(`${a.date}T${a.startTime || "23:59"}:00`);
+    const toDateTime = (a) =>
+      new Date(`${a.date}T${a.startTime || "23:59"}:00`);
 
     const actEv = activities
 
-      .filter(a => tag === "ALL" || (a.tags || []).includes(tag))
+      .filter((a) => tag === "ALL" || (a.tags || []).includes(tag))
 
-
-      .map(a => {
+      .map((a) => {
         const isRegistered =
           userProfile?.activities?.includes(a.id) ||
           userProfile?.activities?.includes(a.name);
 
-        const isPast = toDateTime(a) < new Date(); // ✅ בדיקה זהה לזו שבקובץ שלך
+        const isPast = !a.recurring && toDateTime(a) < new Date();
 
         return {
           id: a.id,
@@ -104,27 +105,24 @@ export default function CalendarPreview({
         };
       });
 
-
-
-    const holEv = holidays.map(h => ({
+    const holEv = holidays.map((h) => ({
       id: `hol-${h.date}`,
       title: h.title || h.name,
       start: h.date,
       allDay: true,
       backgroundColor: "#FFFACD", // ← כאן מוגדר צבע הרקע של חג (צהוב בהיר)
-      textColor: "#000",          // ← וכאן צבע הטקסט
+      textColor: "#000", // ← וכאן צבע הטקסט
       extendedProps: {
         holiday: true,
-        isHoliday: true
-      }
+        isHoliday: true,
+      },
     }));
-
 
     return [...actEv, ...holEv];
   }, [activities, holidays, tag, theme.palette, userProfile]);
 
   // click handler
-  const handleEventClick = info => {
+  const handleEventClick = (info) => {
     const props = info.event.extendedProps;
     if (props.isHoliday) return;
 
@@ -134,10 +132,8 @@ export default function CalendarPreview({
     }
 
     const activityId = props.activityId;
-    const flyer = flyers.find(f => f.activityId === activityId);
-    const activity = activities.find(a => a.id === activityId);
-
-
+    const flyer = flyers.find((f) => f.activityId === activityId);
+    const activity = activities.find((a) => a.id === activityId);
 
     if (flyer) openDialog("flyer", flyer);
     else if (activity) openDialog("activity-details", activity);
@@ -148,7 +144,10 @@ export default function CalendarPreview({
   const goNext = () => calendarRef.current.getApi().next();
 
   return (
-    <Box component="section" sx={{ py: { xs: 4, sm: 6 }, backgroundColor: "#fff" }}>
+    <Box
+      component="section"
+      sx={{ py: { xs: 4, sm: 6 }, backgroundColor: "#fff" }}
+    >
       <Container maxWidth="lg">
         <SectionTitle icon={<EventIcon />} title="לוח פעילויות" />
 
@@ -160,7 +159,6 @@ export default function CalendarPreview({
             gap: 3, // רווח קבוע בין הכפתורים (24px)
             mb: 4,
             background: `linear-gradient(180deg, ${theme.palette.primary.vlight} 0%,#ffffff 100%,)`,
-
           }}
         >
           <ToggleButton
@@ -197,7 +195,6 @@ export default function CalendarPreview({
           />
         </Box>
 
-
         {/* NAV ARROWS */}
         <NavWrapper>
           <NavArrow side="left" onClick={goNext} />
@@ -217,16 +214,17 @@ export default function CalendarPreview({
           </Typography>
         )}
 
-
         {/* TAG FILTER */}
-        <Box sx={{
-          display: "flex",
-          justifyContent: "center",
-          mb: 3,
-          overflowX: "auto",
-          scrollbarWidth: "none",
-          "&::-webkit-scrollbar": { display: "none" },
-        }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            mb: 3,
+            overflowX: "auto",
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
+          }}
+        >
           <Tabs
             value={tag}
             onChange={(e, newTag) => setTag(newTag)}
@@ -237,14 +235,17 @@ export default function CalendarPreview({
             indicatorColor="primary"
             sx={{ borderBottom: 1, borderColor: "divider" }}
           >
-            {tags.map(t => (
+            {tags.map((t) => (
               <Tab
                 key={t}
                 value={t}
                 label={t === "ALL" ? "הכל" : t}
                 sx={{
                   fontWeight: tag === t ? 600 : 400,
-                  color: tag === t ? theme.palette.primary.main : theme.palette.text.primary,
+                  color:
+                    tag === t
+                      ? theme.palette.primary.main
+                      : theme.palette.text.primary,
                   minWidth: 90,
                 }}
               />
@@ -254,80 +255,83 @@ export default function CalendarPreview({
 
         {/* CALENDAR */}
         <Box sx={{ overflowX: isMobile ? "auto" : "visible" }}>
-          <Box sx={{
-            minWidth: calendarMinWidth,
+          <Box
+            sx={{
+              minWidth: calendarMinWidth,
 
-            borderRadius: 2,
-            overflow: "hidden",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-            backgroundColor: "#fafafa",
+              borderRadius: 2,
+              overflow: "hidden",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              backgroundColor: "#fafafa",
 
-            /* HEADER */
-            "& .fc-col-header-cell": {
-              backgroundColor: theme.palette.primary.light,
-              color: theme.palette.primary.contrastText,
-              fontWeight: 600,
-              fontSize: isMobile ? "0.75em" : "1rem",
-            },
+              /* HEADER */
+              "& .fc-col-header-cell": {
+                backgroundColor: theme.palette.primary.light,
+                color: theme.palette.primary.contrastText,
+                fontWeight: 600,
+                fontSize: isMobile ? "0.75em" : "1rem",
+              },
 
-            /* TODAY */
-            "& .fc-timegrid-col.fc-day-today, & .fc-daygrid-day.fc-day-today": {
-              backgroundColor: `${theme.palette.primary.vlight} !important`,
-            },
+              /* TODAY */
+              "& .fc-timegrid-col.fc-day-today, & .fc-daygrid-day.fc-day-today":
+                {
+                  backgroundColor: `${theme.palette.primary.vlight} !important`,
+                },
 
-            /* EVENT – WEEK/DAY (timeGrid) */
-            "& .fc-timegrid-event-harness": {
-              backgroundColor: "transparent !important",
-              border: "none !important",
-              borderRadius: 0,
-              margin: "3px 0",
-              height: "auto !important"
-            },
+              /* EVENT – WEEK/DAY (timeGrid) */
+              "& .fc-timegrid-event-harness": {
+                backgroundColor: "transparent !important",
+                border: "none !important",
+                borderRadius: 0,
+                margin: "3px 0",
+                height: "auto !important",
+              },
 
-            "& .fc-timegrid-event": {
-              position: "relative !important",
-              zIndex: 5,
-              height: "auto !important",
-              border: "none !important",
-              borderRadius: "8px",
-              backgroundColor: theme.palette.primary.lightblue,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-              padding: isMobile ? "1px 4px" : "4px 8px",
-              boxSizing: "border-box",
-              overflow: "visible !important",
-              whiteSpace: "normal !important",
-              wordBreak: "break-word !important",
-            },
+              "& .fc-timegrid-event": {
+                position: "relative !important",
+                zIndex: 5,
+                height: "auto !important",
+                border: "none !important",
+                borderRadius: "8px",
+                backgroundColor: theme.palette.primary.lightblue,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                padding: isMobile ? "1px 4px" : "4px 8px",
+                boxSizing: "border-box",
+                overflow: "visible !important",
+                whiteSpace: "normal !important",
+                wordBreak: "break-word !important",
+              },
 
-            "& .fc-timegrid-event .fc-event-main": {
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-            },
+              "& .fc-timegrid-event .fc-event-main": {
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+              },
 
-            /* EVENT – MONTH (dayGrid) */
-            "& .fc-daygrid-event": {
-              border: "none !important",
-              borderRadius: "8px",
-              backgroundColor: theme.palette.primary.lightblue,
-              color: "#000",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-              overflow: "visible !important",
-              whiteSpace: "normal !important",
-              wordBreak: "break-word !important",
-              margin: "2px 0",
-              padding: isMobile ? "1px" : "4px",
-              fontSize: isMobile ? "0.7em" : "0.85em",
-            },
-            "& .fc-daygrid-event-dot": { display: "none" },
-            "& .fc-daygrid-event .fc-event-main-frame": {
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-            },
-          }}>
+              /* EVENT – MONTH (dayGrid) */
+              "& .fc-daygrid-event": {
+                border: "none !important",
+                borderRadius: "8px",
+                backgroundColor: theme.palette.primary.lightblue,
+                color: "#000",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                overflow: "visible !important",
+                whiteSpace: "normal !important",
+                wordBreak: "break-word !important",
+                margin: "2px 0",
+                padding: isMobile ? "1px" : "4px",
+                fontSize: isMobile ? "0.7em" : "0.85em",
+              },
+              "& .fc-daygrid-event-dot": { display: "none" },
+              "& .fc-daygrid-event .fc-event-main-frame": {
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+              },
+            }}
+          >
             <FullCalendar
               datesSet={() => {
                 const centerDate = calendarRef.current?.getApi().getDate();
@@ -352,14 +356,21 @@ export default function CalendarPreview({
               slotMaxTime="22:00:00"
               slotDuration="01:00:00"
               slotLabelInterval="01:00"
-              eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
+              eventTimeFormat={{
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              }}
               displayEventEnd={false}
-
-              slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
-
+              slotLabelFormat={{
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              }}
               eventClick={handleEventClick}
               eventDidMount={(info) => {
-                const { isPast, isRegistered, isHoliday } = info.event.extendedProps;
+                const { isPast, isRegistered, isHoliday } =
+                  info.event.extendedProps;
 
                 // אם זה חג – אל תגעי בכלום
                 if (isHoliday) return;
@@ -368,7 +379,8 @@ export default function CalendarPreview({
                 if (isPast) {
                   info.el.style.backgroundColor = "#e0e0e0"; // אפור
                 } else {
-                  info.el.style.backgroundColor = theme.palette.primary.lightblue; // תכלת רגיל
+                  info.el.style.backgroundColor =
+                    theme.palette.primary.lightblue; // תכלת רגיל
                 }
 
                 // צבע טקסט אחיד
@@ -382,7 +394,11 @@ export default function CalendarPreview({
 
                 // ✔️ לפני כותרת
                 const titleEl = info.el.querySelector(".fc-event-title");
-                if (titleEl && isRegistered && !titleEl.innerHTML.startsWith("✔️")) {
+                if (
+                  titleEl &&
+                  isRegistered &&
+                  !titleEl.innerHTML.startsWith("✔️")
+                ) {
                   titleEl.innerHTML = `✔️ ${titleEl.innerHTML}`;
                 }
 
@@ -400,9 +416,9 @@ export default function CalendarPreview({
                   titleEl.style.fontSize = `${fs}px`;
                 }
               }}
-
               eventContent={(renderInfo) => {
-                const { isRegistered, isPast, isHoliday } = renderInfo.event.extendedProps;
+                const { isRegistered, isPast, isHoliday } =
+                  renderInfo.event.extendedProps;
                 const startOnly = renderInfo.timeText;
 
                 // אם זה חג – החזר עיצוב שונה
@@ -441,7 +457,8 @@ export default function CalendarPreview({
                       width: "100%",
                       height: "100%",
                       boxSizing: "border-box",
-                      border: isRegistered && !isPast ? "2px solid #81D4FA" : "none",
+                      border:
+                        isRegistered && !isPast ? "2px solid #81D4FA" : "none",
                       borderRadius: "8px",
                       padding: "4px",
                       backgroundColor: isPast
@@ -464,7 +481,9 @@ export default function CalendarPreview({
                       }}
                     >
                       {isRegistered && (
-                        <Box component="span" sx={{ color: "#81D4FA" }}>✔️</Box>
+                        <Box component="span" sx={{ color: "#81D4FA" }}>
+                          ✔️
+                        </Box>
                       )}
                       {renderInfo.event.title}
                     </Typography>
@@ -477,13 +496,6 @@ export default function CalendarPreview({
                   </Box>
                 );
               }}
-
-
-
-
-
-
-
             />
           </Box>
         </Box>
@@ -507,7 +519,9 @@ function ToggleButton({ title, icon, label, active, onClick }) {
           height: 90,
           borderRadius: "16px",
           backgroundColor: active ? theme.palette.primary.light : "#f0f0f0",
-          color: active ? theme.palette.primary.contrastText : theme.palette.text.secondary,
+          color: active
+            ? theme.palette.primary.contrastText
+            : theme.palette.text.secondary,
           boxShadow: active ? "0 4px 12px rgba(0,0,0,0.15)" : "none",
           display: "flex",
           flexDirection: "column",

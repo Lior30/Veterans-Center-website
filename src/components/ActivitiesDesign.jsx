@@ -25,11 +25,18 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
-  Typography
+  Typography,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 
-import { arrayRemove, arrayUnion, collection, doc, getDocs, updateDoc } from "firebase/firestore";
+import {
+  arrayRemove,
+  arrayUnion,
+  collection,
+  doc,
+  getDocs,
+  updateDoc,
+} from "firebase/firestore";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import { db } from "../firebase";
 import ActivityService from "../services/ActivityService";
@@ -37,8 +44,7 @@ import ActivityService from "../services/ActivityService";
 import { OpenStreetMapProvider } from "leaflet-geosearch";
 import "leaflet-geosearch/dist/geosearch.css";
 import "leaflet/dist/leaflet.css";
-import * as XLSX from 'xlsx';
-
+import * as XLSX from "xlsx";
 
 function Recenter({ center, zoom }) {
   const map = useMap();
@@ -103,13 +109,12 @@ export default function ActivitiesDesign({
   useEffect(() => {
     const fetchUsers = async () => {
       const snapshot = await getDocs(collection(db, "users"));
-      const usersList = snapshot.docs.map(doc => doc.data());
+      const usersList = snapshot.docs.map((doc) => doc.data());
       setAllUsers(usersList);
     };
 
     fetchUsers();
   }, []);
-
 
   const [newTagDialogOpen, setNewTagDialogOpen] = useState(false);
   const [newTagValue, setNewTagValue] = useState("");
@@ -128,9 +133,7 @@ export default function ActivitiesDesign({
 
   // function to remove a tag
   const handleRemoveTag = (tagToRemove) => {
-
     setAllTags((prev) => prev.filter((t) => t !== tagToRemove));
-
 
     activities.forEach((act) => {
       if (Array.isArray(act.tags) && act.tags.includes(tagToRemove)) {
@@ -181,21 +184,25 @@ export default function ActivitiesDesign({
     }
 
     // Use filtered participants (respects search filter)
-    const data = filteredParticipants.length > 0 ? filteredParticipants : selAct.participants;
+    const data =
+      filteredParticipants.length > 0
+        ? filteredParticipants
+        : selAct.participants;
 
     // Create a "flat" array of objects – only the columns we want in the sheet
-    const rows = data.map(p => {
+    const rows = data.map((p) => {
       // Extract just the name part (before the phone number and dash)
       const userDisplay = users[p.phone] || p.phone;
-      const fullName = userDisplay.includes(' — ')
-        ? userDisplay.split(' — ')[0]
+      const fullName = userDisplay.includes(" — ")
+        ? userDisplay.split(" — ")[0]
         : userDisplay;
 
-      const isPaidActivity = selAct.priceMember60 > 0 || selAct.priceRegular > 0;
+      const isPaidActivity =
+        selAct.priceMember60 > 0 || selAct.priceRegular > 0;
 
       const row = {
         "שם מלא": fullName,
-        "טלפון": p.phone,
+        טלפון: p.phone,
       };
 
       // Add payment status only for paid activities
@@ -247,8 +254,6 @@ export default function ActivitiesDesign({
     return label.includes(registrantsFilter.trim().toLowerCase());
   });
 
-
-
   useEffect(() => {
     if (!selAct || !selAct.participants) return;
 
@@ -261,11 +266,8 @@ export default function ActivitiesDesign({
       map[phone] = `${displayName} — ${phone}`;
     });
 
-
     setUsers(map);
   }, [selAct]);
-
-
 
   const kickParticipant = async (phone) => {
     // finds out the participant by phone
@@ -275,16 +277,16 @@ export default function ActivitiesDesign({
     // remove the participant from the activity in Firestore
     const actRef = doc(db, "activities", selAct.id);
     await updateDoc(actRef, {
-      participants: arrayRemove(participant)
+      participants: arrayRemove(participant),
     });
 
     // update local state to remove the participant
     setSelAct((prev) =>
       prev
         ? {
-          ...prev,
-          participants: prev.participants.filter((p) => p.phone !== phone)
-        }
+            ...prev,
+            participants: prev.participants.filter((p) => p.phone !== phone),
+          }
         : null
     );
   };
@@ -302,15 +304,14 @@ export default function ActivitiesDesign({
     setSelAct((prev) =>
       prev
         ? {
-          ...prev,
-          participants: prev.participants.map((p) =>
-            p.phone === phone ? updated : p
-          ),
-        }
+            ...prev,
+            participants: prev.participants.map((p) =>
+              p.phone === phone ? updated : p
+            ),
+          }
         : null
     );
   };
-
 
   // sync all tags with local state
   const filteredList = useMemo(() => {
@@ -331,25 +332,25 @@ export default function ActivitiesDesign({
     const actEvents = filteredActs.flatMap((a) =>
       a.recurring && (a.weekdays || []).length
         ? [
-          {
-            id: `${a.id}-rec`,
-            title: a.name,
-            daysOfWeek: a.weekdays,
-            startTime: a.startTime,
-            endTime: a.endTime,
-            startRecur: a.date,
-            backgroundColor: "#A5D6A7",
-          },
-        ]
+            {
+              id: `${a.id}-rec`,
+              title: a.name,
+              daysOfWeek: a.weekdays,
+              startTime: a.startTime,
+              endTime: a.endTime,
+              startRecur: a.date,
+              backgroundColor: "#A5D6A7",
+            },
+          ]
         : [
-          {
-            id: a.id,
-            title: a.name,
-            start: `${a.date}T${a.startTime}`,
-            end: `${a.date}T${a.endTime}`,
-            backgroundColor: "#90CAF9",
-          },
-        ]
+            {
+              id: a.id,
+              title: a.name,
+              start: `${a.date}T${a.startTime}`,
+              end: `${a.date}T${a.endTime}`,
+              backgroundColor: "#90CAF9",
+            },
+          ]
     );
 
     return [...actEvents, ...holidays];
@@ -367,7 +368,7 @@ export default function ActivitiesDesign({
 
         // Convert to string if it's not already
         const dateStr = params.value.toString();
-        const dateParts = dateStr.split('-');
+        const dateParts = dateStr.split("-");
 
         if (dateParts.length === 3) {
           const [year, month, day] = dateParts;
@@ -375,7 +376,7 @@ export default function ActivitiesDesign({
         }
 
         return params.value; // Return original if format is unexpected
-      }
+      },
     },
 
     {
@@ -411,7 +412,6 @@ export default function ActivitiesDesign({
       cellClassName: "multi-line-cell",
     },
 
-
     {
       field: "registrationCondition",
       headerName: "תנאי הרשמה",
@@ -433,7 +433,9 @@ export default function ActivitiesDesign({
       headerAlign: "center",
       align: "center",
       renderCell: ({ row }) => {
-        const count = Array.isArray(row.registrants) ? row.registrants.length : 0;
+        const count = Array.isArray(row.registrants)
+          ? row.registrants.length
+          : 0;
         return row.capacity ? `${count}/${row.capacity}` : "∞";
       },
     },
@@ -453,7 +455,11 @@ export default function ActivitiesDesign({
       align: "center",
       renderCell: (params) => (
         <>
-          <Button size="small" onClick={() => onEdit(params.row)} sx={{ mr: 1 }}>
+          <Button
+            size="small"
+            onClick={() => onEdit(params.row)}
+            sx={{ mr: 1 }}
+          >
             ערוך
           </Button>
           <Button
@@ -492,7 +498,6 @@ export default function ActivitiesDesign({
         <Typography variant="h4" sx={{ textAlign: "right", width: "100%" }}>
           פעילויות
         </Typography>
-
       </Box>
 
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
@@ -507,8 +512,7 @@ export default function ActivitiesDesign({
       </Box>
 
       {tab === 0 && (
-        <Box sx={{ mt: 2, textAlign: "right", }}>
-
+        <Box sx={{ mt: 2, textAlign: "right" }}>
           <Button variant="contained" onClick={onNew} sx={{ mb: 2, ml: 2 }}>
             הוספת פעילות
           </Button>
@@ -519,7 +523,7 @@ export default function ActivitiesDesign({
               display: "flex",
               alignItems: "center",
               gap: 1,
-              mb: 2
+              mb: 2,
             }}
           >
             <ToggleButtonGroup
@@ -549,7 +553,6 @@ export default function ActivitiesDesign({
             </Button>
           </Box>
 
-
           {/* search field */}
           <TextField
             placeholder="חפש לפי שם הפעילות"
@@ -560,8 +563,6 @@ export default function ActivitiesDesign({
             inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
           />
 
-
-
           <Box sx={{ height: 500 }}>
             <DataGrid
               rows={filteredList}
@@ -569,28 +570,26 @@ export default function ActivitiesDesign({
               pageSize={10}
               rowsPerPageOptions={[5, 10]}
               getRowId={(r) => r.id ?? r.tempId}
-
-              getRowHeight={() => 'auto'}
-
+              getRowHeight={() => "auto"}
               autoHeight
               sx={{
-                '& .MuiDataGrid-cell': {
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                "& .MuiDataGrid-cell": {
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 },
-                '& .multi-line-cell': {
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  whiteSpace: 'normal',
-                  wordBreak: 'break-word',
+                "& .multi-line-cell": {
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  whiteSpace: "normal",
+                  wordBreak: "break-word",
                   lineHeight: 1.3,
-                  paddingTop: '8px',
-                  paddingBottom: '8px',
+                  paddingTop: "8px",
+                  paddingBottom: "8px",
                 },
-                '& .MuiDataGrid-row': {
-                  maxHeight: 'none !important',
+                "& .MuiDataGrid-row": {
+                  maxHeight: "none !important",
                 },
               }}
             />
@@ -638,11 +637,9 @@ export default function ActivitiesDesign({
             </Button>
           </Box>
 
-
           <FullCalendar
             plugins={[dayGridPlugin, interactionPlugin]}
             initialView="dayGridMonth"
-
             locale={heLocale}
             direction="rtl"
             events={events}
@@ -668,7 +665,9 @@ export default function ActivitiesDesign({
           setMapZoom(13);
           onClose();
         }}
-      >        <DialogTitle sx={{ textAlign: "right" }}>
+      >
+        {" "}
+        <DialogTitle sx={{ textAlign: "right" }}>
           {form.id ? "עריכת פעילות" : "הוספת פעילות חדשה"}
         </DialogTitle>
         <DialogContent
@@ -727,7 +726,6 @@ export default function ActivitiesDesign({
               return filtered;
             }}
             getOptionLabel={(option) => {
-
               if (typeof option === "string") {
                 return option;
               }
@@ -740,7 +738,6 @@ export default function ActivitiesDesign({
             }}
             value={form.tags || []}
             onChange={(_, newValue) => {
-
               const tags = newValue.map((v) =>
                 typeof v === "string" ? v : v.inputValue || v
               );
@@ -775,6 +772,28 @@ export default function ActivitiesDesign({
             value={form.date}
             onChange={(e) =>
               onFormChange((f) => ({ ...f, date: e.target.value }))
+            }
+            fullWidth
+            InputLabelProps={{
+              shrink: true,
+              sx: {
+                position: "absolute",
+                top: "-6px",
+                right: "12px",
+                transform: "none",
+                backgroundColor: "#fff",
+                px: 0.5,
+                fontSize: "0.75rem",
+              },
+            }}
+            inputProps={{ dir: "rtl", style: { textAlign: "right" } }}
+          />
+          <TextField
+            label="תאריך סיום"
+            type="date"
+            value={form.endDate || ""}
+            onChange={(e) =>
+              onFormChange((f) => ({ ...f, endDate: e.target.value }))
             }
             fullWidth
             InputLabelProps={{
@@ -913,7 +932,10 @@ export default function ActivitiesDesign({
             label="תנאי הרשמה"
             value={form.registrationCondition || ""}
             onChange={(e) =>
-              onFormChange((f) => ({ ...f, registrationCondition: e.target.value }))
+              onFormChange((f) => ({
+                ...f,
+                registrationCondition: e.target.value,
+              }))
             }
             fullWidth
             InputLabelProps={{
@@ -934,7 +956,6 @@ export default function ActivitiesDesign({
             <MenuItem value="registeredUser">משתמש רשום</MenuItem>
           </TextField>
 
-
           {/* look for address */}
           <TextField
             label="מיקום"
@@ -943,7 +964,9 @@ export default function ActivitiesDesign({
             onChange={(e) => setAddressQuery(e.target.value)}
             onKeyDown={async (e) => {
               if (e.key === "Enter" && addressQuery.trim()) {
-                const results = await geoProvider.search({ query: addressQuery });
+                const results = await geoProvider.search({
+                  query: addressQuery,
+                });
                 if (results.length > 0) {
                   const typedAddress = addressQuery;
                   const { x: lng, y: lat } = results[0];
@@ -991,7 +1014,6 @@ export default function ActivitiesDesign({
               </Marker>
             )}
           </MapContainer>
-
 
           <FormControlLabel
             control={
@@ -1228,7 +1250,6 @@ export default function ActivitiesDesign({
             סגור
           </Button>
         </DialogActions>
-
       </Dialog>
     </Container>
   );
