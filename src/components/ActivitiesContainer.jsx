@@ -6,12 +6,12 @@ import ActionFeedbackDialog from "./ActionFeedbackDialog";
 import ActivitiesDesign from "./ActivitiesDesign";
 import ConfirmDialog from "./ConfirmDialog";
 
-
 const initialForm = {
   id: null,
   name: "",
   description: "",
   date: "",
+  endDate: "",
   startTime: "",
   endTime: "",
   capacity: "",
@@ -32,7 +32,11 @@ export default function ActivitiesContainer() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
 
-  const [message, setMessage] = useState({ open: false, text: "", type: "success" });
+  const [message, setMessage] = useState({
+    open: false,
+    text: "",
+    type: "success",
+  });
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [activityToDelete, setActivityToDelete] = useState(null);
 
@@ -71,7 +75,6 @@ export default function ActivitiesContainer() {
       setActivityToDelete(null);
     }
   };
-
 
   const toMinutes = (timeStr) => {
     const [hh, mm] = timeStr.split(":").map((x) => parseInt(x, 10));

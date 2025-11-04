@@ -1,5 +1,5 @@
 // src/components/LandingDialogs.jsx
-import { CheckCircle, Error } from '@mui/icons-material';
+import { CheckCircle, Error } from "@mui/icons-material";
 import EventIcon from "@mui/icons-material/Event";
 import {
   Box,
@@ -45,11 +45,19 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
 const InfoCard = styled(Card)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 2,
   transition: "box-shadow .3s",
-  backgroundColor: theme.palette.mode === "light" ? theme.palette.grey[50] : theme.palette.grey[900],
+  backgroundColor:
+    theme.palette.mode === "light"
+      ? theme.palette.grey[50]
+      : theme.palette.grey[900],
   "&:hover": { boxShadow: theme.shadows[3] },
 }));
 const Label = (props) => (
-  <Typography variant="subtitle2" fontWeight={600} sx={{ minWidth: 60 }} {...props} />
+  <Typography
+    variant="subtitle2"
+    fontWeight={600}
+    sx={{ minWidth: 60 }}
+    {...props}
+  />
 );
 
 /* component  */
@@ -80,7 +88,12 @@ export default function LandingDialogs({
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const [message, setMessage] = useState({ open: false, text: '', type: 'success', title: '' });
+  const [message, setMessage] = useState({
+    open: false,
+    text: "",
+    type: "success",
+    title: "",
+  });
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   /*  helper */
@@ -94,7 +107,7 @@ export default function LandingDialogs({
 
     async function refresh() {
       const fresh = activities.filter((a) => {
-        return a.participants?.some(p => p.phone === userProfile?.phone);
+        return a.participants?.some((p) => p.phone === userProfile?.phone);
       });
 
       const future = fresh.filter((a) => toDateTime(a) >= new Date());
@@ -113,17 +126,26 @@ export default function LandingDialogs({
         onClose={() => setCancelDialog({ open: false, activityId: null })}
         fullScreen={fullScreen}
       >
-        <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
+        <DialogTitle
+          sx={{ color: theme.palette.primary.main, fontWeight: 700 }}
+        >
           אישור ביטול הרשמה
         </DialogTitle>
         <DialogContent>
           <Typography>האם את/ה בטוח/ה שברצונך לבטל את ההרשמה?</Typography>
         </DialogContent>
         <DialogActions>
-          <CtaButton color="default" onClick={() => setCancelDialog({ open: false, activityId: null })}>
+          <CtaButton
+            color="default"
+            onClick={() => setCancelDialog({ open: false, activityId: null })}
+          >
             ביטול
           </CtaButton>
-          <CtaButton color="error" variant="contained" onClick={confirmCancelRegistration}>
+          <CtaButton
+            color="error"
+            variant="contained"
+            onClick={confirmCancelRegistration}
+          >
             בטל הרשמה
           </CtaButton>
         </DialogActions>
@@ -137,7 +159,9 @@ export default function LandingDialogs({
         maxWidth="sm"
         fullScreen={fullScreen}
       >
-        <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
+        <DialogTitle
+          sx={{ color: theme.palette.primary.main, fontWeight: 700 }}
+        >
           הפעילויות שלי
         </DialogTitle>
 
@@ -147,7 +171,9 @@ export default function LandingDialogs({
               activities={upcomingActs.map((a) => ({
                 id: a.id,
                 title: a.name,
-                start: new Date(`${a.date}T${a.startTime || "09:00"}:00`).toISOString(),
+                start: new Date(
+                  `${a.date}T${a.startTime || "09:00"}:00`
+                ).toISOString(),
                 notes: a.description || "",
               }))}
             />
@@ -159,8 +185,8 @@ export default function LandingDialogs({
               typeof loc === "string"
                 ? loc
                 : loc && typeof loc === "object"
-                  ? loc.address || `${loc.lat},${loc.lng}`
-                  : "";
+                ? loc.address || `${loc.lat},${loc.lng}`
+                : "";
 
             return (
               <Box
@@ -170,16 +196,16 @@ export default function LandingDialogs({
                   p: 2,
                   borderRadius: 2,
                   boxShadow: 1,
-                  backgroundColor: theme.palette.mode === "light"
-                    ? theme.palette.grey[50]
-                    : theme.palette.grey[900],
+                  backgroundColor:
+                    theme.palette.mode === "light"
+                      ? theme.palette.grey[50]
+                      : theme.palette.grey[900],
                   display: "flex",
                   flexDirection: isMobile ? "column" : "row", // שינוי חשוב!
                   alignItems: isMobile ? "center" : "flex-start",
                   gap: 2,
                 }}
               >
-
                 {flyers?.some((f) => f.activityId === a.id) && (
                   <Box
                     onClick={() =>
@@ -208,7 +234,12 @@ export default function LandingDialogs({
                   </Box>
                 )}
 
-                <Box flex={1} display="flex" flexDirection="column" justifyContent="space-between">
+                <Box
+                  flex={1}
+                  display="flex"
+                  flexDirection="column"
+                  justifyContent="space-between"
+                >
                   <Typography variant="h6" fontWeight={700} gutterBottom>
                     {a.name}
                   </Typography>
@@ -240,7 +271,9 @@ export default function LandingDialogs({
                     {locationStr && (
                       <CtaButton
                         component="a"
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationStr)}`}
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                          locationStr
+                        )}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         color="secondary"
@@ -252,7 +285,9 @@ export default function LandingDialogs({
                     <CtaButton
                       color="error"
                       size="small"
-                      onClick={() => setCancelDialog({ open: true, activityId: a.id })}
+                      onClick={() =>
+                        setCancelDialog({ open: true, activityId: a.id })
+                      }
                     >
                       ביטול הרשמה
                     </CtaButton>
@@ -264,13 +299,14 @@ export default function LandingDialogs({
         </DialogContent>
 
         <DialogActions>
-          <CtaButton color="primary.light" onClick={() => setOpenMyActivities(false)}>
+          <CtaButton
+            color="primary.light"
+            onClick={() => setOpenMyActivities(false)}
+          >
             סגור
           </CtaButton>
         </DialogActions>
       </StyledDialog>
-
-
 
       {/* 4. All messages */}
       <StyledDialog
@@ -280,7 +316,9 @@ export default function LandingDialogs({
         maxWidth="sm"
         fullScreen={fullScreen}
       >
-        <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
+        <DialogTitle
+          sx={{ color: theme.palette.primary.main, fontWeight: 700 }}
+        >
           כל ההודעות
         </DialogTitle>
         <DialogContent dividers>
@@ -332,7 +370,9 @@ export default function LandingDialogs({
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
+        <DialogTitle
+          sx={{ color: theme.palette.primary.main, fontWeight: 700 }}
+        >
           פרטי פעילות
         </DialogTitle>
         <DialogContent>
@@ -343,20 +383,35 @@ export default function LandingDialogs({
                 {dialog.data.name || dialog.data.title}
               </Typography>
 
-              {/* תאריך ושעות */}
-              {dialog.data.date && (
-                <Typography>
-                  <strong>תאריך:</strong>{" "}
-                  {new Date(dialog.data.date).toLocaleDateString("he-IL")}
-                </Typography>
-              )}
+              {/* תאריכים */}
+              {dialog.data.date &&
+                (dialog.data.endDate ? (
+                  <>
+                    <Typography>
+                      <strong>תאריך התחלה:</strong>{" "}
+                      {new Date(dialog.data.date).toLocaleDateString("he-IL")}
+                    </Typography>
+                    <Typography>
+                      <strong>תאריך סיום:</strong>{" "}
+                      {new Date(dialog.data.endDate).toLocaleDateString(
+                        "he-IL"
+                      )}
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography>
+                    <strong>תאריך:</strong>{" "}
+                    {new Date(dialog.data.date).toLocaleDateString("he-IL")}
+                  </Typography>
+                ))}
+
+              {/* שעה */}
               <Typography>
-                <strong>שעה:</strong>{" "}
-                {dialog.data.startTime || "לא צוינה"}{" "}
+                <strong>שעה:</strong> {dialog.data.startTime || "לא צוינה"}{" "}
                 {dialog.data.endTime ? `– ${dialog.data.endTime}` : ""}
               </Typography>
 
-              {/* תגיות אם קיימות */}
+              {/* תגיות */}
               {dialog.data.tags?.length > 0 && (
                 <Typography>
                   <strong>קטגוריה:</strong> {dialog.data.tags.join(", ")}
@@ -370,7 +425,7 @@ export default function LandingDialogs({
                   {typeof dialog.data.location === "string"
                     ? dialog.data.location
                     : dialog.data.location?.address ||
-                    `${dialog.data.location.lat}, ${dialog.data.location.lng}`}
+                      `${dialog.data.location.lat}, ${dialog.data.location.lng}`}
                 </Typography>
               )}
 
@@ -388,28 +443,27 @@ export default function LandingDialogs({
 
         <DialogActions sx={{ justifyContent: "flex-end", pb: 3 }}>
           <Box display="flex" gap={2}>
-            {dialog.data?.id && userProfile?.phone && (
-              <CtaButton
-                startIcon={<EventIcon />}
-                color="primary"
-                onClick={() => {
-                  closeDialog();
-                  openDialog("register", dialog.data.id);
-                }}
-              >
-                הרשמה מהירה
-              </CtaButton>
-            )}
+            {dialog.data?.id &&
+              userProfile?.phone &&
+              !dialog.data.recurring && (
+                <CtaButton
+                  startIcon={<EventIcon />}
+                  color="primary"
+                  onClick={() => {
+                    closeDialog();
+                    openDialog("register", dialog.data.id);
+                  }}
+                >
+                  הרשמה מהירה
+                </CtaButton>
+              )}
 
             <CtaButton color="primary.light" onClick={closeDialog}>
               סגור
             </CtaButton>
           </Box>
         </DialogActions>
-
-
       </StyledDialog>
-
 
       {/* 6. Register confirmation */}
       <StyledDialog
@@ -419,14 +473,19 @@ export default function LandingDialogs({
         maxWidth="xs"
         fullScreen={fullScreen}
       >
-        <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
+        <DialogTitle
+          sx={{ color: theme.palette.primary.main, fontWeight: 700 }}
+        >
           הרשמה לפעילות
         </DialogTitle>
 
         <DialogContent>
           <Typography>
             {userProfile?.first_name}, האם את/ה בטוח/ה שברצונך להירשם לפעילות{" "}
-            <strong>{activities.find((a) => a.id === dialog.data)?.name || ""}</strong>?
+            <strong>
+              {activities.find((a) => a.id === dialog.data)?.name || ""}
+            </strong>
+            ?
           </Typography>
         </DialogContent>
 
@@ -449,8 +508,10 @@ export default function LandingDialogs({
                 setMessage({
                   open: true,
                   text: result.message,
-                  type: result.success ? 'success' : 'error',
-                  title: result.title || (result.success ? "הרשמה הושלמה" : "שגיאה בהרשמה"),
+                  type: result.success ? "success" : "error",
+                  title:
+                    result.title ||
+                    (result.success ? "הרשמה הושלמה" : "שגיאה בהרשמה"),
                 });
 
                 if (result.success) {
@@ -497,8 +558,6 @@ export default function LandingDialogs({
                 });
               }
             }}
-
-
           >
             כן, הירשם/י
           </CtaButton>
@@ -514,7 +573,9 @@ export default function LandingDialogs({
         fullScreen={fullScreen}
         scroll="body" // ✅ מאפשר תוכן פנימי לגלול במקום לחתוך
       >
-        <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }} />
+        <DialogTitle
+          sx={{ color: theme.palette.primary.main, fontWeight: 700 }}
+        />
         <DialogContent>
           {!dialog.data?.fromMyActivities && (
             <Box
@@ -524,8 +585,8 @@ export default function LandingDialogs({
               sx={{ flexWrap: "wrap", gap: 2 }}
             >
               {dialog.data?.activityId &&
-                activities.find((a) => a.id === dialog.data.activityId)?.registrationCondition ===
-                "member60" && (
+                activities.find((a) => a.id === dialog.data.activityId)
+                  ?.registrationCondition === "member60" && (
                   <Box display="flex" justifyContent="center" mb={2}>
                     <Box
                       component="img"
@@ -536,25 +597,29 @@ export default function LandingDialogs({
                   </Box>
                 )}
 
-              <CtaButton
-                color="primary"
-                startIcon={<EventIcon />}
-                onClick={() => {
-                  const activityId = dialog.data.activityId;
-                  if (!activityId) {
-                    alert("הפלייר הזה אינו מקושר לפעילות");
-                    return;
-                  }
-                  closeDialog();
-                  if (!userProfile?.phone) {
-                    setOpenIdentify(true);
-                    return;
-                  }
-                  openDialog("register", activityId);
-                }}
-              >
-                הרשמה מהירה
-              </CtaButton>
+              {/* הרשמה מהירה - רק אם הפעילות אינה חוזרת */}
+              {!activities.find((a) => a.id === dialog.data?.activityId)
+                ?.recurring && (
+                <CtaButton
+                  color="primary"
+                  startIcon={<EventIcon />}
+                  onClick={() => {
+                    const activityId = dialog.data.activityId;
+                    if (!activityId) {
+                      alert("הפלייר הזה אינו מקושר לפעילות");
+                      return;
+                    }
+                    closeDialog();
+                    if (!userProfile?.phone) {
+                      setOpenIdentify(true);
+                      return;
+                    }
+                    openDialog("register", activityId);
+                  }}
+                >
+                  הרשמה מהירה
+                </CtaButton>
+              )}
 
               <CtaButton
                 color="default"
@@ -620,6 +685,7 @@ export default function LandingDialogs({
             </a>
           </Box>
         </DialogContent>
+
         <DialogActions>
           <CtaButton color="primary.light" onClick={closeDialog}>
             סגור
@@ -628,8 +694,15 @@ export default function LandingDialogs({
       </StyledDialog>
 
       {/* 8. Message reply */}
-      <StyledDialog open={dialog.type === "message"} onClose={closeDialog} fullWidth fullScreen={fullScreen}>
-        <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
+      <StyledDialog
+        open={dialog.type === "message"}
+        onClose={closeDialog}
+        fullWidth
+        fullScreen={fullScreen}
+      >
+        <DialogTitle
+          sx={{ color: theme.palette.primary.main, fontWeight: 700 }}
+        >
           השב להודעה
         </DialogTitle>
         <DialogContent>
@@ -643,8 +716,15 @@ export default function LandingDialogs({
       </StyledDialog>
 
       {/* 9. Survey fill */}
-      <StyledDialog open={dialog.type === "survey"} onClose={closeDialog} fullWidth fullScreen={fullScreen}>
-        <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
+      <StyledDialog
+        open={dialog.type === "survey"}
+        onClose={closeDialog}
+        fullWidth
+        fullScreen={fullScreen}
+      >
+        <DialogTitle
+          sx={{ color: theme.palette.primary.main, fontWeight: 700 }}
+        >
           מילוי סקר
         </DialogTitle>
         <DialogContent>
@@ -665,7 +745,9 @@ export default function LandingDialogs({
         maxWidth="sm"
         fullScreen={fullScreen}
       >
-        <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
+        <DialogTitle
+          sx={{ color: theme.palette.primary.main, fontWeight: 700 }}
+        >
           כל הסקרים
         </DialogTitle>
         <DialogContent dividers>
@@ -707,7 +789,9 @@ export default function LandingDialogs({
         maxWidth="xs"
         fullScreen={fullScreen}
       >
-        <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
+        <DialogTitle
+          sx={{ color: theme.palette.primary.main, fontWeight: 700 }}
+        >
           הזדהות
         </DialogTitle>
         <DialogContent>
@@ -728,7 +812,9 @@ export default function LandingDialogs({
         maxWidth="xs"
         fullScreen={fullScreen}
       >
-        <DialogTitle sx={{ color: theme.palette.primary.main, fontWeight: 700 }}>
+        <DialogTitle
+          sx={{ color: theme.palette.primary.main, fontWeight: 700 }}
+        >
           התחברות מנהל
         </DialogTitle>
         <DialogContent>
@@ -745,66 +831,74 @@ export default function LandingDialogs({
         open={message.open}
         // Only close when user clicks the button
         onClose={(e, reason) => {
-          if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
-            setMessage(prev => ({ ...prev, open: false }));
+          if (reason !== "backdropClick" && reason !== "escapeKeyDown") {
+            setMessage((prev) => ({ ...prev, open: false }));
           }
         }}
         maxWidth="xs"
         PaperProps={{
           sx: {
             p: 2,
-            textAlign: 'center',
+            textAlign: "center",
             borderRadius: 1,
             // Vibrant border using main palette colors
-            border: theme => `3px solid ${theme.palette[message.type === 'success' ? 'success' : 'error'].main}`,
-            boxShadow: 2
-          }
+            border: (theme) =>
+              `3px solid ${
+                theme.palette[message.type === "success" ? "success" : "error"]
+                  .main
+              }`,
+            boxShadow: 2,
+          },
         }}
       >
         <DialogContent>
           <Box sx={{ mb: 2 }}>
-            {message.type === 'success' ? (
-              <CheckCircle sx={{ fontSize: 64, color: 'success.main', mb: 1 }} />
+            {message.type === "success" ? (
+              <CheckCircle
+                sx={{ fontSize: 64, color: "success.main", mb: 1 }}
+              />
             ) : (
-              <Error sx={{ fontSize: 64, color: 'error.main', mb: 1 }} />
+              <Error sx={{ fontSize: 64, color: "error.main", mb: 1 }} />
             )}
           </Box>
           <Typography
-            variant="h5"                // increased heading size
+            variant="h5" // increased heading size
             sx={{
               fontWeight: 600,
               mb: 1,
-              color: message.type === 'success' ? 'success.main' : 'error.main'
+              color: message.type === "success" ? "success.main" : "error.main",
             }}
           >
             {message.title}
           </Typography>
           <Typography
-            variant="body1"             // increased body size
+            variant="body1" // increased body size
             sx={{
-              fontSize: '1.8rem',         // explicitly larger font
+              fontSize: "1.8rem", // explicitly larger font
               lineHeight: 1.6,
-              color: 'text.primary'
+              color: "text.primary",
             }}
           >
             {message.text}
           </Typography>
         </DialogContent>
-        <DialogActions sx={{ justifyContent: 'center', pb: 1 }}>
+        <DialogActions sx={{ justifyContent: "center", pb: 1 }}>
           <Button
-            onClick={() => setMessage(prev => ({ ...prev, open: false }))}
+            onClick={() => setMessage((prev) => ({ ...prev, open: false }))}
             variant="contained"
             size="medium"
             sx={{
-              fontSize: '1.2rem',          // larger button font
+              fontSize: "1.2rem", // larger button font
               py: 1,
-              px: 4,                       // slightly more horizontal padding
+              px: 4, // slightly more horizontal padding
               // Use main colors for strong effect
-              bgcolor: message.type === 'success' ? 'success.main' : 'error.main',
-              color: 'common.white',
-              '&:hover': {
-                bgcolor: message.type === 'success' ? 'success.dark' : 'error.dark'
-              }
+              bgcolor:
+                message.type === "success" ? "success.main" : "error.main",
+              color: "common.white",
+              "&:hover": {
+                bgcolor:
+                  message.type === "success" ? "success.dark" : "error.dark",
+              },
             }}
           >
             הבנתי
