@@ -56,13 +56,20 @@ function Recenter({ center, zoom }) {
   return null;
 }
 const WEEKDAYS = [
-  { label: "א׳", value: 1 },
-  { label: "ב׳", value: 2 },
-  { label: "ג׳", value: 3 },
-  { label: "ד׳", value: 4 },
-  { label: "ה׳", value: 5 },
-  { label: "ו׳", value: 6 },
-  { label: "ש׳", value: 0 },
+  // { label: "א׳", value: 1 },
+  // { label: "ב׳", value: 2 },
+  // { label: "ג׳", value: 3 },
+  // { label: "ד׳", value: 4 },
+  // { label: "ה׳", value: 5 },
+  // { label: "ו׳", value: 6 },
+  // { label: "ש׳", value: 0 },
+  { label: "א׳", value: 0 },
+  { label: "ב׳", value: 1 },
+  { label: "ג׳", value: 2 },
+  { label: "ד׳", value: 3 },
+  { label: "ה׳", value: 4 },
+  { label: "ו׳", value: 5 },
+  { label: "ש׳", value: 6 },
 ];
 
 //freeSolo
@@ -150,6 +157,13 @@ export default function ActivitiesDesign({
   // render map center and zoom
   const [mapCenter, setMapCenter] = useState([31.7683, 35.2137]);
   const [mapZoom, setMapZoom] = useState(13);
+
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [participantData, setParticipantData] = useState({
+    name: "",
+    phone: "",
+  });
+  const [targetAct, setTargetAct] = useState(null);
 
   useEffect(() => {
     if (!selAct || !selAct.participants) return;
@@ -445,20 +459,20 @@ export default function ActivitiesDesign({
       width: 80,
       headerAlign: "center",
       align: "center",
-      valueFormatter: ({ value }) => (value ? "כן" : "לא"),
+      renderCell: ({ row }) => (row.recurring === true ? "כן" : "לא"),
     },
     {
       field: "actions",
       headerName: "פעולות",
-      width: 280,
+      width: 260,
       headerAlign: "center",
-      align: "center",
+      align: "right", // aligns cell content to the right
       renderCell: (params) => (
-        <>
+        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.5 }}>
           <Button
             size="small"
             onClick={() => onEdit(params.row)}
-            sx={{ mr: 1 }}
+            sx={{ px: 1, minWidth: 0, fontSize: 13 }}
           >
             ערוך
           </Button>
@@ -466,7 +480,7 @@ export default function ActivitiesDesign({
             size="small"
             color="error"
             onClick={() => onDelete(params.row)}
-            sx={{ mr: 1 }}
+            sx={{ px: 1, minWidth: 0, fontSize: 13 }}
           >
             מחק
           </Button>
@@ -474,11 +488,23 @@ export default function ActivitiesDesign({
             size="small"
             variant="outlined"
             onClick={() => setSelAct(params.row)}
-            sx={{ whiteSpace: "nowrap" }}
+            sx={{ whiteSpace: "nowrap", px: 1, minWidth: 70, fontSize: 13 }}
           >
             נרשמים
           </Button>
-        </>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => {
+              setTargetAct(params.row);
+              setParticipantData({ name: "", phone: "" });
+              setAddDialogOpen(true);
+            }}
+            sx={{ whiteSpace: "nowrap", px: 1, minWidth: 80, fontSize: 13 }}
+          >
+            הוסף משתתף
+          </Button>
+        </Box>
       ),
     },
   ];
@@ -1040,11 +1066,12 @@ export default function ActivitiesDesign({
               <Typography sx={{ mb: 1, textAlign: "right" }}>
                 בחר ימי שבוע חוזרים:
               </Typography>
+
               <Box
                 sx={{
                   display: "flex",
                   flexWrap: "wrap",
-                  gap: 1,
+                  gap: 2,
                   justifyContent: "flex-end",
                 }}
               >
@@ -1052,7 +1079,13 @@ export default function ActivitiesDesign({
                   <FormControlLabel
                     key={d.value}
                     label={d.label}
-                    sx={{ mr: 0 }}
+                    labelPlacement="top" // 👈 label above checkbox
+                    sx={{
+                      flexDirection: "column-reverse", // 👈 checkbox under the label
+                      alignItems: "center",
+                      m: 0,
+                      minWidth: 60, // optional: keeps spacing consistent
+                    }}
                     control={
                       <Checkbox
                         checked={(form.weekdays || []).includes(d.value)}
@@ -1248,6 +1281,77 @@ export default function ActivitiesDesign({
             }}
           >
             סגור
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={addDialogOpen}
+        onClose={() => setAddDialogOpen(false)}
+        dir="rtl"
+      >
+        <DialogTitle sx={{ textAlign: "right" }}>
+          הוסף משתתף לפעילות
+        </DialogTitle>
+
+        <DialogContent sx={{ minWidth: 320 }}>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="שם משתתף"
+              value={participantData.name}
+              onChange={(e) =>
+                setParticipantData((p) => ({ ...p, name: e.target.value }))
+              }
+              fullWidth
+              inputProps={{ style: { textAlign: "right" } }}
+            />
+            <TextField
+              label="טלפון"
+              value={participantData.phone}
+              onChange={(e) =>
+                setParticipantData((p) => ({ ...p, phone: e.target.value }))
+              }
+              fullWidth
+              inputProps={{ style: { textAlign: "right" } }}
+            />
+          </Stack>
+        </DialogContent>
+
+        <DialogActions sx={{ justifyContent: "space-between" }}>
+          <Button onClick={() => setAddDialogOpen(false)}>ביטול</Button>
+          <Button
+            variant="outlined" // ✅ same look as “נרשמים”
+            sx={{
+              whiteSpace: "nowrap",
+              borderColor: "primary.main",
+            }}
+            onClick={async () => {
+              if (!participantData.name.trim() || !participantData.phone.trim())
+                return;
+
+              try {
+                const newParticipant = {
+                  name: participantData.name.trim(),
+                  phone: participantData.phone.trim(),
+                };
+
+                const updated = {
+                  ...targetAct,
+                  participants: [
+                    ...(targetAct.participants || []),
+                    newParticipant,
+                  ],
+                };
+
+                await ActivityService.update(targetAct.id, updated);
+
+                setAddDialogOpen(false);
+                setParticipantData({ name: "", phone: "" });
+              } catch (err) {
+                console.error("Error adding participant:", err);
+              }
+            }}
+          >
+            שמור
           </Button>
         </DialogActions>
       </Dialog>
