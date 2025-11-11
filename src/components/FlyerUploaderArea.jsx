@@ -27,7 +27,11 @@ export default function FlyerUploaderArea({ onUpload }) {
   const [activities, setActivities] = useState([]);
   const [activityId, setActivityId] = useState("");
   const dropRef = useRef();
-  const [message, setMessage] = useState({ open: false, text: "", type: "success" });
+  const [message, setMessage] = useState({
+    open: false,
+    text: "",
+    type: "success",
+  });
 
   useEffect(() => {
     const unsub = ActivityService.subscribe((acts) => setActivities(acts));
@@ -59,18 +63,29 @@ export default function FlyerUploaderArea({ onUpload }) {
       return;
     }
 
-    if (!activityId) {
-      setMessage({ open: true, type: "error", text: "יש לבחור פעילות" });
-      return;
-    }
+    // ❌ remove this (no longer required)
+    // if (!activityId) {
+    //   setMessage({ open: true, type: "error", text: "יש לבחור פעילות" });
+    //   return;
+    // }
 
     if (endDate && startDate && endDate < startDate) {
-      setMessage({ open: true, type: "error", text: "תאריך סיום חייב להיות אחרי תאריך התחלה" });
+      setMessage({
+        open: true,
+        type: "error",
+        text: "תאריך סיום חייב להיות אחרי תאריך התחלה",
+      });
       return;
     }
 
     try {
-      await FlyerService.uploadFlyer({ name, file, startDate, endDate, activityId });
+      await FlyerService.uploadFlyer({
+        name,
+        file,
+        startDate,
+        endDate,
+        activityId: activityId || null, // ✅ allow null activity
+      });
 
       setName("");
       setFile(null);
@@ -82,10 +97,13 @@ export default function FlyerUploaderArea({ onUpload }) {
       onUpload?.();
     } catch (err) {
       console.error(err);
-      setMessage({ open: true, type: "error", text: "העלאה נכשלה: " + (err.code || err.message) });
+      setMessage({
+        open: true,
+        type: "error",
+        text: "העלאה נכשלה: " + (err.code || err.message),
+      });
     }
   };
-
 
   return (
     <Box
@@ -99,7 +117,12 @@ export default function FlyerUploaderArea({ onUpload }) {
         boxShadow: 1,
       }}
     >
-      <Typography variant="h5" align="center" gutterBottom sx={{ mb: 2, fontWeight: 600 }}>
+      <Typography
+        variant="h5"
+        align="center"
+        gutterBottom
+        sx={{ mb: 2, fontWeight: 600 }}
+      >
         העלאת פלייר
       </Typography>
 
@@ -169,8 +192,12 @@ export default function FlyerUploaderArea({ onUpload }) {
             overflow: "hidden",
             "& input[type='file']": {
               position: "absolute",
-              top: 0, left: 0, width: "100%", height: "100%",
-              opacity: 0, cursor: "pointer",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              opacity: 0,
+              cursor: "pointer",
             },
           }}
         >
@@ -181,13 +208,17 @@ export default function FlyerUploaderArea({ onUpload }) {
               גרור קובץ לכאן או לחצי כדי לבחור
             </Typography>
           )}
-          <input type="file" accept="image/*,application/pdf" onChange={handleFileChange} />
+          <input
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={handleFileChange}
+          />
         </Box>
 
         {/*  save button*/}
         <CtaButton
           onClick={handleSubmit}
-          disabled={!name.trim() || !file || !activityId}
+          disabled={!name.trim() || !file} // ✅ removed !activityId
           fullWidth
           sx={{ mt: 1 }}
         >
@@ -199,7 +230,7 @@ export default function FlyerUploaderArea({ onUpload }) {
         open={message.open}
         type={message.type}
         text={message.text}
-        onClose={() => setMessage(prev => ({ ...prev, open: false }))}
+        onClose={() => setMessage((prev) => ({ ...prev, open: false }))}
       />
     </Box>
   );

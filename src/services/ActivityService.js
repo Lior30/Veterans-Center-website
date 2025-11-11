@@ -11,16 +11,20 @@ import {
   query,
   runTransaction,
   updateDoc,
-  where
+  where,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import FlyerService from "./FlyerService";
+
+async function update(id, data) {
+  const ref = doc(db, "activities", id);
+  await updateDoc(ref, data);
+}
 
 export default class ActivityService {
   /* collection constants */
   static COL = "activities";
   static colRef = collection(db, ActivityService.COL);
-
 
   /** ➖ delete full  doc*/
   static async delete(id) {
@@ -38,8 +42,6 @@ export default class ActivityService {
     }
   }
 
-
-
   /* Realtime stream  */
   static subscribe(callback) {
     return onSnapshot(
@@ -55,7 +57,7 @@ export default class ActivityService {
               participants: data.participants || [],
               tags: data.tags || [],
               registrants: Array.isArray(data.participants)
-                ? data.participants.map(p => p.phone)
+                ? data.participants.map((p) => p.phone)
                 : [],
             };
           })
@@ -117,10 +119,9 @@ export default class ActivityService {
   /**
    * ➕ user registers (transaction = capacity safe), ועדכון גם של מסמך המשתמש
    * @param {string} activityId
-   * @param {{name: string, phone: string}} user  
+   * @param {{name: string, phone: string}} user
    */
   static async registerUser(activityId, user) {
-
     if (!activityId) {
       throw new Error("MISSING_ACTIVITY_ID");
     }
@@ -137,7 +138,10 @@ export default class ActivityService {
     const userQuery = query(usersCol, where("phone", "==", normalizedPhone));
     const userSnap = await getDocs(userQuery);
     if (userSnap.empty) {
-      console.warn("ActivityService.registerUser: USER_NOT_FOUND for phone:", normalizedPhone);
+      console.warn(
+        "ActivityService.registerUser: USER_NOT_FOUND for phone:",
+        normalizedPhone
+      );
       throw new Error("USER_NOT_FOUND");
     }
     const userRef = userSnap.docs[0].ref;
@@ -163,7 +167,7 @@ export default class ActivityService {
               success: false,
               reason: "PAST_ACTIVITY",
               message: "תאריך הפעילות עבר, לא ניתן להירשם.",
-              title: "הרשמה לא אושרה"
+              title: "הרשמה לא אושרה",
             };
           }
         }
@@ -172,12 +176,12 @@ export default class ActivityService {
         const userData = userSnapTx.data();
 
         // check for 60+
-        if (data.registrationCondition === 'member60' && !userData.is_club_60) {
+        if (data.registrationCondition === "member60" && !userData.is_club_60) {
           return {
             success: false,
             reason: "CONDITION_NOT_MET",
             message: "פעילות זו מיועדת לחברי מרכז 60+ בלבד",
-            title: "הרשמה לא אושרה"
+            title: "הרשמה לא אושרה",
           };
         }
 
@@ -209,7 +213,7 @@ export default class ActivityService {
             success: false,
             reason: "FULL",
             message: "אין עוד מקומות פנויים בפעילות זו",
-            title: "הפעילות מלאה"
+            title: "הפעילות מלאה",
           };
         }
         // new user data to add
@@ -231,22 +235,22 @@ export default class ActivityService {
           success: true,
           reason: "OK",
           message: "נרשמת לפעילות בהצלחה!",
-          title: "הרשמה הושלמה בהצלחה"
+          title: "הרשמה הושלמה בהצלחה",
         };
       });
 
-      return result ?? {
-        success: false,
-        reason: "ERROR",
-        message: "אירעה שגיאה במהלך ההרשמה. אנא נסה שוב",
-        title: "שגיאה בהרשמה"
-      };
+      return (
+        result ?? {
+          success: false,
+          reason: "ERROR",
+          message: "אירעה שגיאה במהלך ההרשמה. אנא נסה שוב",
+          title: "שגיאה בהרשמה",
+        }
+      );
     } catch (err) {
       throw err;
     }
   }
-
-
 
   /** ➖ admin removes user */
   static async removeUser(activityId, participant) {
@@ -293,5 +297,4 @@ export default class ActivityService {
 
     return results;
   }
-
 }
